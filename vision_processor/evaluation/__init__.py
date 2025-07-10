@@ -1,5 +1,4 @@
-"""
-Unified Evaluation Framework
+"""Unified Evaluation Framework
 
 Comprehensive evaluation system for fair model comparison using identical
 Llama 7-step processing pipeline. Supports SROIE dataset evaluation,

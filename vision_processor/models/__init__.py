@@ -1,5 +1,4 @@
-"""
-Vision Models Package
+"""Vision Models Package
 
 Provides unified interface for vision models with model-agnostic processing capabilities.
 Supports both InternVL3 and Llama-3.2-Vision models with optimizations for different hardware configurations.

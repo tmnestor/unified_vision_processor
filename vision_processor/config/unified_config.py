@@ -1,5 +1,4 @@
-"""
-Unified Configuration Management
+"""Unified Configuration Management
 
 Combines Llama configuration with InternVL features for model-agnostic processing.
 Supports environment-driven configuration with intelligent defaults.
@@ -10,7 +9,7 @@ import os
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -45,8 +44,7 @@ class ProductionAssessment(Enum):
 
 @dataclass
 class UnifiedConfig:
-    """
-    Unified configuration for vision document processing.
+    """Unified configuration for vision document processing.
 
     Integrates Llama-3.2 configuration framework with InternVL advanced features.
     Supports cross-platform deployment from Mac M1 → 2x H200 → single V100.
@@ -56,12 +54,12 @@ class UnifiedConfig:
     # MODEL SELECTION
     # =====================================================
     model_type: ModelType = ModelType.INTERNVL3
-    model_path: Optional[Path] = None
+    model_path: Path | None = None
     device_config: DeviceConfig = DeviceConfig.AUTO
 
     # Model-specific paths for offline production
-    internvl_model_path: Optional[Path] = None
-    llama_model_path: Optional[Path] = None
+    internvl_model_path: Path | None = None
+    llama_model_path: Path | None = None
     offline_mode: bool = True  # Default to offline for production safety
 
     # =====================================================
@@ -97,9 +95,9 @@ class UnifiedConfig:
     # =====================================================
     # DATA PATHS
     # =====================================================
-    dataset_path: Optional[Path] = None
-    ground_truth_path: Optional[Path] = None
-    output_path: Optional[Path] = None
+    dataset_path: Path | None = None
+    ground_truth_path: Path | None = None
+    output_path: Path | None = None
 
     # =====================================================
     # PERFORMANCE AND COMPATIBILITY
@@ -114,13 +112,13 @@ class UnifiedConfig:
     # =====================================================
     fair_comparison: bool = True
     model_comparison: bool = True
-    evaluation_fields: List[str] = field(
+    evaluation_fields: list[str] = field(
         default_factory=lambda: [
             "date_value",
             "store_name_value",
             "tax_value",
             "total_value",
-        ]
+        ],
     )
     sroie_evaluation: bool = True
 
@@ -144,7 +142,6 @@ class UnifiedConfig:
 
     def __post_init__(self):
         """Post-initialization processing."""
-
         # Convert string paths to Path objects
         if isinstance(self.model_path, str):
             self.model_path = Path(self.model_path)
@@ -189,17 +186,16 @@ class UnifiedConfig:
                 raise ValueError(
                     f"Offline mode is enabled (default) but no model path configured for {self.model_type.value}. "
                     f"Set {env_var_name} in .env or "
-                    f"set VISION_OFFLINE_MODE=false for development with internet access."
+                    f"set VISION_OFFLINE_MODE=false for development with internet access.",
                 )
             # Otherwise, model will be downloaded (development only)
             logger.warning(
                 f"No local model path configured for {self.model_type.value}. "
-                "Model will be downloaded from internet (development mode only)"
+                "Model will be downloaded from internet (development mode only)",
             )
 
     def _validate_config(self) -> None:
         """Validate configuration parameters."""
-
         # Validate thresholds
         if not 0 <= self.quality_threshold <= 1:
             raise ValueError("quality_threshold must be between 0 and 1")
@@ -224,12 +220,11 @@ class UnifiedConfig:
         if self.offline_mode and self.model_path:
             if not self.model_path.exists():
                 raise ValueError(
-                    f"Offline mode enabled but model path does not exist: {self.model_path}"
+                    f"Offline mode enabled but model path does not exist: {self.model_path}",
                 )
 
     def _apply_environment_optimizations(self) -> None:
         """Apply optimizations based on detected environment."""
-
         import platform
 
         import torch
@@ -243,7 +238,8 @@ class UnifiedConfig:
             self.local_dev = True
             self.enable_8bit_quantization = False  # MPS doesn't support quantization
             self.gpu_memory_limit = min(
-                self.gpu_memory_limit, 16384
+                self.gpu_memory_limit,
+                16384,
             )  # Unified memory constraint
 
         # Multi-GPU development system (H200)
@@ -251,7 +247,7 @@ class UnifiedConfig:
             gpu_memory = torch.cuda.get_device_properties(0).total_memory
             if gpu_memory > 70 * 1024**3:  # 70GB+ indicates H200-class GPU
                 logger.info(
-                    "Detected high-memory multi-GPU system, applying H200 optimizations"
+                    "Detected high-memory multi-GPU system, applying H200 optimizations",
                 )
                 self.h200_development = True
                 self.enable_8bit_quantization = (
@@ -265,7 +261,7 @@ class UnifiedConfig:
             gpu_memory = torch.cuda.get_device_properties(0).total_memory
             if 15 * 1024**3 <= gpu_memory <= 17 * 1024**3:  # V100 16GB range
                 logger.info(
-                    "Detected V100-class GPU, applying production optimizations"
+                    "Detected V100-class GPU, applying production optimizations",
                 )
                 self.v100_production = True
                 self.production_mode = True
@@ -274,17 +270,16 @@ class UnifiedConfig:
                 self.gpu_memory_limit = 15360  # Conservative limit for V100
 
     @classmethod
-    def from_env(cls, env_file: Optional[Union[str, Path]] = None) -> "UnifiedConfig":
-        """
-        Create configuration from environment variables.
+    def from_env(cls, env_file: str | Path | None = None) -> "UnifiedConfig":
+        """Create configuration from environment variables.
 
         Args:
             env_file: Optional path to .env file
 
         Returns:
             UnifiedConfig instance
-        """
 
+        """
         # Load environment file if specified
         if env_file:
             load_dotenv(env_file)
@@ -315,7 +310,8 @@ class UnifiedConfig:
         if llama_path := os.getenv("VISION_LLAMA_MODEL_PATH"):
             config_dict["llama_model_path"] = Path(llama_path)
         config_dict["offline_mode"] = cls._get_bool_env(
-            "VISION_OFFLINE_MODE", True
+            "VISION_OFFLINE_MODE",
+            True,
         )  # Default to True
 
         # Processing configuration
@@ -332,14 +328,16 @@ class UnifiedConfig:
         config_dict.update(
             {
                 "highlight_detection": cls._get_bool_env(
-                    "VISION_HIGHLIGHT_DETECTION", True
+                    "VISION_HIGHLIGHT_DETECTION",
+                    True,
                 ),
                 "awk_fallback": cls._get_bool_env("VISION_AWK_FALLBACK", True),
                 "computer_vision": cls._get_bool_env("VISION_COMPUTER_VISION", True),
                 "graceful_degradation": cls._get_bool_env(
-                    "VISION_GRACEFUL_DEGRADATION", True
+                    "VISION_GRACEFUL_DEGRADATION",
+                    True,
                 ),
-            }
+            },
         )
 
         # Confidence and production
@@ -354,11 +352,12 @@ class UnifiedConfig:
         config_dict.update(
             {
                 "enable_8bit_quantization": cls._get_bool_env(
-                    "VISION_ENABLE_8BIT_QUANTIZATION", True
+                    "VISION_ENABLE_8BIT_QUANTIZATION",
+                    True,
                 ),
                 "multi_gpu_dev": cls._get_bool_env("VISION_MULTI_GPU_DEV", True),
                 "single_gpu_prod": cls._get_bool_env("VISION_SINGLE_GPU_PROD", True),
-            }
+            },
         )
 
         # Data paths
@@ -379,7 +378,7 @@ class UnifiedConfig:
         config_dict.update(
             {
                 "cross_platform": cls._get_bool_env("VISION_CROSS_PLATFORM", True),
-            }
+            },
         )
 
         # Evaluation and comparison
@@ -388,7 +387,7 @@ class UnifiedConfig:
                 "fair_comparison": cls._get_bool_env("VISION_FAIR_COMPARISON", True),
                 "model_comparison": cls._get_bool_env("VISION_MODEL_COMPARISON", True),
                 "sroie_evaluation": cls._get_bool_env("VISION_SROIE_EVALUATION", True),
-            }
+            },
         )
         if eval_fields := os.getenv("VISION_EVALUATION_FIELDS"):
             config_dict["evaluation_fields"] = eval_fields.split(",")
@@ -401,7 +400,7 @@ class UnifiedConfig:
                 "h200_development": cls._get_bool_env("VISION_H200_DEVELOPMENT", False),
                 "v100_production": cls._get_bool_env("VISION_V100_PRODUCTION", False),
                 "production_mode": cls._get_bool_env("VISION_PRODUCTION_MODE", False),
-            }
+            },
         )
 
         return cls(**config_dict)
@@ -414,7 +413,7 @@ class UnifiedConfig:
             return default
         return value.lower() in ("true", "1", "yes", "on")
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary."""
         result = {}
 
@@ -428,7 +427,7 @@ class UnifiedConfig:
 
         return result
 
-    def save_to_file(self, file_path: Union[str, Path]) -> None:
+    def save_to_file(self, file_path: str | Path) -> None:
         """Save configuration to YAML file."""
         import yaml
 
@@ -441,7 +440,7 @@ class UnifiedConfig:
         logger.info(f"Configuration saved to {file_path}")
 
     @classmethod
-    def load_from_file(cls, file_path: Union[str, Path]) -> "UnifiedConfig":
+    def load_from_file(cls, file_path: str | Path) -> "UnifiedConfig":
         """Load configuration from YAML file."""
         import yaml
 
@@ -457,21 +456,21 @@ class UnifiedConfig:
             config_dict["device_config"] = DeviceConfig(config_dict["device_config"])
         if "processing_pipeline" in config_dict:
             config_dict["processing_pipeline"] = ProcessingPipeline(
-                config_dict["processing_pipeline"]
+                config_dict["processing_pipeline"],
             )
         if "extraction_method" in config_dict:
             config_dict["extraction_method"] = ExtractionMethod(
-                config_dict["extraction_method"]
+                config_dict["extraction_method"],
             )
         if "production_assessment" in config_dict:
             config_dict["production_assessment"] = ProductionAssessment(
-                config_dict["production_assessment"]
+                config_dict["production_assessment"],
             )
 
         logger.info(f"Configuration loaded from {file_path}")
         return cls(**config_dict)
 
-    def get_model_config(self) -> Dict[str, Any]:
+    def get_model_config(self) -> dict[str, Any]:
         """Get configuration specific to model creation."""
         return {
             "model_type": self.model_type,
@@ -482,7 +481,7 @@ class UnifiedConfig:
             "trust_remote_code": self.trust_remote_code,
         }
 
-    def get_processing_config(self) -> Dict[str, Any]:
+    def get_processing_config(self) -> dict[str, Any]:
         """Get configuration specific to processing pipeline."""
         return {
             "processing_pipeline": self.processing_pipeline,

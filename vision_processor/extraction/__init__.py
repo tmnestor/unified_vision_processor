@@ -1,10 +1,12 @@
-"""
-Extraction Package
+"""Extraction Package
 
 Implements the unified 7-step processing pipeline combining Llama architecture
 with InternVL enhancements for robust document processing.
 """
 
+# Import from new organized modules
+from ..classification import ClassificationResult, DocumentClassifier, DocumentType
+from ..confidence import ComplianceResult, ConfidenceManager, ConfidenceResult
 from .awk_extractor import AWKExtractor, ExtractionPattern, FieldType
 from .hybrid_extraction_manager import (
     ProcessingResult,
@@ -14,35 +16,29 @@ from .hybrid_extraction_manager import (
 )
 from .pipeline_components import (
     ATOComplianceHandler,
-    ClassificationResult,
-    ComplianceResult,
-    ConfidenceManager,
-    ConfidenceResult,
-    DocumentClassifier,
     DocumentHandler,
-    DocumentType,
     EnhancedKeyValueParser,
     HighlightDetector,
     PromptManager,
 )
 
 __all__ = [
-    "UnifiedExtractionManager",
-    "ProcessingResult",
-    "ProcessingStage",
-    "QualityGrade",
+    "ATOComplianceHandler",
     "AWKExtractor",
-    "ExtractionPattern",
-    "FieldType",
-    "DocumentType",
     "ClassificationResult",
     "ComplianceResult",
+    "ConfidenceManager",
     "ConfidenceResult",
     "DocumentClassifier",
-    "ConfidenceManager",
-    "ATOComplianceHandler",
-    "PromptManager",
     "DocumentHandler",
-    "HighlightDetector",
+    "DocumentType",
     "EnhancedKeyValueParser",
+    "ExtractionPattern",
+    "FieldType",
+    "HighlightDetector",
+    "ProcessingResult",
+    "ProcessingStage",
+    "PromptManager",
+    "QualityGrade",
+    "UnifiedExtractionManager",
 ]

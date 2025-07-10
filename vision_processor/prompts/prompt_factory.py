@@ -1,12 +1,11 @@
-"""
-Prompt Factory
+"""Prompt Factory
 
 Unified prompt management system combining InternVL's 47 specialized prompts
 with Llama's 13 ATO-compliant prompts for Australian tax document processing.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..extraction.pipeline_components import DocumentType
 from .internvl_prompts import InternVLPrompts
@@ -16,8 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class PromptFactory:
-    """
-    Factory for managing unified prompt selection and optimization.
+    """Factory for managing unified prompt selection and optimization.
 
     Features:
     - 47 InternVL specialized prompts for document processing
@@ -36,7 +34,7 @@ class PromptFactory:
         self.llama_prompts = LlamaPrompts()
 
         # Prompt performance tracking
-        self.prompt_performance: Dict[str, Dict[str, float]] = {}
+        self.prompt_performance: dict[str, dict[str, float]] = {}
 
         # Feature flags
         self.enable_highlight_prompts = getattr(config, "highlight_detection", True)
@@ -56,7 +54,7 @@ class PromptFactory:
         self._load_prompt_performance()
 
         logger.info(
-            f"PromptFactory initialized with {self.get_total_prompt_count()} prompts"
+            f"PromptFactory initialized with {self.get_total_prompt_count()} prompts",
         )
         self.initialized = True
 
@@ -67,8 +65,7 @@ class PromptFactory:
         extraction_quality: float = 0.0,
         prefer_ato_compliance: bool = True,
     ) -> str:
-        """
-        Get the optimal prompt for a given document type and context.
+        """Get the optimal prompt for a given document type and context.
 
         Args:
             document_type: Type of document being processed
@@ -78,13 +75,17 @@ class PromptFactory:
 
         Returns:
             Optimized prompt string for the given context
+
         """
         if not self.initialized:
             self.initialize()
 
         # Determine prompt strategy
         prompt_strategy = self._determine_prompt_strategy(
-            document_type, has_highlights, extraction_quality, prefer_ato_compliance
+            document_type,
+            has_highlights,
+            extraction_quality,
+            prefer_ato_compliance,
         )
 
         # Get base prompt based on strategy
@@ -100,7 +101,10 @@ class PromptFactory:
 
         # Apply prompt enhancements
         enhanced_prompt = self._enhance_prompt(
-            base_prompt, document_type, has_highlights, extraction_quality
+            base_prompt,
+            document_type,
+            has_highlights,
+            extraction_quality,
         )
 
         # Track prompt usage for optimization
@@ -117,7 +121,6 @@ class PromptFactory:
         prefer_ato_compliance: bool,
     ) -> str:
         """Determine the best prompt strategy for the given context."""
-
         # If previous extraction quality was low, try different strategy
         if extraction_quality < 0.5:
             return "specialized"
@@ -181,7 +184,6 @@ Extract all relevant information accurately and provide confidence scores."""
         extraction_quality: float,
     ) -> str:
         """Enhance the base prompt with context-specific information."""
-
         enhanced_prompt = base_prompt
 
         # Add highlight-specific instructions
@@ -215,7 +217,6 @@ EXTRACTION QUALITY IMPROVEMENT:
 
     def _get_document_specific_enhancements(self, document_type: DocumentType) -> str:
         """Get document-type specific prompt enhancements."""
-
         enhancements = {
             DocumentType.FUEL_RECEIPT: """
 FUEL RECEIPT SPECIFIC:
@@ -255,8 +256,9 @@ TAX INVOICE SPECIFIC:
         self.prompt_performance[doc_type_str][strategy] += 1
 
     def _get_best_performing_strategy(
-        self, document_type: DocumentType
-    ) -> Optional[str]:
+        self,
+        document_type: DocumentType,
+    ) -> str | None:
         """Get the best performing prompt strategy for a document type."""
         doc_type_str = document_type.value
 
@@ -282,7 +284,7 @@ TAX INVOICE SPECIFIC:
         llama_count = self.llama_prompts.get_prompt_count()
         return internvl_count + llama_count
 
-    def get_prompt_statistics(self) -> Dict[str, Any]:
+    def get_prompt_statistics(self) -> dict[str, Any]:
         """Get comprehensive prompt system statistics."""
         return {
             "total_prompts": self.get_total_prompt_count(),
@@ -294,13 +296,14 @@ TAX INVOICE SPECIFIC:
             "performance_data": self.prompt_performance,
         }
 
-    def get_available_strategies(self) -> List[str]:
+    def get_available_strategies(self) -> list[str]:
         """Get list of available prompt strategies."""
         return ["ato_compliance", "highlight_enhanced", "specialized", "unified"]
 
     def optimize_prompts_for_document_type(
-        self, document_type: DocumentType
-    ) -> Dict[str, str]:
+        self,
+        document_type: DocumentType,
+    ) -> dict[str, str]:
         """Get optimized prompts for all strategies for a document type."""
         strategies = {}
 
@@ -309,11 +312,11 @@ TAX INVOICE SPECIFIC:
                 strategies[strategy] = self.llama_prompts.get_ato_prompt(document_type)
             elif strategy == "highlight_enhanced":
                 strategies[strategy] = self.internvl_prompts.get_highlight_prompt(
-                    document_type
+                    document_type,
                 )
             elif strategy == "specialized":
                 strategies[strategy] = self.internvl_prompts.get_specialized_prompt(
-                    document_type
+                    document_type,
                 )
             else:  # unified
                 strategies[strategy] = self._get_unified_prompt(document_type)

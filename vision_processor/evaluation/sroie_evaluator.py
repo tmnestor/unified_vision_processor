@@ -1,5 +1,4 @@
-"""
-SROIE Dataset Evaluator
+"""SROIE Dataset Evaluator
 
 Enhanced SROIE (Scanned Receipts OCR and Information Extraction) dataset evaluation
 with Australian tax document adaptations and cross-model comparison capabilities.
@@ -8,7 +7,7 @@ with Australian tax document adaptations and cross-model comparison capabilities
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from .metrics_calculator import MetricsCalculator
 from .unified_evaluator import UnifiedEvaluator
@@ -17,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class SROIEEvaluator:
-    """
-    Enhanced SROIE dataset evaluator.
+    """Enhanced SROIE dataset evaluator.
 
     Provides specialized evaluation for SROIE dataset with Australian tax
     document adaptations and standardized metrics for model comparison.
@@ -53,14 +51,13 @@ class SROIEEvaluator:
 
     def evaluate_sroie_dataset(
         self,
-        dataset_path: Union[str, Path],
-        ground_truth_path: Union[str, Path],
+        dataset_path: str | Path,
+        ground_truth_path: str | Path,
         model_name: str,
         use_enhanced_fields: bool = True,
-        max_documents: Optional[int] = None,
-    ) -> Dict[str, Any]:
-        """
-        Evaluate model on SROIE dataset with enhanced metrics.
+        max_documents: int | None = None,
+    ) -> dict[str, Any]:
+        """Evaluate model on SROIE dataset with enhanced metrics.
 
         Args:
             dataset_path: Path to SROIE dataset images
@@ -71,17 +68,18 @@ class SROIEEvaluator:
 
         Returns:
             Enhanced SROIE evaluation results
+
         """
         dataset_path = Path(dataset_path)
         ground_truth_path = Path(ground_truth_path)
 
         logger.info(
-            f"Starting enhanced SROIE evaluation: {dataset_path} with {model_name}"
+            f"Starting enhanced SROIE evaluation: {dataset_path} with {model_name}",
         )
 
         # Find all images and ground truth files
         image_files = list(dataset_path.glob("*.jpg")) + list(
-            dataset_path.glob("*.png")
+            dataset_path.glob("*.png"),
         )
         if max_documents:
             image_files = image_files[:max_documents]
@@ -122,7 +120,7 @@ class SROIEEvaluator:
 
         for i, image_file in enumerate(image_files, 1):
             logger.info(
-                f"Processing SROIE document {i}/{len(image_files)}: {image_file.name}"
+                f"Processing SROIE document {i}/{len(image_files)}: {image_file.name}",
             )
 
             # Find corresponding ground truth
@@ -138,17 +136,22 @@ class SROIEEvaluator:
 
             # Convert SROIE format to standard format
             standardized_gt = self._standardize_sroie_ground_truth(
-                ground_truth_data, field_mapping
+                ground_truth_data,
+                field_mapping,
             )
 
             # Evaluate document using unified evaluator
             doc_result = self.unified_evaluator.evaluate_document(
-                image_file, standardized_gt, model_name
+                image_file,
+                standardized_gt,
+                model_name,
             )
 
             # Calculate SROIE-specific metrics
             sroie_metrics = self._calculate_sroie_field_metrics(
-                doc_result.extracted_fields, standardized_gt, field_mapping
+                doc_result.extracted_fields,
+                standardized_gt,
+                field_mapping,
             )
 
             # Add SROIE metrics to document result
@@ -168,35 +171,35 @@ class SROIEEvaluator:
 
         # Calculate aggregated SROIE metrics
         results["sroie_metrics"] = self._aggregate_sroie_metrics(
-            results["document_results"], list(field_mapping.keys())
+            results["document_results"],
+            list(field_mapping.keys()),
         )
 
         # Calculate overall metrics
         results["overall_metrics"] = self._calculate_overall_sroie_metrics(
-            results["document_results"]
+            results["document_results"],
         )
 
         # Calculate processing statistics
         results["processing_statistics"] = self._calculate_processing_statistics(
-            results["document_results"]
+            results["document_results"],
         )
 
         logger.info(
-            f"SROIE evaluation completed: {len(results['document_results'])} documents processed"
+            f"SROIE evaluation completed: {len(results['document_results'])} documents processed",
         )
 
         return results
 
     def compare_models_on_sroie(
         self,
-        dataset_path: Union[str, Path],
-        ground_truth_path: Union[str, Path],
-        model_names: List[str],
+        dataset_path: str | Path,
+        ground_truth_path: str | Path,
+        model_names: list[str],
         use_enhanced_fields: bool = True,
-        max_documents: Optional[int] = None,
-    ) -> Dict[str, Dict[str, Any]]:
-        """
-        Compare multiple models on SROIE dataset.
+        max_documents: int | None = None,
+    ) -> dict[str, dict[str, Any]]:
+        """Compare multiple models on SROIE dataset.
 
         Args:
             dataset_path: Path to SROIE dataset images
@@ -207,6 +210,7 @@ class SROIEEvaluator:
 
         Returns:
             Dictionary mapping model names to SROIE evaluation results
+
         """
         logger.info(f"Starting SROIE model comparison: {model_names}")
 
@@ -228,22 +232,23 @@ class SROIEEvaluator:
             logger.info(
                 f"Model {model_name} SROIE results: "
                 f"Overall F1={result['overall_metrics']['average_f1']:.3f}, "
-                f"Success Rate={result['overall_metrics']['success_rate']:.1%}"
+                f"Success Rate={result['overall_metrics']['success_rate']:.1%}",
             )
 
         return comparison_results
 
     def generate_sroie_leaderboard(
-        self, comparison_results: Dict[str, Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """
-        Generate SROIE leaderboard from comparison results.
+        self,
+        comparison_results: dict[str, dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Generate SROIE leaderboard from comparison results.
 
         Args:
             comparison_results: Results from SROIE model comparison
 
         Returns:
             SROIE leaderboard with rankings and metrics
+
         """
         leaderboard = {
             "rankings": [],
@@ -321,8 +326,10 @@ class SROIEEvaluator:
         return leaderboard
 
     def _standardize_sroie_ground_truth(
-        self, ground_truth_data: Dict[str, Any], field_mapping: Dict[str, List[str]]
-    ) -> Dict[str, Any]:
+        self,
+        ground_truth_data: dict[str, Any],
+        field_mapping: dict[str, list[str]],
+    ) -> dict[str, Any]:
         """Convert SROIE ground truth format to standardized format."""
         standardized = {}
 
@@ -336,10 +343,10 @@ class SROIEEvaluator:
 
     def _calculate_sroie_field_metrics(
         self,
-        extracted: Dict[str, Any],
-        ground_truth: Dict[str, Any],
-        field_mapping: Dict[str, List[str]],
-    ) -> Dict[str, Dict[str, float]]:
+        extracted: dict[str, Any],
+        ground_truth: dict[str, Any],
+        field_mapping: dict[str, list[str]],
+    ) -> dict[str, dict[str, float]]:
         """Calculate field-specific metrics for SROIE evaluation."""
         field_metrics = {}
 
@@ -347,14 +354,14 @@ class SROIEEvaluator:
             # Find extracted value for this field
             extracted_value = None
             for field_name in standard_fields:
-                if field_name in extracted and extracted[field_name]:
+                if extracted.get(field_name):
                     extracted_value = extracted[field_name]
                     break
 
             # Find ground truth value for this field
             gt_value = None
             for field_name in standard_fields:
-                if field_name in ground_truth and ground_truth[field_name]:
+                if ground_truth.get(field_name):
                     gt_value = ground_truth[field_name]
                     break
 
@@ -368,14 +375,13 @@ class SROIEEvaluator:
                         precision = recall = f1 = 0.0
                 else:
                     precision = recall = f1 = 0.0
+            # No ground truth for this field
+            elif extracted_value is not None:
+                precision = 0.0  # False positive
+                recall = 0.0
+                f1 = 0.0
             else:
-                # No ground truth for this field
-                if extracted_value is not None:
-                    precision = 0.0  # False positive
-                    recall = 0.0
-                    f1 = 0.0
-                else:
-                    precision = recall = f1 = 1.0  # True negative
+                precision = recall = f1 = 1.0  # True negative
 
             field_metrics[sroie_field] = {
                 "precision": precision,
@@ -386,7 +392,10 @@ class SROIEEvaluator:
         return field_metrics
 
     def _field_exact_match(
-        self, extracted_value: Any, gt_value: Any, field_type: str
+        self,
+        extracted_value: Any,
+        gt_value: Any,
+        field_type: str,
     ) -> bool:
         """Check if extracted value exactly matches ground truth for specific field type."""
         extracted_str = str(extracted_value).strip().lower()
@@ -414,8 +423,10 @@ class SROIEEvaluator:
             return extracted_str == gt_str
 
     def _aggregate_sroie_metrics(
-        self, document_results: List[Dict[str, Any]], fields: List[str]
-    ) -> Dict[str, Dict[str, float]]:
+        self,
+        document_results: list[dict[str, Any]],
+        fields: list[str],
+    ) -> dict[str, dict[str, float]]:
         """Aggregate SROIE metrics across all documents."""
         aggregated = {}
 
@@ -449,8 +460,9 @@ class SROIEEvaluator:
         return aggregated
 
     def _calculate_overall_sroie_metrics(
-        self, document_results: List[Dict[str, Any]]
-    ) -> Dict[str, float]:
+        self,
+        document_results: list[dict[str, Any]],
+    ) -> dict[str, float]:
         """Calculate overall SROIE metrics."""
         successful_results = [r for r in document_results if r["success"]]
 
@@ -477,8 +489,9 @@ class SROIEEvaluator:
         }
 
     def _calculate_processing_statistics(
-        self, document_results: List[Dict[str, Any]]
-    ) -> Dict[str, float]:
+        self,
+        document_results: list[dict[str, Any]],
+    ) -> dict[str, float]:
         """Calculate processing time statistics."""
         successful_results = [r for r in document_results if r["success"]]
 

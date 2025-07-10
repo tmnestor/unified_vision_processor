@@ -1,5 +1,4 @@
-"""
-OCR Processor for Highlighted Regions
+"""OCR Processor for Highlighted Regions
 
 This module provides OCR capabilities specifically optimized for processing
 text from highlighted regions detected by the HighlightDetector.
@@ -8,7 +7,7 @@ text from highlighted regions detected by the HighlightDetector.
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -26,7 +25,7 @@ class OCRResult:
     text: str
     confidence: float
     bbox: tuple
-    highlight_region: Optional[HighlightRegion] = None
+    highlight_region: HighlightRegion | None = None
     preprocessed: bool = False
 
     def __post_init__(self):
@@ -35,8 +34,7 @@ class OCRResult:
 
 
 class OCRProcessor:
-    """
-    OCR processor optimized for highlighted regions.
+    """OCR processor optimized for highlighted regions.
 
     Features:
     - Image preprocessing for better OCR accuracy
@@ -114,7 +112,7 @@ class OCRProcessor:
             logger.info("Tesseract OCR engine initialized")
         except ImportError:
             logger.warning(
-                "pytesseract not available, OCR functionality will be limited"
+                "pytesseract not available, OCR functionality will be limited",
             )
             self.tesseract = None
 
@@ -131,11 +129,10 @@ class OCRProcessor:
 
     def process_highlighted_regions(
         self,
-        image_path: Union[str, Path, Image.Image],
-        highlights: List[HighlightRegion],
-    ) -> List[OCRResult]:
-        """
-        Process OCR on highlighted regions.
+        image_path: str | Path | Image.Image,
+        highlights: list[HighlightRegion],
+    ) -> list[OCRResult]:
+        """Process OCR on highlighted regions.
 
         Args:
             image_path: Path to original image
@@ -143,6 +140,7 @@ class OCRProcessor:
 
         Returns:
             List of OCR results for each highlight
+
         """
         if not self.initialized:
             self.initialize()
@@ -178,8 +176,10 @@ class OCRProcessor:
             return []
 
     def _process_single_highlight(
-        self, image: np.ndarray, highlight: HighlightRegion
-    ) -> Optional[OCRResult]:
+        self,
+        image: np.ndarray,
+        highlight: HighlightRegion,
+    ) -> OCRResult | None:
         """Process OCR for a single highlight region."""
         try:
             # Extract region from image
@@ -233,7 +233,9 @@ class OCRProcessor:
             new_width = int(width * scale_factor)
             new_height = int(height * scale_factor)
             gray = cv2.resize(
-                gray, (new_width, new_height), interpolation=cv2.INTER_CUBIC
+                gray,
+                (new_width, new_height),
+                interpolation=cv2.INTER_CUBIC,
             )
 
         # Deskew if enabled
@@ -301,9 +303,9 @@ class OCRProcessor:
 
         if engine == "tesseract" and self.tesseract:
             return self._run_tesseract_ocr(image)
-        elif engine == "easyocr" and self.easyocr:
+        if engine == "easyocr" and self.easyocr:
             return self._run_easyocr(image)
-        elif engine == "both":
+        if engine == "both":
             # Try both engines and use the result with higher confidence
             tesseract_result = (
                 self._run_tesseract_ocr(image) if self.tesseract else ("", 0.0)
@@ -312,11 +314,9 @@ class OCRProcessor:
 
             if tesseract_result[1] >= easyocr_result[1]:
                 return tesseract_result
-            else:
-                return easyocr_result
-        else:
-            logger.warning("No OCR engine available")
-            return "", 0.0
+            return easyocr_result
+        logger.warning("No OCR engine available")
+        return "", 0.0
 
     def _run_tesseract_ocr(self, image: np.ndarray) -> tuple[str, float]:
         """Run Tesseract OCR."""
@@ -354,8 +354,7 @@ class OCRProcessor:
                     valid_words * 100
                 )  # Normalize to 0-1
                 return text, avg_confidence
-            else:
-                return "", 0.0
+            return "", 0.0
 
         except Exception as e:
             logger.error(f"Tesseract OCR error: {e}")
@@ -387,8 +386,7 @@ class OCRProcessor:
                 combined_text = " ".join(all_text)
                 avg_confidence = total_confidence / total_length
                 return combined_text, avg_confidence
-            else:
-                return "", 0.0
+            return "", 0.0
 
         except Exception as e:
             logger.error(f"EasyOCR error: {e}")
@@ -425,11 +423,10 @@ class OCRProcessor:
 
     def process_bank_statement_highlights(
         self,
-        image_path: Union[str, Path, Image.Image],
-        highlights: List[HighlightRegion],
-    ) -> Dict[str, Any]:
-        """
-        Process OCR specifically for bank statement highlights.
+        image_path: str | Path | Image.Image,
+        highlights: list[HighlightRegion],
+    ) -> dict[str, Any]:
+        """Process OCR specifically for bank statement highlights.
 
         Args:
             image_path: Path to bank statement image
@@ -437,6 +434,7 @@ class OCRProcessor:
 
         Returns:
             Dictionary with extracted bank statement data
+
         """
         ocr_results = self.process_highlighted_regions(image_path, highlights)
 
@@ -473,8 +471,10 @@ class OCRProcessor:
         }
 
     def _parse_transaction_text(
-        self, text: str, ocr_result: OCRResult
-    ) -> Optional[Dict[str, Any]]:
+        self,
+        text: str,
+        ocr_result: OCRResult,
+    ) -> dict[str, Any] | None:
         """Parse transaction information from OCR text."""
         import re
 
@@ -489,7 +489,8 @@ class OCRProcessor:
         if amounts:
             # Clean amount (remove commas)
             amount_str = amounts[-1].replace(
-                ",", ""
+                ",",
+                "",
             )  # Take last amount (usually the final amount)
 
             try:
@@ -509,7 +510,8 @@ class OCRProcessor:
                 description = text
                 for amount in amounts:
                     description = description.replace(f"${amount}", "").replace(
-                        amount, ""
+                        amount,
+                        "",
                     )
                 for date in dates:
                     description = description.replace(date, "")
@@ -523,7 +525,7 @@ class OCRProcessor:
 
         return None
 
-    def _extract_account_info(self, text: str) -> Dict[str, Any]:
+    def _extract_account_info(self, text: str) -> dict[str, Any]:
         """Extract account information from OCR text."""
         import re
 

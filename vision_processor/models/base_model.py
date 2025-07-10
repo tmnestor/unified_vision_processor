@@ -1,5 +1,4 @@
-"""
-Base Vision Model Abstraction
+"""Base Vision Model Abstraction
 
 Provides a unified interface for both InternVL3 and Llama-3.2-Vision models,
 preserving their unique capabilities while enabling model-agnostic processing.
@@ -9,7 +8,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import torch
 from PIL import Image
@@ -39,12 +38,12 @@ class ModelResponse:
     confidence: float
     processing_time: float
     device_used: str
-    memory_usage: Optional[float] = None
-    model_type: Optional[str] = None
+    memory_usage: float | None = None
+    model_type: str | None = None
     quantized: bool = False
 
     # Additional metadata for analysis
-    metadata: Dict[str, Any] = None
+    metadata: dict[str, Any] = None
 
     def __post_init__(self):
         if self.metadata is None:
@@ -59,14 +58,13 @@ class ModelCapabilities:
     supports_quantization: bool
     supports_highlight_detection: bool
     supports_batch_processing: bool
-    max_image_size: Tuple[int, int]
+    max_image_size: tuple[int, int]
     memory_efficient: bool
     cross_platform: bool
 
 
 class BaseVisionModel(ABC):
-    """
-    Abstract base class for vision models.
+    """Abstract base class for vision models.
 
     Provides unified interface while preserving model-specific optimizations:
     - InternVL3: Multi-GPU optimization, highlight detection, enhanced parsing
@@ -75,10 +73,10 @@ class BaseVisionModel(ABC):
 
     def __init__(
         self,
-        model_path: Union[str, Path],
+        model_path: str | Path,
         device_config: DeviceConfig = DeviceConfig.AUTO,
         enable_quantization: bool = True,
-        memory_limit_mb: Optional[int] = None,
+        memory_limit_mb: int | None = None,
         **kwargs,
     ):
         self.model_path = Path(model_path)
@@ -100,29 +98,27 @@ class BaseVisionModel(ABC):
     @abstractmethod
     def _get_capabilities(self) -> ModelCapabilities:
         """Return model-specific capabilities."""
-        pass
 
     @abstractmethod
     def _setup_device(self) -> torch.device:
         """Setup device configuration for the model."""
-        pass
 
     @abstractmethod
     def load_model(self) -> None:
         """Load the model into memory."""
-        pass
 
     @abstractmethod
     def unload_model(self) -> None:
         """Unload the model from memory."""
-        pass
 
     @abstractmethod
     def process_image(
-        self, image_path: Union[str, Path, Image.Image], prompt: str, **kwargs
+        self,
+        image_path: str | Path | Image.Image,
+        prompt: str,
+        **kwargs,
     ) -> ModelResponse:
-        """
-        Process a single image with the given prompt.
+        """Process a single image with the given prompt.
 
         Args:
             image_path: Path to image file or PIL Image
@@ -131,18 +127,17 @@ class BaseVisionModel(ABC):
 
         Returns:
             ModelResponse with standardized format
+
         """
-        pass
 
     @abstractmethod
     def process_batch(
         self,
-        image_paths: List[Union[str, Path, Image.Image]],
-        prompts: List[str],
+        image_paths: list[str | Path | Image.Image],
+        prompts: list[str],
         **kwargs,
-    ) -> List[ModelResponse]:
-        """
-        Process multiple images in batch.
+    ) -> list[ModelResponse]:
+        """Process multiple images in batch.
 
         Args:
             image_paths: List of image paths or PIL Images
@@ -151,8 +146,8 @@ class BaseVisionModel(ABC):
 
         Returns:
             List of ModelResponse objects
+
         """
-        pass
 
     def get_memory_usage(self) -> float:
         """Get current GPU memory usage in MB."""
@@ -172,17 +167,16 @@ class BaseVisionModel(ABC):
     @abstractmethod
     def _apply_quantization(self) -> None:
         """Apply model-specific quantization."""
-        pass
 
-    def validate_image(self, image_path: Union[str, Path, Image.Image]) -> bool:
-        """
-        Validate image format and size constraints.
+    def validate_image(self, image_path: str | Path | Image.Image) -> bool:
+        """Validate image format and size constraints.
 
         Args:
             image_path: Path to image or PIL Image
 
         Returns:
             True if image is valid for processing
+
         """
         try:
             if isinstance(image_path, (str, Path)):
@@ -204,7 +198,7 @@ class BaseVisionModel(ABC):
         except Exception:
             return False
 
-    def get_device_info(self) -> Dict[str, Any]:
+    def get_device_info(self) -> dict[str, Any]:
         """Get detailed device information."""
         info = {
             "device": str(self.device),
@@ -227,7 +221,7 @@ class BaseVisionModel(ABC):
                     if self.device.type == "cuda"
                     else None,
                     "gpu_memory_allocated": self.get_memory_usage(),
-                }
+                },
             )
 
         return info

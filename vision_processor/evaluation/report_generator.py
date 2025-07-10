@@ -1,5 +1,4 @@
-"""
-Comprehensive Report Generator
+"""Comprehensive Report Generator
 
 Generates detailed evaluation reports for model comparison and performance analysis.
 Supports HTML, JSON, and text formats with visualizations and statistics.
@@ -9,14 +8,13 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class ReportGenerator:
-    """
-    Comprehensive report generator for evaluation results.
+    """Comprehensive report generator for evaluation results.
 
     Generates detailed reports with metrics, comparisons, and recommendations
     for model evaluation and production deployment decisions.
@@ -36,17 +34,16 @@ class ReportGenerator:
         }
 
         logger.info(
-            "ReportGenerator initialized for comprehensive evaluation reporting"
+            "ReportGenerator initialized for comprehensive evaluation reporting",
         )
 
     def generate_model_comparison_report(
         self,
-        comparison_results: Dict[str, Any],
-        output_path: Optional[Union[str, Path]] = None,
+        comparison_results: dict[str, Any],
+        output_path: str | Path | None = None,
         format_type: str = "html",
     ) -> str:
-        """
-        Generate comprehensive model comparison report.
+        """Generate comprehensive model comparison report.
 
         Args:
             comparison_results: Results from model comparison
@@ -55,6 +52,7 @@ class ReportGenerator:
 
         Returns:
             Report content as string
+
         """
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -87,11 +85,10 @@ class ReportGenerator:
     def generate_dataset_evaluation_report(
         self,
         evaluation_result: Any,
-        output_path: Optional[Union[str, Path]] = None,
+        output_path: str | Path | None = None,
         format_type: str = "html",
     ) -> str:
-        """
-        Generate detailed dataset evaluation report.
+        """Generate detailed dataset evaluation report.
 
         Args:
             evaluation_result: Dataset evaluation result
@@ -100,6 +97,7 @@ class ReportGenerator:
 
         Returns:
             Report content as string
+
         """
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
@@ -130,7 +128,8 @@ class ReportGenerator:
         return report_content
 
     def _generate_html_comparison_report(
-        self, comparison_results: Dict[str, Any]
+        self,
+        comparison_results: dict[str, Any],
     ) -> str:
         """Generate HTML model comparison report."""
         html_content = f"""
@@ -261,7 +260,8 @@ class ReportGenerator:
         return html_content
 
     def _generate_html_executive_summary(
-        self, comparison_results: Dict[str, Any]
+        self,
+        comparison_results: dict[str, Any],
     ) -> str:
         """Generate executive summary section."""
         if not comparison_results:
@@ -286,7 +286,7 @@ class ReportGenerator:
 
         return summary
 
-    def _generate_html_metrics_table(self, comparison_results: Dict[str, Any]) -> str:
+    def _generate_html_metrics_table(self, comparison_results: dict[str, Any]) -> str:
         """Generate metrics comparison table."""
         if not comparison_results:
             return "<p>No metrics available.</p>"
@@ -369,7 +369,7 @@ class ReportGenerator:
         table_html += "</tbody>\n</table>"
         return table_html
 
-    def _generate_html_model_cards(self, comparison_results: Dict[str, Any]) -> str:
+    def _generate_html_model_cards(self, comparison_results: dict[str, Any]) -> str:
         """Generate model performance cards."""
         cards_html = ""
 
@@ -407,7 +407,8 @@ class ReportGenerator:
         return cards_html
 
     def _generate_html_production_assessment(
-        self, comparison_results: Dict[str, Any]
+        self,
+        comparison_results: dict[str, Any],
     ) -> str:
         """Generate production readiness assessment."""
         assessment_html = ""
@@ -447,7 +448,7 @@ class ReportGenerator:
 
         return assessment_html
 
-    def _generate_html_error_analysis(self, comparison_results: Dict[str, Any]) -> str:
+    def _generate_html_error_analysis(self, comparison_results: dict[str, Any]) -> str:
         """Generate error analysis section."""
         error_html = ""
 
@@ -464,7 +465,7 @@ class ReportGenerator:
 
         return error_html or "<p>No errors detected in the evaluation.</p>"
 
-    def _generate_html_recommendations(self, comparison_results: Dict[str, Any]) -> str:
+    def _generate_html_recommendations(self, comparison_results: dict[str, Any]) -> str:
         """Generate recommendations section."""
         recommendations = self._generate_model_recommendations(comparison_results)
 
@@ -478,7 +479,8 @@ class ReportGenerator:
         return f'<div class="recommendation">{recommendations_html}</div>'
 
     def _generate_html_technical_details(
-        self, comparison_results: Dict[str, Any]
+        self,
+        comparison_results: dict[str, Any],
     ) -> str:
         """Generate technical details section."""
         details_html = ""
@@ -498,7 +500,8 @@ class ReportGenerator:
         return details_html
 
     def _generate_text_comparison_report(
-        self, comparison_results: Dict[str, Any]
+        self,
+        comparison_results: dict[str, Any],
     ) -> str:
         """Generate text-based comparison report."""
         report_lines = [
@@ -526,7 +529,7 @@ class ReportGenerator:
                     f"Production Ready Rate: {best_result.production_ready_rate:.1%}",
                     f"Average Processing Time: {best_result.average_processing_time:.2f}s",
                     "",
-                ]
+                ],
             )
 
         # Detailed metrics
@@ -534,7 +537,7 @@ class ReportGenerator:
             [
                 "DETAILED METRICS",
                 "-" * 40,
-            ]
+            ],
         )
 
         for model_name, result in comparison_results.items():
@@ -549,13 +552,14 @@ class ReportGenerator:
                     f"  Processing Time: {result.average_processing_time:.2f}s",
                     f"  Success Rate: {result.successful_extractions / result.total_documents:.1%}",
                     "",
-                ]
+                ],
             )
 
         return "\n".join(report_lines)
 
     def _generate_json_comparison_report(
-        self, comparison_results: Dict[str, Any]
+        self,
+        comparison_results: dict[str, Any],
     ) -> str:
         """Generate JSON comparison report."""
         report_data = {
@@ -651,8 +655,9 @@ class ReportGenerator:
 </html>"""
 
     def _generate_model_recommendations(
-        self, comparison_results: Dict[str, Any]
-    ) -> Dict[str, List[str]]:
+        self,
+        comparison_results: dict[str, Any],
+    ) -> dict[str, list[str]]:
         """Generate model-specific recommendations."""
         recommendations = {
             "Production Deployment": [],
@@ -675,34 +680,34 @@ class ReportGenerator:
         # Production deployment recommendations
         if best_result.production_ready_rate >= 0.9:
             recommendations["Production Deployment"].append(
-                f"✅ {best_model} is ready for production deployment with {best_result.production_ready_rate:.1%} ready rate"
+                f"✅ {best_model} is ready for production deployment with {best_result.production_ready_rate:.1%} ready rate",
             )
         elif best_result.production_ready_rate >= 0.7:
             recommendations["Production Deployment"].append(
-                f"⚠️ {best_model} requires monitoring in production with {best_result.production_ready_rate:.1%} ready rate"
+                f"⚠️ {best_model} requires monitoring in production with {best_result.production_ready_rate:.1%} ready rate",
             )
         else:
             recommendations["Production Deployment"].append(
-                f"❌ {best_model} requires significant improvement before production deployment"
+                f"❌ {best_model} requires significant improvement before production deployment",
             )
 
         # Performance optimization
         for model_name, result in comparison_results.items():
             if result.awk_fallback_rate > 0.3:
                 recommendations["Performance Optimization"].append(
-                    f"🔄 {model_name}: High AWK fallback rate ({result.awk_fallback_rate:.1%}) - consider improving primary extraction"
+                    f"🔄 {model_name}: High AWK fallback rate ({result.awk_fallback_rate:.1%}) - consider improving primary extraction",
                 )
 
             if result.average_processing_time > 10.0:
                 recommendations["Performance Optimization"].append(
-                    f"⏱️ {model_name}: Slow processing ({result.average_processing_time:.2f}s avg) - consider optimization"
+                    f"⏱️ {model_name}: Slow processing ({result.average_processing_time:.2f}s avg) - consider optimization",
                 )
 
         # Quality improvement
         for model_name, result in comparison_results.items():
             if result.average_f1_score < 0.8:
                 recommendations["Quality Improvement"].append(
-                    f"📈 {model_name}: F1 score below threshold ({result.average_f1_score:.3f}) - review extraction accuracy"
+                    f"📈 {model_name}: F1 score below threshold ({result.average_f1_score:.3f}) - review extraction accuracy",
                 )
 
         # Technical considerations
@@ -711,7 +716,7 @@ class ReportGenerator:
                 "🔧 All models use identical Llama 7-step pipeline for fair comparison",
                 "📊 Consider ensemble approach combining best features from multiple models",
                 "🎯 Focus on Australian tax document compliance and ATO requirements",
-            ]
+            ],
         )
 
         return recommendations

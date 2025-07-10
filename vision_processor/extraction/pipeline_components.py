@@ -1,5 +1,4 @@
-"""
-Pipeline Components for 7-Step Processing
+"""Pipeline Components for 7-Step Processing
 
 Provides placeholder interfaces for pipeline components that will be
 implemented in subsequent phases.
@@ -9,7 +8,7 @@ import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ class ClassificationResult:
 
     document_type: DocumentType
     confidence: float
-    evidence: List[str]
+    evidence: list[str]
 
 
 @dataclass
@@ -46,8 +45,8 @@ class ComplianceResult:
 
     compliance_score: float
     compliance_passed: bool
-    issues: List[str]
-    recommendations: List[str]
+    issues: list[str]
+    recommendations: list[str]
 
 
 @dataclass
@@ -57,9 +56,9 @@ class ConfidenceResult:
     overall_confidence: float
     quality_grade: str  # Will use QualityGrade enum
     production_ready: bool
-    component_scores: Dict[str, float]
-    quality_flags: List[str]
-    recommendations: List[str]
+    component_scores: dict[str, float]
+    quality_flags: list[str]
+    recommendations: list[str]
 
 
 class BasePipelineComponent(ABC):
@@ -72,7 +71,6 @@ class BasePipelineComponent(ABC):
     @abstractmethod
     def initialize(self) -> None:
         """Initialize the component."""
-        pass
 
     def ensure_initialized(self) -> None:
         """Ensure component is initialized."""
@@ -86,7 +84,6 @@ class DocumentClassifier(BasePipelineComponent):
 
     def initialize(self) -> None:
         """Initialize classifier with Australian business knowledge."""
-
         # Australian business classification keywords
         self.classification_keywords = {
             DocumentType.BUSINESS_RECEIPT: [
@@ -421,29 +418,29 @@ class DocumentClassifier(BasePipelineComponent):
         logger.info("DocumentClassifier initialized with Australian business knowledge")
 
     def classify_with_evidence(
-        self, _image_path: Any
-    ) -> Tuple[DocumentType, float, List[str]]:
-        """
-        Classify document with evidence using model response.
+        self,
+        _image_path: Any,
+    ) -> tuple[DocumentType, float, list[str]]:
+        """Classify document with evidence using model response.
 
         Returns:
             Tuple of (document_type, confidence, evidence)
+
         """
         # For now, return a medium confidence classification
         # This will be enhanced when we have the actual model integration
         return DocumentType.BUSINESS_RECEIPT, 0.7, ["Model-based classification"]
 
-    def classify_from_text(self, text: str) -> Tuple[DocumentType, float, List[str]]:
-        """
-        Classify document from text content with graceful degradation.
+    def classify_from_text(self, text: str) -> tuple[DocumentType, float, list[str]]:
+        """Classify document from text content with graceful degradation.
 
         Args:
             text: Document text content
 
         Returns:
             Tuple of (document_type, confidence, evidence)
-        """
 
+        """
         text_lower = text.lower()
 
         # Score each document type
@@ -490,7 +487,7 @@ class DocumentClassifier(BasePipelineComponent):
             for bm in type_evidence["business_matches"][:2]:  # Top 2 businesses
                 if "confidence" in bm:
                     business_display.append(
-                        f"{bm['business']} ({bm['confidence']:.2f})"
+                        f"{bm['business']} ({bm['confidence']:.2f})",
                     )
                 else:
                     business_display.append(bm["business"])
@@ -500,8 +497,10 @@ class DocumentClassifier(BasePipelineComponent):
         return best_type, best_score, evidence
 
     def _score_document_type(
-        self, text: str, doc_type: DocumentType
-    ) -> Tuple[float, Dict[str, Any]]:
+        self,
+        text: str,
+        doc_type: DocumentType,
+    ) -> tuple[float, dict[str, Any]]:
         """Score how well text matches a document type."""
         import re
 
@@ -533,7 +532,7 @@ class DocumentClassifier(BasePipelineComponent):
 
                 keyword_score += weight
                 evidence["keyword_matches"].append(
-                    {"keyword": keyword, "weight": weight}
+                    {"keyword": keyword, "weight": weight},
                 )
 
         # Normalize keyword score
@@ -569,7 +568,7 @@ class DocumentClassifier(BasePipelineComponent):
                     "business": business["official_name"],
                     "category": business["industry"],
                     "confidence": business["confidence"],
-                }
+                },
             )
 
         # Fallback to legacy method for any missed businesses
@@ -581,7 +580,7 @@ class DocumentClassifier(BasePipelineComponent):
                 ):
                     business_score += 0.3
                     evidence["business_matches"].append(
-                        {"business": business, "category": category, "confidence": 0.8}
+                        {"business": business, "category": category, "confidence": 0.8},
                     )
 
         # Normalize business score
@@ -608,7 +607,6 @@ class ConfidenceManager(BasePipelineComponent):
 
     def initialize(self) -> None:
         """Initialize confidence manager with 4-component scoring."""
-
         # Component weight configuration (Llama 4-component system)
         self.component_weights = {
             "classification": 0.25,  # 25% - Document type classification
@@ -647,16 +645,16 @@ class ConfidenceManager(BasePipelineComponent):
     def assess_document_confidence(
         self,
         raw_text: str,
-        extracted_fields: Dict[str, Any],
+        extracted_fields: dict[str, Any],
         compliance_result: ComplianceResult,
         classification_confidence: float,
         highlights_detected: bool,
     ) -> ConfidenceResult:
-        """
-        Assess document confidence using 4-component scoring.
+        """Assess document confidence using 4-component scoring.
 
         Returns:
             ConfidenceResult with comprehensive assessment
+
         """
         # Component 1: Classification confidence (25%)
         classification_score = classification_confidence
@@ -669,7 +667,9 @@ class ConfidenceManager(BasePipelineComponent):
 
         # Component 4: Business recognition (15%)
         business_recognition_score = self._assess_business_recognition(
-            raw_text, extracted_fields, highlights_detected
+            raw_text,
+            extracted_fields,
+            highlights_detected,
         )
 
         # Calculate overall confidence using weighted average
@@ -696,12 +696,16 @@ class ConfidenceManager(BasePipelineComponent):
 
         # Generate quality flags
         quality_flags = self._generate_quality_flags(
-            component_scores, extracted_fields, compliance_result
+            component_scores,
+            extracted_fields,
+            compliance_result,
         )
 
         # Generate recommendations
         recommendations = self._generate_recommendations(
-            component_scores, quality_flags, overall_confidence
+            component_scores,
+            quality_flags,
+            overall_confidence,
         )
 
         return ConfidenceResult(
@@ -714,7 +718,9 @@ class ConfidenceManager(BasePipelineComponent):
         )
 
     def _assess_extraction_quality(
-        self, extracted_fields: Dict[str, Any], _raw_text: str
+        self,
+        extracted_fields: dict[str, Any],
+        _raw_text: str,
     ) -> float:
         """Assess extraction quality based on fields extracted."""
         if not extracted_fields:
@@ -722,7 +728,7 @@ class ConfidenceManager(BasePipelineComponent):
 
         # Base score from number of fields
         field_count = len(
-            [v for v in extracted_fields.values() if v is not None and v != ""]
+            [v for v in extracted_fields.values() if v is not None and v != ""],
         )
         field_score = min(field_count / 6.0, 1.0)  # Expect around 6 fields
 
@@ -749,7 +755,10 @@ class ConfidenceManager(BasePipelineComponent):
         return min(extraction_score, 1.0)
 
     def _assess_business_recognition(
-        self, raw_text: str, extracted_fields: Dict[str, Any], highlights_detected: bool
+        self,
+        raw_text: str,
+        extracted_fields: dict[str, Any],
+        highlights_detected: bool,
     ) -> float:
         """Assess Australian business recognition."""
         score = 0.0
@@ -815,21 +824,20 @@ class ConfidenceManager(BasePipelineComponent):
         """Determine quality grade based on confidence."""
         if overall_confidence >= self.readiness_thresholds["excellent"]:
             return "excellent"
-        elif overall_confidence >= self.readiness_thresholds["good"]:
+        if overall_confidence >= self.readiness_thresholds["good"]:
             return "good"
-        elif overall_confidence >= self.readiness_thresholds["fair"]:
+        if overall_confidence >= self.readiness_thresholds["fair"]:
             return "fair"
-        elif overall_confidence >= self.readiness_thresholds["poor"]:
+        if overall_confidence >= self.readiness_thresholds["poor"]:
             return "poor"
-        else:
-            return "very_poor"
+        return "very_poor"
 
     def _generate_quality_flags(
         self,
-        component_scores: Dict[str, float],
-        extracted_fields: Dict[str, Any],
+        component_scores: dict[str, float],
+        extracted_fields: dict[str, Any],
         compliance_result: ComplianceResult,
-    ) -> List[str]:
+    ) -> list[str]:
         """Generate quality flags based on component scores."""
         flags = []
 
@@ -842,7 +850,7 @@ class ConfidenceManager(BasePipelineComponent):
 
         # Extraction flags
         field_count = len(
-            [v for v in extracted_fields.values() if v is not None and v != ""]
+            [v for v in extracted_fields.values() if v is not None and v != ""],
         )
         if field_count < self.quality_thresholds["minimum_extraction_fields"]:
             flags.append("insufficient_fields")
@@ -877,10 +885,10 @@ class ConfidenceManager(BasePipelineComponent):
 
     def _generate_recommendations(
         self,
-        component_scores: Dict[str, float],
-        quality_flags: List[str],
+        component_scores: dict[str, float],
+        quality_flags: list[str],
         overall_confidence: float,
-    ) -> List[str]:
+    ) -> list[str]:
         """Generate recommendations based on confidence assessment."""
         recommendations = []
 
@@ -906,7 +914,7 @@ class ConfidenceManager(BasePipelineComponent):
 
         if "insufficient_fields" in quality_flags:
             recommendations.append(
-                "Insufficient fields extracted - consider manual review"
+                "Insufficient fields extracted - consider manual review",
             )
 
         # Processing recommendations
@@ -934,13 +942,12 @@ class ATOComplianceHandler(BasePipelineComponent):
 
     def assess_compliance(
         self,
-        extracted_fields: Dict[str, Any],
+        extracted_fields: dict[str, Any],
         document_type: DocumentType,
         raw_text: str = "",
         classification_confidence: float = 0.7,
     ) -> ComplianceResult:
-        """
-        Assess ATO compliance for extracted fields.
+        """Assess ATO compliance for extracted fields.
 
         Args:
             extracted_fields: Fields extracted from document
@@ -950,6 +957,7 @@ class ATOComplianceHandler(BasePipelineComponent):
 
         Returns:
             ComplianceResult with comprehensive compliance assessment
+
         """
         if not self.initialized:
             self.initialize()
@@ -970,10 +978,11 @@ class PromptManager(BasePipelineComponent):
         logger.info("PromptManager initialized (placeholder)")
 
     def get_prompt(
-        self, document_type: DocumentType, has_highlights: bool = False
+        self,
+        document_type: DocumentType,
+        has_highlights: bool = False,
     ) -> str:
-        """
-        Get appropriate prompt for document type.
+        """Get appropriate prompt for document type.
 
         Args:
             document_type: Type of document
@@ -981,6 +990,7 @@ class PromptManager(BasePipelineComponent):
 
         Returns:
             Prompt string
+
         """
         # Placeholder implementation
         highlight_suffix = (
@@ -996,15 +1006,15 @@ class DocumentHandler(BasePipelineComponent):
         """Initialize handler."""
         logger.info("DocumentHandler initialized (placeholder)")
 
-    def extract_fields_primary(self, _raw_text: str) -> Dict[str, Any]:
-        """
-        Primary field extraction.
+    def extract_fields_primary(self, _raw_text: str) -> dict[str, Any]:
+        """Primary field extraction.
 
         Args:
             raw_text: Raw text from model
 
         Returns:
             Extracted fields dictionary
+
         """
         # Placeholder implementation
         return {
@@ -1012,15 +1022,15 @@ class DocumentHandler(BasePipelineComponent):
             "fields_count": 0,
         }
 
-    def validate_fields(self, fields: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validate extracted fields.
+    def validate_fields(self, fields: dict[str, Any]) -> dict[str, Any]:
+        """Validate extracted fields.
 
         Args:
             fields: Fields to validate
 
         Returns:
             Validated fields dictionary
+
         """
         # Placeholder implementation
         return fields
@@ -1033,15 +1043,15 @@ class HighlightDetector(BasePipelineComponent):
         """Initialize highlight detector."""
         logger.info("HighlightDetector initialized (placeholder)")
 
-    def detect_highlights(self, _image_path: Any) -> List[Dict[str, Any]]:
-        """
-        Detect highlights in image.
+    def detect_highlights(self, _image_path: Any) -> list[dict[str, Any]]:
+        """Detect highlights in image.
 
         Args:
             image_path: Path to image
 
         Returns:
             List of detected highlights
+
         """
         # Placeholder implementation
         return []
@@ -1054,15 +1064,15 @@ class EnhancedKeyValueParser(BasePipelineComponent):
         """Initialize parser."""
         logger.info("EnhancedKeyValueParser initialized (placeholder)")
 
-    def parse(self, _raw_text: str) -> Dict[str, Any]:
-        """
-        Parse key-value pairs from text.
+    def parse(self, _raw_text: str) -> dict[str, Any]:
+        """Parse key-value pairs from text.
 
         Args:
             raw_text: Raw text to parse
 
         Returns:
             Parsed fields dictionary
+
         """
         # Placeholder implementation
         return {
@@ -1072,10 +1082,10 @@ class EnhancedKeyValueParser(BasePipelineComponent):
 
 
 def create_document_handler(
-    _document_type: DocumentType, config: Any
+    _document_type: DocumentType,
+    config: Any,
 ) -> DocumentHandler:
-    """
-    Factory function to create document handlers.
+    """Factory function to create document handlers.
 
     Args:
         document_type: Type of document
@@ -1083,6 +1093,7 @@ def create_document_handler(
 
     Returns:
         Document handler instance
+
     """
     # For Phase 1, return base handler
     # Phase 5 will implement specific handlers

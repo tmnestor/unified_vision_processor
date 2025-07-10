@@ -1,5 +1,4 @@
-"""
-Fuel Receipt Handler
+"""Fuel Receipt Handler
 
 Specialized handler for fuel receipts following the Llama 7-step pipeline
 with Australian fuel station recognition and vehicle expense validation.
@@ -7,7 +6,7 @@ with Australian fuel station recognition and vehicle expense validation.
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 from .base_ato_handler import BaseATOHandler
 
@@ -15,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class FuelReceiptHandler(BaseATOHandler):
-    """
-    Handler for fuel receipts with Australian fuel station expertise.
+    """Handler for fuel receipts with Australian fuel station expertise.
 
     Supports major Australian fuel stations:
     - BP, Shell, Caltex/Ampol, Mobil, 7-Eleven
@@ -78,7 +76,7 @@ class FuelReceiptHandler(BaseATOHandler):
             r"(?:costco|woolworths|coles)\s*fuel",
         ]
 
-    def _extract_document_specific_fields(self, text: str) -> Dict[str, Any]:
+    def _extract_document_specific_fields(self, text: str) -> dict[str, Any]:
         """Extract fuel receipt specific fields."""
         fields = {}
 
@@ -273,49 +271,49 @@ class FuelReceiptHandler(BaseATOHandler):
 
         return ""
 
-    def _validate_document_specific_fields(self, fields: Dict[str, Any]) -> List[str]:
+    def _validate_document_specific_fields(self, fields: dict[str, Any]) -> list[str]:
         """Validate fuel receipt specific fields."""
         issues = []
 
         # Validate fuel type
-        if "fuel_type" in fields and fields["fuel_type"]:
+        if fields.get("fuel_type"):
             fuel_type = fields["fuel_type"].lower()
             valid_types = [ft.lower() for ft in self.validation_rules["fuel_types"]]
             if not any(vt in fuel_type for vt in valid_types):
                 issues.append(f"Unrecognized fuel type: {fields['fuel_type']}")
 
         # Validate litres range
-        if "litres" in fields and fields["litres"]:
+        if fields.get("litres"):
             try:
                 litres = float(fields["litres"])
                 min_litres, max_litres = self.validation_rules["litres_range"]
                 if not (min_litres <= litres <= max_litres):
                     issues.append(
-                        f"Fuel quantity {litres}L outside reasonable range ({min_litres}-{max_litres}L)"
+                        f"Fuel quantity {litres}L outside reasonable range ({min_litres}-{max_litres}L)",
                     )
             except (ValueError, TypeError):
                 issues.append("Invalid fuel quantity format")
 
         # Validate price per litre
-        if "price_per_litre" in fields and fields["price_per_litre"]:
+        if fields.get("price_per_litre"):
             try:
                 price = float(fields["price_per_litre"])
                 min_price, max_price = self.validation_rules["price_per_litre_range"]
                 if not (min_price <= price <= max_price):
                     issues.append(
-                        f"Price per litre ${price:.3f} outside reasonable range (${min_price}-${max_price})"
+                        f"Price per litre ${price:.3f} outside reasonable range (${min_price}-${max_price})",
                     )
             except (ValueError, TypeError):
                 issues.append("Invalid price per litre format")
 
         # Validate total amount
-        if "total_amount" in fields and fields["total_amount"]:
+        if fields.get("total_amount"):
             try:
                 total = float(fields["total_amount"])
                 min_total, max_total = self.validation_rules["total_amount_range"]
                 if not (min_total <= total <= max_total):
                     issues.append(
-                        f"Total amount ${total:.2f} outside reasonable range (${min_total}-${max_total})"
+                        f"Total amount ${total:.2f} outside reasonable range (${min_total}-${max_total})",
                     )
             except (ValueError, TypeError):
                 issues.append("Invalid total amount format")
@@ -337,7 +335,7 @@ class FuelReceiptHandler(BaseATOHandler):
                 tolerance = max(calculated_total * 0.15, 2.0)  # 15% or $2 tolerance
                 if difference > tolerance:
                     issues.append(
-                        f"Calculated total ${calculated_total:.2f} differs significantly from stated total ${total_amount:.2f}"
+                        f"Calculated total ${calculated_total:.2f} differs significantly from stated total ${total_amount:.2f}",
                     )
             except (ValueError, TypeError):
                 issues.append("Cannot validate fuel calculation due to invalid values")
@@ -345,10 +343,11 @@ class FuelReceiptHandler(BaseATOHandler):
         return issues
 
     def enhance_with_highlights(
-        self, fields: Dict[str, Any], highlights: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """
-        Enhance fuel receipt extraction using InternVL highlight detection.
+        self,
+        fields: dict[str, Any],
+        highlights: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Enhance fuel receipt extraction using InternVL highlight detection.
 
         Fuel receipts benefit from highlight detection for:
         - Total amount highlighting (most important)
@@ -373,7 +372,7 @@ class FuelReceiptHandler(BaseATOHandler):
         ]
 
         for highlight in highlights:
-            if "text" in highlight and highlight["text"]:
+            if highlight.get("text"):
                 highlight_text = highlight["text"]
                 highlight_confidence = highlight.get("confidence", 0.8)
 
@@ -398,7 +397,7 @@ class FuelReceiptHandler(BaseATOHandler):
                                 highlight_confidence
                             )
                             logger.info(
-                                f"Override field {field} from high-confidence highlight: {value}"
+                                f"Override field {field} from high-confidence highlight: {value}",
                             )
 
         # Validate calculations after highlight enhancement
@@ -406,7 +405,7 @@ class FuelReceiptHandler(BaseATOHandler):
 
         return enhanced_fields
 
-    def _extract_from_highlight(self, highlight_text: str) -> Dict[str, Any]:
+    def _extract_from_highlight(self, highlight_text: str) -> dict[str, Any]:
         """Extract fuel receipt information from highlighted text region."""
         fields = {}
 
@@ -450,7 +449,7 @@ class FuelReceiptHandler(BaseATOHandler):
 
         return fields
 
-    def _validate_fuel_calculations(self, fields: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_fuel_calculations(self, fields: dict[str, Any]) -> dict[str, Any]:
         """Validate and correct fuel calculations after highlight enhancement."""
         if all(
             field in fields and fields[field] for field in ["litres", "price_per_litre"]
@@ -465,7 +464,7 @@ class FuelReceiptHandler(BaseATOHandler):
                     fields["total_amount"] = calculated_total
                     fields["calculated_total"] = True
                     logger.info(
-                        f"Calculated total from highlights: ${calculated_total:.2f}"
+                        f"Calculated total from highlights: ${calculated_total:.2f}",
                     )
                 else:
                     existing_total = float(fields["total_amount"])
@@ -480,7 +479,7 @@ class FuelReceiptHandler(BaseATOHandler):
                             fields["total_amount"] = calculated_total
                             fields["corrected_from_calculation"] = True
                             logger.info(
-                                f"Corrected total using calculation: ${calculated_total:.2f}"
+                                f"Corrected total using calculation: ${calculated_total:.2f}",
                             )
 
             except (ValueError, TypeError):
@@ -488,7 +487,7 @@ class FuelReceiptHandler(BaseATOHandler):
 
         return fields
 
-    def _apply_enhanced_parsing(self, text: str) -> Dict[str, Any]:
+    def _apply_enhanced_parsing(self, text: str) -> dict[str, Any]:
         """Apply InternVL enhanced parsing techniques for fuel receipts."""
         if not self.supports_enhanced_parsing:
             return {}
@@ -565,11 +564,11 @@ class FuelReceiptHandler(BaseATOHandler):
             if match:
                 if "91" in match.group(0) or "regular" in match.group(0).lower():
                     return "unleaded 91"
-                elif "95" in match.group(0) or "premium" in match.group(0).lower():
+                if "95" in match.group(0) or "premium" in match.group(0).lower():
                     return "premium unleaded 95"
-                elif "98" in match.group(0) or "supreme" in match.group(0).lower():
+                if "98" in match.group(0) or "supreme" in match.group(0).lower():
                     return "premium unleaded 98"
-                elif "diesel" in match.group(0).lower():
+                if "diesel" in match.group(0).lower():
                     return "diesel"
 
         return ""
@@ -589,11 +588,10 @@ class FuelReceiptHandler(BaseATOHandler):
             if re.search(r"\b\d{4}\b", line):  # Contains postcode
                 # Check if line contains state abbreviation
                 if re.search(
-                    r"\b(?:NSW|VIC|QLD|WA|SA|TAS|ACT|NT)\b", line, re.IGNORECASE
-                ):
-                    return line
-                # Or look for street addresses
-                elif re.search(
+                    r"\b(?:NSW|VIC|QLD|WA|SA|TAS|ACT|NT)\b",
+                    line,
+                    re.IGNORECASE,
+                ) or re.search(
                     r"\b\d+\s+[A-Za-z\s]+(?:st|street|rd|road|ave|avenue|dr|drive)\b",
                     line,
                     re.IGNORECASE,

@@ -1,5 +1,4 @@
-"""
-Comprehensive AWK Extractor for Document Processing
+"""Comprehensive AWK Extractor for Document Processing
 
 This module provides advanced AWK-based text extraction capabilities
 combining patterns from both InternVL and Llama-3.2 systems.
@@ -9,9 +8,9 @@ import logging
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from .pipeline_components import DocumentType
+from ..classification import DocumentType
 
 logger = logging.getLogger(__name__)
 
@@ -47,16 +46,17 @@ class ExtractionPattern:
     pattern: str
     field_type: FieldType
     priority: int  # Higher priority patterns are tried first
-    document_types: List[DocumentType]
+    document_types: list[DocumentType]
     group_index: int = 1  # Which regex group contains the value
-    post_processor: Optional[str] = None  # Method name for post-processing
-    validation_pattern: Optional[str] = None  # Optional validation regex
+    post_processor: str | None = None  # Method name for post-processing
+    validation_pattern: str | None = None  # Optional validation regex
 
     def __post_init__(self):
         """Compile the regex pattern."""
         try:
             self.compiled_pattern = re.compile(
-                self.pattern, re.IGNORECASE | re.MULTILINE
+                self.pattern,
+                re.IGNORECASE | re.MULTILINE,
             )
         except re.error as e:
             logger.error(f"Failed to compile pattern '{self.pattern}': {e}")
@@ -64,8 +64,7 @@ class ExtractionPattern:
 
 
 class AWKExtractor:
-    """
-    Comprehensive AWK-based field extractor.
+    """Comprehensive AWK-based field extractor.
 
     Features:
     - 2000+ extraction patterns from both codebases
@@ -88,9 +87,10 @@ class AWKExtractor:
         }
 
         # Will be populated during initialization
-        self.patterns: List[ExtractionPattern] = []
-        self.document_specific_patterns: Dict[
-            DocumentType, List[ExtractionPattern]
+        self.patterns: list[ExtractionPattern] = []
+        self.document_specific_patterns: dict[
+            DocumentType,
+            list[ExtractionPattern],
         ] = {}
 
     def initialize(self) -> None:
@@ -111,9 +111,8 @@ class AWKExtractor:
         logger.info(f"AWKExtractor initialized with {len(self.patterns)} patterns")
         self.initialized = True
 
-    def extract(self, text: str, document_type: DocumentType) -> Dict[str, Any]:
-        """
-        Extract fields using AWK patterns.
+    def extract(self, text: str, document_type: DocumentType) -> dict[str, Any]:
+        """Extract fields using AWK patterns.
 
         Args:
             text: Raw text to process
@@ -121,6 +120,7 @@ class AWKExtractor:
 
         Returns:
             Extracted fields dictionary
+
         """
         if not self.initialized:
             self.initialize()
@@ -152,12 +152,14 @@ class AWKExtractor:
                     extracted_fields[field_name] = field_value
                     extraction_metadata["patterns_matched"] += 1
                     extraction_metadata["field_types_found"].append(
-                        pattern.field_type.value
+                        pattern.field_type.value,
                     )
 
                     # Calculate confidence based on pattern priority and validation
                     confidence = self._calculate_field_confidence(
-                        field_value, pattern, text
+                        field_value,
+                        pattern,
+                        text,
                     )
                     extraction_metadata["confidence_scores"][field_name] = confidence
 
@@ -170,7 +172,7 @@ class AWKExtractor:
         processed_fields["_document_type"] = document_type.value
 
         logger.info(
-            f"AWK extracted {len(processed_fields)} fields for {document_type.value}"
+            f"AWK extracted {len(processed_fields)} fields for {document_type.value}",
         )
 
         return processed_fields
@@ -200,7 +202,7 @@ class AWKExtractor:
                     priority=9,
                     document_types=list(DocumentType),
                 ),
-            ]
+            ],
         )
 
         # Amount and total patterns
@@ -227,7 +229,7 @@ class AWKExtractor:
                     document_types=list(DocumentType),
                     post_processor="clean_amount",
                 ),
-            ]
+            ],
         )
 
         # Tax and GST patterns (Australian specific)
@@ -250,7 +252,7 @@ class AWKExtractor:
                     ],
                     post_processor="clean_amount",
                 ),
-            ]
+            ],
         )
 
         # ABN patterns (Australian Business Number)
@@ -278,7 +280,7 @@ class AWKExtractor:
                     post_processor="clean_abn",
                     validation_pattern=r"^\d{11}$",
                 ),
-            ]
+            ],
         )
 
         # Invoice number patterns
@@ -299,7 +301,7 @@ class AWKExtractor:
                     priority=8,
                     document_types=list(DocumentType),
                 ),
-            ]
+            ],
         )
 
         # Supplier and customer patterns
@@ -322,7 +324,7 @@ class AWKExtractor:
                     document_types=[DocumentType.TAX_INVOICE],
                     post_processor="clean_business_name",
                 ),
-            ]
+            ],
         )
 
         # Fuel receipt specific patterns
@@ -355,7 +357,7 @@ class AWKExtractor:
                     document_types=[DocumentType.FUEL_RECEIPT],
                     post_processor="clean_fuel_type",
                 ),
-            ]
+            ],
         )
 
         # Bank statement specific patterns
@@ -374,7 +376,7 @@ class AWKExtractor:
                     priority=10,
                     document_types=[DocumentType.BANK_STATEMENT],
                 ),
-            ]
+            ],
         )
 
         # Item and quantity patterns for receipts
@@ -396,7 +398,7 @@ class AWKExtractor:
                     document_types=[DocumentType.BUSINESS_RECEIPT],
                     post_processor="clean_amount",
                 ),
-            ]
+            ],
         )
 
         # Australian business name patterns
@@ -423,7 +425,7 @@ class AWKExtractor:
                     document_types=[DocumentType.BANK_STATEMENT],
                     post_processor="clean_business_name",
                 ),
-            ]
+            ],
         )
 
         # Store all patterns
@@ -444,14 +446,17 @@ class AWKExtractor:
             self.document_specific_patterns[doc_type] = relevant_patterns
 
     def _get_relevant_patterns(
-        self, document_type: DocumentType
-    ) -> List[ExtractionPattern]:
+        self,
+        document_type: DocumentType,
+    ) -> list[ExtractionPattern]:
         """Get patterns relevant to the document type."""
         return self.document_specific_patterns.get(document_type, [])
 
     def _extract_with_pattern(
-        self, text: str, pattern: ExtractionPattern
-    ) -> Optional[str]:
+        self,
+        text: str,
+        pattern: ExtractionPattern,
+    ) -> str | None:
         """Extract field value using a specific pattern."""
         if pattern.compiled_pattern is None:
             return None
@@ -473,7 +478,10 @@ class AWKExtractor:
         return None
 
     def _calculate_field_confidence(
-        self, value: str, pattern: ExtractionPattern, text: str
+        self,
+        value: str,
+        pattern: ExtractionPattern,
+        text: str,
     ) -> float:
         """Calculate confidence score for extracted field."""
         confidence = 0.0
@@ -507,8 +515,10 @@ class AWKExtractor:
         return min(confidence, 1.0)
 
     def _post_process_fields(
-        self, fields: Dict[str, Any], _document_type: DocumentType
-    ) -> Dict[str, Any]:
+        self,
+        fields: dict[str, Any],
+        _document_type: DocumentType,
+    ) -> dict[str, Any]:
         """Post-process extracted fields."""
         processed = {}
 
@@ -608,10 +618,11 @@ class AWKExtractor:
             return value
 
     def extract_advanced_patterns(
-        self, text: str, document_type: DocumentType
-    ) -> Dict[str, Any]:
-        """
-        Extract using advanced pattern matching for complex documents.
+        self,
+        text: str,
+        document_type: DocumentType,
+    ) -> dict[str, Any]:
+        """Extract using advanced pattern matching for complex documents.
 
         This method uses more sophisticated parsing for documents that
         standard AWK patterns might miss.
@@ -631,7 +642,7 @@ class AWKExtractor:
 
         return advanced_fields
 
-    def _extract_invoice_items(self, text: str) -> Dict[str, Any]:
+    def _extract_invoice_items(self, text: str) -> dict[str, Any]:
         """Extract line items from tax invoices."""
         items = []
 
@@ -652,7 +663,7 @@ class AWKExtractor:
 
         return {"invoice_items": items} if items else {}
 
-    def _extract_transactions(self, text: str) -> Dict[str, Any]:
+    def _extract_transactions(self, text: str) -> dict[str, Any]:
         """Extract transaction details from bank statements."""
         transactions = []
 
@@ -673,7 +684,7 @@ class AWKExtractor:
 
         return {"transactions": transactions} if transactions else {}
 
-    def _extract_fuel_details(self, text: str) -> Dict[str, Any]:
+    def _extract_fuel_details(self, text: str) -> dict[str, Any]:
         """Extract detailed fuel purchase information."""
         fuel_details = {}
 
@@ -693,7 +704,7 @@ class AWKExtractor:
 
         return fuel_details
 
-    def get_extraction_statistics(self) -> Dict[str, Any]:
+    def get_extraction_statistics(self) -> dict[str, Any]:
         """Get statistics about the extraction patterns."""
         if not self.initialized:
             self.initialize()

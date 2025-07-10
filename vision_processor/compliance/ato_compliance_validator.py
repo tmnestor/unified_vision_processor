@@ -1,14 +1,14 @@
-"""
-ATO Compliance Validator
+"""ATO Compliance Validator
 
 This module provides comprehensive Australian Taxation Office compliance validation
 combining features from both InternVL and Llama-3.2 systems.
 """
 
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
-from ..extraction.pipeline_components import ComplianceResult, DocumentType
+from ..classification import DocumentType
+from ..confidence import ComplianceResult
 from .australian_business_registry import AustralianBusinessRegistry
 from .field_validators import ABNValidator, BSBValidator, DateValidator, GSTValidator
 
@@ -16,8 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class ATOComplianceValidator:
-    """
-    Comprehensive ATO compliance validator for Australian tax documents.
+    """Comprehensive ATO compliance validator for Australian tax documents.
 
     Features:
     - ABN validation with checksum verification
@@ -153,13 +152,12 @@ class ATOComplianceValidator:
 
     def assess_compliance(
         self,
-        extracted_fields: Dict[str, Any],
+        extracted_fields: dict[str, Any],
         document_type: DocumentType,
         raw_text: str = "",
         _classification_confidence: float = 0.7,
     ) -> ComplianceResult:
-        """
-        Assess ATO compliance for extracted fields.
+        """Assess ATO compliance for extracted fields.
 
         Args:
             extracted_fields: Fields extracted from document
@@ -169,6 +167,7 @@ class ATOComplianceValidator:
 
         Returns:
             ComplianceResult with comprehensive compliance assessment
+
         """
         if not self.initialized:
             self.initialize()
@@ -179,7 +178,8 @@ class ATOComplianceValidator:
 
         # Component 1: Field completeness validation (30%)
         field_score, field_issues = self._validate_field_completeness(
-            extracted_fields, document_type
+            extracted_fields,
+            document_type,
         )
         compliance_issues.extend(field_issues)
         compliance_score += field_score * 0.30
@@ -204,7 +204,8 @@ class ATOComplianceValidator:
 
         # Component 5: Document-specific validation (10%)
         doc_score, doc_issues = self._validate_document_specific_requirements(
-            extracted_fields, document_type
+            extracted_fields,
+            document_type,
         )
         compliance_issues.extend(doc_issues)
         compliance_score += doc_score * 0.10
@@ -219,13 +220,15 @@ class ATOComplianceValidator:
         if not compliance_passed:
             recommendations.extend(
                 self._generate_compliance_recommendations(
-                    compliance_score, compliance_issues, document_type
-                )
+                    compliance_score,
+                    compliance_issues,
+                    document_type,
+                ),
             )
 
         logger.info(
             f"ATO compliance assessed: {compliance_score:.2f} score, "
-            f"{len(compliance_issues)} issues, passed: {compliance_passed}"
+            f"{len(compliance_issues)} issues, passed: {compliance_passed}",
         )
 
         return ComplianceResult(
@@ -236,8 +239,10 @@ class ATOComplianceValidator:
         )
 
     def _validate_field_completeness(
-        self, extracted_fields: Dict[str, Any], document_type: DocumentType
-    ) -> Tuple[float, List[str]]:
+        self,
+        extracted_fields: dict[str, Any],
+        document_type: DocumentType,
+    ) -> tuple[float, list[str]]:
         """Validate field completeness for document type."""
         issues = []
 
@@ -284,8 +289,9 @@ class ATOComplianceValidator:
         return completeness_score, issues
 
     def _validate_field_formats(
-        self, extracted_fields: Dict[str, Any]
-    ) -> Tuple[float, List[str]]:
+        self,
+        extracted_fields: dict[str, Any],
+    ) -> tuple[float, list[str]]:
         """Validate field formats using specialized validators."""
         issues = []
         validation_scores = []
@@ -293,7 +299,7 @@ class ATOComplianceValidator:
         # Validate ABN if present
         if extracted_fields.get("abn"):
             is_valid, formatted_abn, abn_issues = self.abn_validator.validate(
-                extracted_fields["abn"]
+                extracted_fields["abn"],
             )
             if not is_valid:
                 issues.extend([f"ABN: {issue}" for issue in abn_issues])
@@ -343,7 +349,7 @@ class ATOComplianceValidator:
             if extracted_fields.get(field):
                 try:
                     amount = float(
-                        str(extracted_fields[field]).replace("$", "").replace(",", "")
+                        str(extracted_fields[field]).replace("$", "").replace(",", ""),
                     )
                     if amount < 0:
                         issues.append(f"{field}: Amount cannot be negative")
@@ -366,10 +372,10 @@ class ATOComplianceValidator:
 
     def _validate_business_context(
         self,
-        extracted_fields: Dict[str, Any],
+        extracted_fields: dict[str, Any],
         document_type: DocumentType,
         raw_text: str,
-    ) -> Tuple[float, List[str], List[str]]:
+    ) -> tuple[float, list[str], list[str]]:
         """Validate Australian business context."""
         issues = []
         recommendations = []
@@ -387,7 +393,9 @@ class ATOComplianceValidator:
             business_name = extracted_fields.get("supplier_name", "")
             is_valid, context_issues, context_recs = (
                 self.business_registry.validate_business_context(
-                    business_name, document_type.value, extracted_fields
+                    business_name,
+                    document_type.value,
+                    extracted_fields,
                 )
             )
 
@@ -402,21 +410,21 @@ class ATOComplianceValidator:
             extracted_fields["recognized_business"] = primary_business["official_name"]
             extracted_fields["business_industry"] = primary_business["industry"]
 
+        # No recognized business - check if we have supplier name
+        elif extracted_fields.get("supplier_name"):
+            business_score = 0.3  # Partial credit for having supplier name
+            issues.append("Supplier not recognized as major Australian business")
+            recommendations.append("Verify supplier name and business details")
         else:
-            # No recognized business - check if we have supplier name
-            if extracted_fields.get("supplier_name"):
-                business_score = 0.3  # Partial credit for having supplier name
-                issues.append("Supplier not recognized as major Australian business")
-                recommendations.append("Verify supplier name and business details")
-            else:
-                business_score = 0.0
-                issues.append("No supplier information found")
+            business_score = 0.0
+            issues.append("No supplier information found")
 
         return business_score, issues, recommendations
 
     def _validate_tax_calculations(
-        self, extracted_fields: Dict[str, Any]
-    ) -> Tuple[float, List[str]]:
+        self,
+        extracted_fields: dict[str, Any],
+    ) -> tuple[float, list[str]]:
         """Validate GST and tax calculations."""
         issues = []
 
@@ -434,14 +442,14 @@ class ATOComplianceValidator:
 
                     extracted_fields["subtotal_calculated"] = str(gst_calc["subtotal"])
                     extracted_fields["gst_amount_calculated"] = str(
-                        gst_calc["gst_amount"]
+                        gst_calc["gst_amount"],
                     )
 
                     return 0.7, []  # Partial score for calculated GST
 
                 except ValueError:
                     return 0.5, [
-                        "Cannot validate GST - insufficient amount information"
+                        "Cannot validate GST - insufficient amount information",
                     ]
 
             return 0.8, []  # No GST validation required
@@ -455,23 +463,26 @@ class ATOComplianceValidator:
             # Validate GST calculation
             is_valid, calc_values, gst_issues = (
                 self.gst_validator.validate_gst_calculation(
-                    subtotal_val, gst_val, total_val
+                    subtotal_val,
+                    gst_val,
+                    total_val,
                 )
             )
 
             if is_valid:
                 return 1.0, []
-            else:
-                issues.extend(gst_issues)
-                return 0.3, issues
+            issues.extend(gst_issues)
+            return 0.3, issues
 
         except ValueError:
             issues.append("Invalid amount format for GST validation")
             return 0.2, issues
 
     def _validate_document_specific_requirements(
-        self, extracted_fields: Dict[str, Any], document_type: DocumentType
-    ) -> Tuple[float, List[str]]:
+        self,
+        extracted_fields: dict[str, Any],
+        document_type: DocumentType,
+    ) -> tuple[float, list[str]]:
         """Validate document-specific ATO requirements."""
         issues = []
 
@@ -514,18 +525,21 @@ class ATOComplianceValidator:
         return max(score, 0.0), issues
 
     def _generate_compliance_recommendations(
-        self, compliance_score: float, issues: List[str], document_type: DocumentType
-    ) -> List[str]:
+        self,
+        compliance_score: float,
+        issues: list[str],
+        document_type: DocumentType,
+    ) -> list[str]:
         """Generate specific recommendations for compliance improvement."""
         recommendations = []
 
         if compliance_score < 0.3:
             recommendations.append(
-                "Document requires significant manual review for ATO compliance"
+                "Document requires significant manual review for ATO compliance",
             )
         elif compliance_score < 0.6:
             recommendations.append(
-                "Document needs additional validation before submission"
+                "Document needs additional validation before submission",
             )
 
         # Issue-specific recommendations
@@ -534,27 +548,27 @@ class ATOComplianceValidator:
 
         if any("GST" in issue for issue in issues):
             recommendations.append(
-                "Check GST calculations and ensure 10% rate is applied correctly"
+                "Check GST calculations and ensure 10% rate is applied correctly",
             )
 
         if any("date" in issue.lower() for issue in issues):
             recommendations.append(
-                "Verify date format follows DD/MM/YYYY Australian standard"
+                "Verify date format follows DD/MM/YYYY Australian standard",
             )
 
         if any("supplier" in issue.lower() for issue in issues):
             recommendations.append(
-                "Ensure supplier name matches Australian business registry"
+                "Ensure supplier name matches Australian business registry",
             )
 
         # Document-specific recommendations
         if document_type == DocumentType.TAX_INVOICE:
             recommendations.append(
-                "Tax invoices require ABN, GST amount, and complete supplier details"
+                "Tax invoices require ABN, GST amount, and complete supplier details",
             )
         elif document_type == DocumentType.FUEL_RECEIPT:
             recommendations.append(
-                "Fuel receipts should include litres, fuel type, and price per litre"
+                "Fuel receipts should include litres, fuel type, and price per litre",
             )
 
         return list(set(recommendations))  # Remove duplicates

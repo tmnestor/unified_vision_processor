@@ -1,12 +1,10 @@
-"""
-Llama Prompts
+"""Llama Prompts
 
 Collection of 13 ATO-compliant prompts from the Llama-3.2 system optimized for
 Australian tax compliance and graceful degradation processing.
 """
 
 import logging
-from typing import Dict
 
 from ..extraction.pipeline_components import DocumentType
 
@@ -14,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class LlamaPrompts:
-    """
-    Llama ATO-compliant prompt library with 13 specialized prompts.
+    """Llama ATO-compliant prompt library with 13 specialized prompts.
 
     Features:
     - Australian Tax Office compliance focus
@@ -27,7 +24,7 @@ class LlamaPrompts:
 
     def __init__(self):
         self.initialized = False
-        self.ato_prompts: Dict[str, str] = {}
+        self.ato_prompts: dict[str, str] = {}
 
     def initialize(self) -> None:
         """Initialize all Llama ATO-compliant prompts."""
@@ -37,7 +34,7 @@ class LlamaPrompts:
         self._load_ato_prompts()
 
         logger.info(
-            f"Llama prompts initialized with {self.get_prompt_count()} ATO-compliant prompts"
+            f"Llama prompts initialized with {self.get_prompt_count()} ATO-compliant prompts",
         )
         self.initialized = True
 
@@ -418,13 +415,15 @@ Extract with small business tax implications and concession opportunities.""",
     def get_ato_prompt(self, document_type: DocumentType) -> str:
         """Get ATO-compliant prompt for a document type."""
         return self.ato_prompts.get(
-            document_type.value, self.ato_prompts[DocumentType.OTHER.value]
+            document_type.value,
+            self.ato_prompts[DocumentType.OTHER.value],
         )
 
     def get_specialized_ato_prompt(self, prompt_type: str) -> str:
         """Get specialized ATO prompt by type."""
         return self.ato_prompts.get(
-            prompt_type, self.ato_prompts[DocumentType.OTHER.value]
+            prompt_type,
+            self.ato_prompts[DocumentType.OTHER.value],
         )
 
     def get_prompt_count(self) -> int:
@@ -439,7 +438,7 @@ Extract with small business tax implications and concession opportunities.""",
                 specializations.append(key)
         return specializations
 
-    def get_prompt_statistics(self) -> Dict[str, any]:
+    def get_prompt_statistics(self) -> dict[str, any]:
         """Get comprehensive statistics about Llama prompts."""
         document_type_prompts = sum(
             1

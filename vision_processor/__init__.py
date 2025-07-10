@@ -1,5 +1,4 @@
-"""
-Unified Vision Document Processing Architecture
+"""Unified Vision Document Processing Architecture
 
 A comprehensive system for processing Australian tax documents using both InternVL3 and Llama-3.2-Vision models.
 Integrates advanced computer vision capabilities with robust document processing pipelines.

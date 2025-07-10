@@ -1,5 +1,4 @@
-"""
-Business Receipt Handler
+"""Business Receipt Handler
 
 Specialized handler for general business receipts following the Llama 7-step pipeline
 with Australian retail chain recognition and item-level extraction.
@@ -7,7 +6,7 @@ with Australian retail chain recognition and item-level extraction.
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 from .base_ato_handler import BaseATOHandler
 
@@ -15,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class BusinessReceiptHandler(BaseATOHandler):
-    """
-    Handler for general business receipts with Australian retail expertise.
+    """Handler for general business receipts with Australian retail expertise.
 
     Supports major Australian retailers:
     - Woolworths, Coles, ALDI, Target, Kmart
@@ -95,7 +93,7 @@ class BusinessReceiptHandler(BaseATOHandler):
             "Costco": r"\bcostco\b",
         }
 
-    def _extract_document_specific_fields(self, text: str) -> Dict[str, Any]:
+    def _extract_document_specific_fields(self, text: str) -> dict[str, Any]:
         """Extract business receipt specific fields."""
         fields = {}
 
@@ -227,7 +225,7 @@ class BusinessReceiptHandler(BaseATOHandler):
 
         return ""
 
-    def _extract_items(self, text: str) -> List[Dict[str, Any]]:
+    def _extract_items(self, text: str) -> list[dict[str, Any]]:
         """Extract individual items from detailed receipt."""
         items = []
         lines = text.split("\n")
@@ -272,31 +270,31 @@ class BusinessReceiptHandler(BaseATOHandler):
 
         return 0.0
 
-    def _validate_document_specific_fields(self, fields: Dict[str, Any]) -> List[str]:
+    def _validate_document_specific_fields(self, fields: dict[str, Any]) -> list[str]:
         """Validate business receipt specific fields."""
         issues = []
 
         # Validate total amount range
-        if "total_amount" in fields and fields["total_amount"]:
+        if fields.get("total_amount"):
             try:
                 total = float(fields["total_amount"])
                 min_total, max_total = self.validation_rules["total_amount_range"]
                 if not (min_total <= total <= max_total):
                     issues.append(
-                        f"Total amount ${total:.2f} outside reasonable range (${min_total}-${max_total})"
+                        f"Total amount ${total:.2f} outside reasonable range (${min_total}-${max_total})",
                     )
             except (ValueError, TypeError):
                 issues.append("Invalid total amount format")
 
         # Validate payment method
-        if "payment_method" in fields and fields["payment_method"]:
+        if fields.get("payment_method"):
             payment_method = fields["payment_method"].lower()
             valid_methods = [
                 pm.lower() for pm in self.validation_rules["payment_methods"]
             ]
             if payment_method not in valid_methods:
                 issues.append(
-                    f"Unrecognized payment method: {fields['payment_method']}"
+                    f"Unrecognized payment method: {fields['payment_method']}",
                 )
 
         # Validate GST calculation consistency
@@ -315,7 +313,7 @@ class BusinessReceiptHandler(BaseATOHandler):
 
                 if total_difference > self.validation_rules["gst_tolerance"]:
                     issues.append(
-                        f"Subtotal + GST (${calculated_total:.2f}) does not equal total (${total_amount:.2f})"
+                        f"Subtotal + GST (${calculated_total:.2f}) does not equal total (${total_amount:.2f})",
                     )
 
                 # Check if GST is approximately 10% of subtotal
@@ -324,7 +322,7 @@ class BusinessReceiptHandler(BaseATOHandler):
 
                 if gst_difference > self.validation_rules["gst_tolerance"]:
                     issues.append(
-                        f"GST amount ${gst_amount:.2f} does not match expected 10% (${expected_gst:.2f})"
+                        f"GST amount ${gst_amount:.2f} does not match expected 10% (${expected_gst:.2f})",
                     )
 
             except (ValueError, TypeError):
@@ -341,13 +339,13 @@ class BusinessReceiptHandler(BaseATOHandler):
                 tolerance = max(receipt_total * 0.20, 5.0)  # 20% or $5 tolerance
                 if difference > tolerance:
                     issues.append(
-                        f"Items total ${items_total:.2f} differs significantly from receipt total ${receipt_total:.2f}"
+                        f"Items total ${items_total:.2f} differs significantly from receipt total ${receipt_total:.2f}",
                     )
             except (ValueError, TypeError):
                 issues.append("Cannot validate items total due to invalid values")
 
         # Validate business name recognition
-        if "business_name" in fields and fields["business_name"]:
+        if fields.get("business_name"):
             business_name = fields["business_name"].lower()
             known_businesses = [
                 name.lower() for name in self.retail_chain_patterns.keys()
@@ -357,16 +355,17 @@ class BusinessReceiptHandler(BaseATOHandler):
             ):
                 # Not necessarily an error, but worth noting
                 logger.info(
-                    f"Business name '{fields['business_name']}' not in known Australian retailers"
+                    f"Business name '{fields['business_name']}' not in known Australian retailers",
                 )
 
         return issues
 
     def enhance_with_highlights(
-        self, fields: Dict[str, Any], highlights: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """
-        Enhance business receipt extraction using InternVL highlight detection.
+        self,
+        fields: dict[str, Any],
+        highlights: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Enhance business receipt extraction using InternVL highlight detection.
 
         Business receipts benefit from highlight detection for:
         - Total amount highlighting (most important for expense claims)
@@ -394,7 +393,7 @@ class BusinessReceiptHandler(BaseATOHandler):
         highlighted_items = []
 
         for highlight in highlights:
-            if "text" in highlight and highlight["text"]:
+            if highlight.get("text"):
                 highlight_text = highlight["text"]
                 highlight_confidence = highlight.get("confidence", 0.8)
 
@@ -419,7 +418,7 @@ class BusinessReceiptHandler(BaseATOHandler):
                                 highlight_confidence
                             )
                             logger.info(
-                                f"Override field {field} from high-confidence highlight: {value}"
+                                f"Override field {field} from high-confidence highlight: {value}",
                             )
 
                 # Extract items from highlighted regions
@@ -445,7 +444,7 @@ class BusinessReceiptHandler(BaseATOHandler):
 
         return enhanced_fields
 
-    def _extract_from_highlight(self, highlight_text: str) -> Dict[str, Any]:
+    def _extract_from_highlight(self, highlight_text: str) -> dict[str, Any]:
         """Extract business receipt information from highlighted text region."""
         fields = {}
 
@@ -509,7 +508,7 @@ class BusinessReceiptHandler(BaseATOHandler):
 
         return fields
 
-    def _deduplicate_items(self, items: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _deduplicate_items(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Remove duplicate items and prioritize highlighted items."""
         seen = set()
         unique_items = []
@@ -521,24 +520,22 @@ class BusinessReceiptHandler(BaseATOHandler):
             if key not in seen:
                 seen.add(key)
                 unique_items.append(item)
-            else:
-                # If duplicate, prefer highlighted version
-                if item.get("highlighted", False):
-                    # Replace existing with highlighted version
-                    for i, existing in enumerate(unique_items):
-                        existing_key = (
-                            existing.get("description", "").lower().strip(),
-                            existing.get("amount", 0),
-                        )
-                        if existing_key == key:
-                            unique_items[i] = item
-                            break
+            # If duplicate, prefer highlighted version
+            elif item.get("highlighted", False):
+                # Replace existing with highlighted version
+                for i, existing in enumerate(unique_items):
+                    existing_key = (
+                        existing.get("description", "").lower().strip(),
+                        existing.get("amount", 0),
+                    )
+                    if existing_key == key:
+                        unique_items[i] = item
+                        break
 
         return unique_items
 
-    def _validate_receipt_calculations(self, fields: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_receipt_calculations(self, fields: dict[str, Any]) -> dict[str, Any]:
         """Validate and correct receipt calculations after highlight enhancement."""
-
         # If we have subtotal and total, calculate GST
         if (
             "subtotal" in fields
@@ -557,7 +554,7 @@ class BusinessReceiptHandler(BaseATOHandler):
                         fields["gst_amount"] = calculated_gst
                         fields["calculated_gst"] = True
                         logger.info(
-                            f"Calculated GST from highlights: ${calculated_gst:.2f}"
+                            f"Calculated GST from highlights: ${calculated_gst:.2f}",
                         )
                 else:
                     existing_gst = float(fields["gst_amount"])
@@ -568,12 +565,12 @@ class BusinessReceiptHandler(BaseATOHandler):
                         # Validate against 10% GST rate
                         expected_gst = subtotal * 0.10
                         if abs(calculated_gst - expected_gst) < abs(
-                            existing_gst - expected_gst
+                            existing_gst - expected_gst,
                         ):
                             fields["gst_amount"] = calculated_gst
                             fields["corrected_gst"] = True
                             logger.info(
-                                f"Corrected GST using calculation: ${calculated_gst:.2f}"
+                                f"Corrected GST using calculation: ${calculated_gst:.2f}",
                             )
 
             except (ValueError, TypeError):
@@ -595,7 +592,7 @@ class BusinessReceiptHandler(BaseATOHandler):
                     fields["total_amount"] = calculated_total
                     fields["calculated_total"] = True
                     logger.info(
-                        f"Calculated total from highlights: ${calculated_total:.2f}"
+                        f"Calculated total from highlights: ${calculated_total:.2f}",
                     )
 
             except (ValueError, TypeError):
@@ -613,7 +610,7 @@ class BusinessReceiptHandler(BaseATOHandler):
                     fields["total_amount"] = estimated_total_with_gst
                     fields["estimated_from_items"] = True
                     logger.info(
-                        f"Estimated total from items: ${estimated_total_with_gst:.2f}"
+                        f"Estimated total from items: ${estimated_total_with_gst:.2f}",
                     )
 
             except (ValueError, TypeError):
@@ -621,7 +618,7 @@ class BusinessReceiptHandler(BaseATOHandler):
 
         return fields
 
-    def _apply_enhanced_parsing(self, text: str) -> Dict[str, Any]:
+    def _apply_enhanced_parsing(self, text: str) -> dict[str, Any]:
         """Apply InternVL enhanced parsing techniques for business receipts."""
         if not self.supports_enhanced_parsing:
             return {}
@@ -679,7 +676,7 @@ class BusinessReceiptHandler(BaseATOHandler):
 
         return ""
 
-    def _categorize_business_items(self, text: str) -> List[Dict[str, Any]]:
+    def _categorize_business_items(self, text: str) -> list[dict[str, Any]]:
         """Categorize items for business expense purposes."""
         items = self._extract_items(text)
         if not items:
@@ -748,14 +745,13 @@ class BusinessReceiptHandler(BaseATOHandler):
             "stationery",
         ]:
             return 0.9
-        elif category in ["cleaning", "tools", "safety", "marketing"]:
+        if category in ["cleaning", "tools", "safety", "marketing"]:
             return 0.8
-        elif category in ["catering"]:
+        if category in ["catering"]:
             return 0.6  # Depends on context
-        else:
-            return 0.3
+        return 0.3
 
-    def _extract_loyalty_program_info(self, text: str) -> Dict[str, Any]:
+    def _extract_loyalty_program_info(self, text: str) -> dict[str, Any]:
         """Extract loyalty program information."""
         loyalty_info = {}
 
@@ -789,7 +785,9 @@ class BusinessReceiptHandler(BaseATOHandler):
 
             # Look for store number with location
             store_match = re.search(
-                r"store\s*(?:no\.?|#)?\s*(\d+)\s*([A-Za-z\s]+)", line, re.IGNORECASE
+                r"store\s*(?:no\.?|#)?\s*(\d+)\s*([A-Za-z\s]+)",
+                line,
+                re.IGNORECASE,
             )
             if store_match:
                 return f"Store {store_match.group(1)} - {store_match.group(2).strip()}"

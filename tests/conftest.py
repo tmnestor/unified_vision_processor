@@ -13,9 +13,9 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
+from vision_processor.classification import DocumentType
 from vision_processor.config.unified_config import ModelType, UnifiedConfig
-from vision_processor.extraction.pipeline_components import (
-    DocumentType,
+from vision_processor.extraction.hybrid_extraction_manager import (
     ProcessingResult,
     QualityGrade,
 )

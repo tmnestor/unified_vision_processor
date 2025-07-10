@@ -1,5 +1,4 @@
-"""
-Tax Invoice Handler
+"""Tax Invoice Handler
 
 Specialized handler for tax invoices following the Llama 7-step pipeline
 with Australian tax compliance and professional services recognition.
@@ -7,7 +6,7 @@ with Australian tax compliance and professional services recognition.
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 from .base_ato_handler import BaseATOHandler
 
@@ -15,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class TaxInvoiceHandler(BaseATOHandler):
-    """
-    Handler for tax invoices with Australian tax compliance expertise.
+    """Handler for tax invoices with Australian tax compliance expertise.
 
     ATO Requirements for Tax Invoices:
     - Words "Tax Invoice" prominently displayed
@@ -59,7 +57,7 @@ class TaxInvoiceHandler(BaseATOHandler):
             "required_text": ["tax invoice", "gst invoice"],
         }
 
-    def _extract_document_specific_fields(self, text: str) -> Dict[str, Any]:
+    def _extract_document_specific_fields(self, text: str) -> dict[str, Any]:
         """Extract tax invoice specific fields."""
         fields = {}
 
@@ -207,7 +205,7 @@ class TaxInvoiceHandler(BaseATOHandler):
                 return match.group(1)
         return ""
 
-    def _validate_document_specific_fields(self, fields: Dict[str, Any]) -> List[str]:
+    def _validate_document_specific_fields(self, fields: dict[str, Any]) -> list[str]:
         """Validate tax invoice specific fields."""
         issues = []
 
@@ -216,7 +214,7 @@ class TaxInvoiceHandler(BaseATOHandler):
             issues.append("Document should contain 'Tax Invoice' text")
 
         # Validate supplier ABN
-        if "supplier_abn" in fields and fields["supplier_abn"]:
+        if fields.get("supplier_abn"):
             abn = str(fields["supplier_abn"]).replace(" ", "")
             if len(abn) != 11 or not abn.isdigit():
                 issues.append("Invalid supplier ABN format")
@@ -239,7 +237,7 @@ class TaxInvoiceHandler(BaseATOHandler):
                     > self.validation_rules["gst_tolerance"]
                 ):
                     issues.append(
-                        f"GST amount may be incorrect (expected ${expected_gst:.2f})"
+                        f"GST amount may be incorrect (expected ${expected_gst:.2f})",
                     )
 
                 if (
@@ -247,7 +245,7 @@ class TaxInvoiceHandler(BaseATOHandler):
                     > self.validation_rules["gst_tolerance"]
                 ):
                     issues.append(
-                        f"Total amount may be incorrect (expected ${expected_total:.2f})"
+                        f"Total amount may be incorrect (expected ${expected_total:.2f})",
                     )
 
             except (ValueError, TypeError):
@@ -256,10 +254,11 @@ class TaxInvoiceHandler(BaseATOHandler):
         return issues
 
     def enhance_with_highlights(
-        self, fields: Dict[str, Any], highlights: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """
-        Enhance tax invoice extraction using InternVL highlight detection.
+        self,
+        fields: dict[str, Any],
+        highlights: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Enhance tax invoice extraction using InternVL highlight detection.
 
         Tax invoices benefit from highlight detection for:
         - Total amount and GST highlighting (critical for compliance)
@@ -284,7 +283,7 @@ class TaxInvoiceHandler(BaseATOHandler):
         ]
 
         for highlight in highlights:
-            if "text" in highlight and highlight["text"]:
+            if highlight.get("text"):
                 highlight_text = highlight["text"]
                 highlight_confidence = highlight.get("confidence", 0.8)
 
@@ -309,7 +308,7 @@ class TaxInvoiceHandler(BaseATOHandler):
                                 highlight_confidence
                             )
                             logger.info(
-                                f"Override field {field} from high-confidence highlight: {value}"
+                                f"Override field {field} from high-confidence highlight: {value}",
                             )
 
         # Validate GST calculations after highlight enhancement
@@ -317,12 +316,13 @@ class TaxInvoiceHandler(BaseATOHandler):
 
         # Check for tax invoice indicator in highlights
         enhanced_fields = self._detect_tax_invoice_indicator(
-            enhanced_fields, highlights
+            enhanced_fields,
+            highlights,
         )
 
         return enhanced_fields
 
-    def _extract_from_highlight(self, highlight_text: str) -> Dict[str, Any]:
+    def _extract_from_highlight(self, highlight_text: str) -> dict[str, Any]:
         """Extract tax invoice information from highlighted text region."""
         fields = {}
 
@@ -388,7 +388,7 @@ class TaxInvoiceHandler(BaseATOHandler):
 
         return fields
 
-    def _validate_gst_calculations(self, fields: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_gst_calculations(self, fields: dict[str, Any]) -> dict[str, Any]:
         """Validate and correct GST calculations after highlight enhancement."""
         # If we have subtotal and total, calculate GST
         if (
@@ -407,7 +407,7 @@ class TaxInvoiceHandler(BaseATOHandler):
                     fields["gst_amount"] = calculated_gst
                     fields["calculated_gst"] = True
                     logger.info(
-                        f"Calculated GST from highlights: ${calculated_gst:.2f}"
+                        f"Calculated GST from highlights: ${calculated_gst:.2f}",
                     )
                 else:
                     existing_gst = float(fields["gst_amount"])
@@ -418,12 +418,12 @@ class TaxInvoiceHandler(BaseATOHandler):
                         # Validate against 10% GST rate
                         expected_gst = subtotal * 0.10
                         if abs(calculated_gst - expected_gst) < abs(
-                            existing_gst - expected_gst
+                            existing_gst - expected_gst,
                         ):
                             fields["gst_amount"] = calculated_gst
                             fields["corrected_gst"] = True
                             logger.info(
-                                f"Corrected GST using calculation: ${calculated_gst:.2f}"
+                                f"Corrected GST using calculation: ${calculated_gst:.2f}",
                             )
 
             except (ValueError, TypeError):
@@ -445,7 +445,7 @@ class TaxInvoiceHandler(BaseATOHandler):
                     fields["total_amount"] = calculated_total
                     fields["calculated_total"] = True
                     logger.info(
-                        f"Calculated total from highlights: ${calculated_total:.2f}"
+                        f"Calculated total from highlights: ${calculated_total:.2f}",
                     )
 
             except (ValueError, TypeError):
@@ -454,11 +454,13 @@ class TaxInvoiceHandler(BaseATOHandler):
         return fields
 
     def _detect_tax_invoice_indicator(
-        self, fields: Dict[str, Any], highlights: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+        self,
+        fields: dict[str, Any],
+        highlights: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """Detect if 'Tax Invoice' text appears in highlights."""
         for highlight in highlights:
-            if "text" in highlight and highlight["text"]:
+            if highlight.get("text"):
                 highlight_text = highlight["text"].lower()
                 if "tax invoice" in highlight_text or "gst invoice" in highlight_text:
                     fields["tax_invoice_indicator"] = True
@@ -468,7 +470,7 @@ class TaxInvoiceHandler(BaseATOHandler):
 
         return fields
 
-    def _apply_enhanced_parsing(self, text: str) -> Dict[str, Any]:
+    def _apply_enhanced_parsing(self, text: str) -> dict[str, Any]:
         """Apply InternVL enhanced parsing techniques for tax invoices."""
         if not self.supports_enhanced_parsing:
             return {}
@@ -582,10 +584,9 @@ class TaxInvoiceHandler(BaseATOHandler):
             if match:
                 if "receipt" in match.group(0).lower():
                     return "Due on receipt"
-                elif "days" in match.group(0).lower():
+                if "days" in match.group(0).lower():
                     return f"Net {match.group(1)} days"
-                else:
-                    return match.group(1).strip()
+                return match.group(1).strip()
 
         return ""
 

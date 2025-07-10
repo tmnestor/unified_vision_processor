@@ -1,5 +1,4 @@
-"""
-Spatial Correlator for Highlight-Text Correlation
+"""Spatial Correlator for Highlight-Text Correlation
 
 This module provides spatial analysis capabilities to correlate highlighted
 regions with surrounding text content for better context understanding.
@@ -7,7 +6,7 @@ regions with surrounding text content for better context understanding.
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -31,12 +30,12 @@ class SpatialRegion:
     region_type: str  # "highlight", "surrounding", "header", "footer"
 
     @property
-    def bbox(self) -> Tuple[int, int, int, int]:
+    def bbox(self) -> tuple[int, int, int, int]:
         """Return bounding box as (x, y, x2, y2)."""
         return (self.x, self.y, self.x + self.width, self.y + self.height)
 
     @property
-    def center(self) -> Tuple[int, int]:
+    def center(self) -> tuple[int, int]:
         """Return center point."""
         return (self.x + self.width // 2, self.y + self.height // 2)
 
@@ -51,11 +50,11 @@ class SpatialCorrelation:
     """Represents correlation between highlighted region and surrounding text."""
 
     highlight_region: HighlightRegion
-    highlighted_text: Optional[str]
-    surrounding_regions: List[SpatialRegion]
+    highlighted_text: str | None
+    surrounding_regions: list[SpatialRegion]
     context_text: str
     correlation_score: float
-    spatial_relationships: Dict[str, Any]
+    spatial_relationships: dict[str, Any]
 
     def get_full_context(self) -> str:
         """Get full context including highlighted text and surroundings."""
@@ -71,8 +70,7 @@ class SpatialCorrelation:
 
 
 class SpatialCorrelator:
-    """
-    Spatial correlator for analyzing relationships between highlighted regions and text.
+    """Spatial correlator for analyzing relationships between highlighted regions and text.
 
     Features:
     - Spatial relationship analysis
@@ -141,13 +139,12 @@ class SpatialCorrelator:
 
     def correlate_highlights_with_text(
         self,
-        image_path: Union[str, Any],
-        highlights: List[HighlightRegion],
-        ocr_results: List[OCRResult],
+        image_path: str | Any,
+        highlights: list[HighlightRegion],
+        ocr_results: list[OCRResult],
         document_type: str = "general",
-    ) -> List[SpatialCorrelation]:
-        """
-        Correlate highlighted regions with surrounding text.
+    ) -> list[SpatialCorrelation]:
+        """Correlate highlighted regions with surrounding text.
 
         Args:
             image_path: Path to original image
@@ -157,6 +154,7 @@ class SpatialCorrelator:
 
         Returns:
             List of spatial correlations
+
         """
         if not self.initialized:
             self.initialize()
@@ -176,7 +174,10 @@ class SpatialCorrelator:
 
             for highlight in highlights:
                 correlation = self._analyze_highlight_correlation(
-                    highlight, ocr_results, image, document_type
+                    highlight,
+                    ocr_results,
+                    image,
+                    document_type,
                 )
                 correlations.append(correlation)
 
@@ -193,8 +194,8 @@ class SpatialCorrelator:
     def _analyze_highlight_correlation(
         self,
         highlight: HighlightRegion,
-        ocr_results: List[OCRResult],
-        _image: Optional[np.ndarray],
+        ocr_results: list[OCRResult],
+        _image: np.ndarray | None,
         document_type: str,
     ) -> SpatialCorrelation:
         """Analyze correlation for a single highlight."""
@@ -209,12 +210,17 @@ class SpatialCorrelator:
 
         # Calculate spatial relationships
         spatial_relationships = self._calculate_spatial_relationships(
-            highlight, surrounding_regions, document_type
+            highlight,
+            surrounding_regions,
+            document_type,
         )
 
         # Calculate correlation score
         correlation_score = self._calculate_correlation_score(
-            highlight, highlighted_text, surrounding_regions, spatial_relationships
+            highlight,
+            highlighted_text,
+            surrounding_regions,
+            spatial_relationships,
         )
 
         return SpatialCorrelation(
@@ -227,8 +233,10 @@ class SpatialCorrelator:
         )
 
     def _find_text_in_highlight(
-        self, highlight: HighlightRegion, ocr_results: List[OCRResult]
-    ) -> Optional[str]:
+        self,
+        highlight: HighlightRegion,
+        ocr_results: list[OCRResult],
+    ) -> str | None:
         """Find OCR text that falls within the highlight region."""
         highlight_bbox = highlight.bbox
 
@@ -250,8 +258,10 @@ class SpatialCorrelator:
         return None
 
     def _find_surrounding_regions(
-        self, highlight: HighlightRegion, ocr_results: List[OCRResult]
-    ) -> List[SpatialRegion]:
+        self,
+        highlight: HighlightRegion,
+        ocr_results: list[OCRResult],
+    ) -> list[SpatialRegion]:
         """Find text regions surrounding the highlight."""
         surrounding_regions = []
         context_radius = self.spatial_config["context_radius"]
@@ -294,7 +304,7 @@ class SpatialCorrelator:
         # Sort by distance from highlight
         highlight_center = highlight.center
         surrounding_regions.sort(
-            key=lambda r: self._calculate_distance(highlight_center, r.center)
+            key=lambda r: self._calculate_distance(highlight_center, r.center),
         )
 
         # Limit number of regions
@@ -302,7 +312,9 @@ class SpatialCorrelator:
         return surrounding_regions[:max_regions]
 
     def _determine_region_type(
-        self, highlight: HighlightRegion, ocr_result: OCRResult
+        self,
+        highlight: HighlightRegion,
+        ocr_result: OCRResult,
     ) -> str:
         """Determine the type of spatial region relative to highlight."""
         ocr_bbox = ocr_result.bbox
@@ -315,16 +327,15 @@ class SpatialCorrelator:
         # Determine relative position
         if ocr_center_y < highlight_bbox[1]:
             return "above"
-        elif ocr_center_y > highlight_bbox[3]:
+        if ocr_center_y > highlight_bbox[3]:
             return "below"
-        elif ocr_center_x < highlight_bbox[0]:
+        if ocr_center_x < highlight_bbox[0]:
             return "left"
-        elif ocr_center_x > highlight_bbox[2]:
+        if ocr_center_x > highlight_bbox[2]:
             return "right"
-        else:
-            return "overlapping"
+        return "overlapping"
 
-    def _extract_context_text(self, surrounding_regions: List[SpatialRegion]) -> str:
+    def _extract_context_text(self, surrounding_regions: list[SpatialRegion]) -> str:
         """Extract meaningful context text from surrounding regions."""
         if not surrounding_regions:
             return ""
@@ -372,9 +383,9 @@ class SpatialCorrelator:
     def _calculate_spatial_relationships(
         self,
         highlight: HighlightRegion,
-        surrounding_regions: List[SpatialRegion],
+        surrounding_regions: list[SpatialRegion],
         document_type: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calculate spatial relationships and layout analysis."""
         relationships = {
             "document_type": document_type,
@@ -402,13 +413,15 @@ class SpatialCorrelator:
         # Layout pattern analysis
         if document_type in self.layout_patterns:
             layout_analysis = self._analyze_layout_patterns(
-                highlight, surrounding_regions, document_type
+                highlight,
+                surrounding_regions,
+                document_type,
             )
             relationships["layout_patterns"] = layout_analysis
 
         return relationships
 
-    def _get_relative_position(self, highlight: HighlightRegion) -> Dict[str, float]:
+    def _get_relative_position(self, highlight: HighlightRegion) -> dict[str, float]:
         """Get relative position of highlight (requires image dimensions)."""
         # This would normally use image dimensions, but we'll use default values
         default_width, default_height = 1000, 1000
@@ -421,7 +434,9 @@ class SpatialCorrelator:
         }
 
     def _calculate_alignment_score(
-        self, highlight: HighlightRegion, region: SpatialRegion
+        self,
+        highlight: HighlightRegion,
+        region: SpatialRegion,
     ) -> float:
         """Calculate how well aligned a region is with the highlight."""
         # Horizontal alignment
@@ -446,9 +461,9 @@ class SpatialCorrelator:
     def _analyze_layout_patterns(
         self,
         highlight: HighlightRegion,
-        surrounding_regions: List[SpatialRegion],
+        surrounding_regions: list[SpatialRegion],
         document_type: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Analyze document-specific layout patterns."""
         patterns = self.layout_patterns.get(document_type, {})
         analysis = {}
@@ -485,9 +500,9 @@ class SpatialCorrelator:
     def _calculate_correlation_score(
         self,
         highlight: HighlightRegion,
-        highlighted_text: Optional[str],
-        surrounding_regions: List[SpatialRegion],
-        spatial_relationships: Dict[str, Any],
+        highlighted_text: str | None,
+        surrounding_regions: list[SpatialRegion],
+        spatial_relationships: dict[str, Any],
     ) -> float:
         """Calculate overall correlation score."""
         weights = self.spatial_config["spatial_weights"]
@@ -518,7 +533,8 @@ class SpatialCorrelator:
             for region in surrounding_regions:
                 if highlight_area > 0:
                     size_ratio = min(region.area, highlight_area) / max(
-                        region.area, highlight_area
+                        region.area,
+                        highlight_area,
                     )
                     size_similarities.append(size_ratio)
 
@@ -529,14 +545,16 @@ class SpatialCorrelator:
         # Text quality component
         if surrounding_regions:
             avg_confidence = sum(r.confidence for r in surrounding_regions) / len(
-                surrounding_regions
+                surrounding_regions,
             )
             score += avg_confidence * weights["text_quality"]
 
         return min(score, 1.0)
 
     def _rectangles_overlap(
-        self, rect1: Tuple[int, int, int, int], rect2: Tuple[int, int, int, int]
+        self,
+        rect1: tuple[int, int, int, int],
+        rect2: tuple[int, int, int, int],
     ) -> bool:
         """Check if two rectangles overlap."""
         x1, y1, x2, y2 = rect1
@@ -545,7 +563,9 @@ class SpatialCorrelator:
         return not (x2 < x3 or x4 < x1 or y2 < y3 or y4 < y1)
 
     def _calculate_overlap_area(
-        self, rect1: Tuple[int, int, int, int], rect2: Tuple[int, int, int, int]
+        self,
+        rect1: tuple[int, int, int, int],
+        rect2: tuple[int, int, int, int],
     ) -> int:
         """Calculate the area of overlap between two rectangles."""
         x1, y1, x2, y2 = rect1
@@ -559,11 +579,12 @@ class SpatialCorrelator:
 
         if left < right and top < bottom:
             return (right - left) * (bottom - top)
-        else:
-            return 0
+        return 0
 
     def _point_in_rectangle(
-        self, point: Tuple[int, int], rect: Tuple[int, int, int, int]
+        self,
+        point: tuple[int, int],
+        rect: tuple[int, int, int, int],
     ) -> bool:
         """Check if a point is inside a rectangle."""
         x, y = point
@@ -572,7 +593,9 @@ class SpatialCorrelator:
         return x1 <= x <= x2 and y1 <= y <= y2
 
     def _calculate_distance(
-        self, point1: Tuple[int, int], point2: Tuple[int, int]
+        self,
+        point1: tuple[int, int],
+        point2: tuple[int, int],
     ) -> float:
         """Calculate Euclidean distance between two points."""
         x1, y1 = point1
@@ -581,8 +604,9 @@ class SpatialCorrelator:
         return np.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 
     def generate_correlation_report(
-        self, correlations: List[SpatialCorrelation]
-    ) -> Dict[str, Any]:
+        self,
+        correlations: list[SpatialCorrelation],
+    ) -> dict[str, Any]:
         """Generate a comprehensive correlation analysis report."""
         if not correlations:
             return {"error": "No correlations to analyze"}
@@ -591,13 +615,13 @@ class SpatialCorrelator:
             "summary": {
                 "total_correlations": len(correlations),
                 "high_confidence": len(
-                    [c for c in correlations if c.correlation_score > 0.7]
+                    [c for c in correlations if c.correlation_score > 0.7],
                 ),
                 "medium_confidence": len(
-                    [c for c in correlations if 0.4 <= c.correlation_score <= 0.7]
+                    [c for c in correlations if 0.4 <= c.correlation_score <= 0.7],
                 ),
                 "low_confidence": len(
-                    [c for c in correlations if c.correlation_score < 0.4]
+                    [c for c in correlations if c.correlation_score < 0.4],
                 ),
             },
             "average_correlation_score": sum(c.correlation_score for c in correlations)
@@ -608,7 +632,9 @@ class SpatialCorrelator:
 
         # Top correlations
         top_correlations = sorted(
-            correlations, key=lambda c: c.correlation_score, reverse=True
+            correlations,
+            key=lambda c: c.correlation_score,
+            reverse=True,
         )[:5]
 
         for i, correlation in enumerate(top_correlations, 1):
@@ -621,7 +647,7 @@ class SpatialCorrelator:
                         :200
                     ],  # Truncate for readability
                     "surrounding_regions_count": len(correlation.surrounding_regions),
-                }
+                },
             )
 
         # Spatial insights
@@ -632,7 +658,7 @@ class SpatialCorrelator:
                 "context_coverage": len([c for c in correlations if c.context_text])
                 / len(correlations),
                 "highlighted_text_detection": len(
-                    [c for c in correlations if c.highlighted_text]
+                    [c for c in correlations if c.highlighted_text],
                 )
                 / len(correlations),
             }

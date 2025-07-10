@@ -1,5 +1,4 @@
-"""
-Image Preprocessing and Optimization
+"""Image Preprocessing and Optimization
 
 This module provides image preprocessing capabilities to optimize images
 for better computer vision and OCR performance.
@@ -8,7 +7,7 @@ for better computer vision and OCR performance.
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -24,10 +23,10 @@ class ImageMetadata:
     width: int
     height: int
     channels: int
-    file_size: Optional[int] = None
-    format: Optional[str] = None
-    dpi: Optional[Tuple[int, int]] = None
-    color_space: Optional[str] = None
+    file_size: int | None = None
+    format: str | None = None
+    dpi: tuple[int, int] | None = None
+    color_space: str | None = None
 
     @property
     def aspect_ratio(self) -> float:
@@ -47,14 +46,13 @@ class PreprocessingResult:
     processed_image: np.ndarray
     original_metadata: ImageMetadata
     processed_metadata: ImageMetadata
-    operations_applied: List[str]
+    operations_applied: list[str]
     quality_score: float
     preprocessing_time: float
 
 
 class ImagePreprocessor:
-    """
-    Advanced image preprocessing for computer vision tasks.
+    """Advanced image preprocessing for computer vision tasks.
 
     Features:
     - Image quality assessment
@@ -105,10 +103,11 @@ class ImagePreprocessor:
         self.initialized = True
 
     def preprocess_image(
-        self, image_path: Union[str, Path, Image.Image], target_type: str = "document"
+        self,
+        image_path: str | Path | Image.Image,
+        target_type: str = "document",
     ) -> PreprocessingResult:
-        """
-        Preprocess image for optimal computer vision performance.
+        """Preprocess image for optimal computer vision performance.
 
         Args:
             image_path: Path to image file or PIL Image
@@ -116,6 +115,7 @@ class ImagePreprocessor:
 
         Returns:
             PreprocessingResult with processed image and metadata
+
         """
         if not self.initialized:
             self.initialize()
@@ -167,8 +167,9 @@ class ImagePreprocessor:
             raise RuntimeError(f"Image preprocessing failed: {e}") from e
 
     def _load_image_with_metadata(
-        self, image_path: Union[str, Path, Image.Image]
-    ) -> Tuple[np.ndarray, ImageMetadata]:
+        self,
+        image_path: str | Path | Image.Image,
+    ) -> tuple[np.ndarray, ImageMetadata]:
         """Load image and extract metadata."""
         if isinstance(image_path, (str, Path)):
             # Load with PIL to get metadata
@@ -230,7 +231,7 @@ class ImagePreprocessor:
             color_space="BGR" if channels == 3 else "GRAY",
         )
 
-    def _preprocess_document(self, image: np.ndarray) -> Tuple[np.ndarray, List[str]]:
+    def _preprocess_document(self, image: np.ndarray) -> tuple[np.ndarray, list[str]]:
         """Preprocess image for general document processing."""
         operations = []
         processed = image.copy()
@@ -268,8 +269,9 @@ class ImagePreprocessor:
         return processed, operations
 
     def _preprocess_bank_statement(
-        self, image: np.ndarray
-    ) -> Tuple[np.ndarray, List[str]]:
+        self,
+        image: np.ndarray,
+    ) -> tuple[np.ndarray, list[str]]:
         """Preprocess image specifically for bank statements."""
         operations = []
         processed = image.copy()
@@ -293,7 +295,7 @@ class ImagePreprocessor:
 
         return processed, operations
 
-    def _preprocess_receipt(self, image: np.ndarray) -> Tuple[np.ndarray, List[str]]:
+    def _preprocess_receipt(self, image: np.ndarray) -> tuple[np.ndarray, list[str]]:
         """Preprocess image specifically for receipts."""
         operations = []
         processed = image.copy()
@@ -321,7 +323,7 @@ class ImagePreprocessor:
 
         return processed, operations
 
-    def _preprocess_general(self, image: np.ndarray) -> Tuple[np.ndarray, List[str]]:
+    def _preprocess_general(self, image: np.ndarray) -> tuple[np.ndarray, list[str]]:
         """General preprocessing for any image type."""
         operations = []
         processed = image.copy()
@@ -340,8 +342,10 @@ class ImagePreprocessor:
         return processed, operations
 
     def _resize_image(
-        self, image: np.ndarray, target_width: Optional[int] = None
-    ) -> Tuple[np.ndarray, Optional[str]]:
+        self,
+        image: np.ndarray,
+        target_width: int | None = None,
+    ) -> tuple[np.ndarray, str | None]:
         """Resize image to optimal dimensions."""
         height, width = image.shape[:2]
 
@@ -362,14 +366,13 @@ class ImagePreprocessor:
         if target_width:
             new_width = target_width
             new_height = int(height * (target_width / width))
+        # Scale based on max dimension
+        elif width > height:
+            new_width = min(width, max_dim)
+            new_height = int(height * (new_width / width))
         else:
-            # Scale based on max dimension
-            if width > height:
-                new_width = min(width, max_dim)
-                new_height = int(height * (new_width / width))
-            else:
-                new_height = min(height, max_dim)
-                new_width = int(width * (new_height / height))
+            new_height = min(height, max_dim)
+            new_width = int(width * (new_height / height))
 
         # Ensure minimum dimensions
         if new_width < min_dim:
@@ -381,7 +384,9 @@ class ImagePreprocessor:
 
         # Resize with high-quality interpolation
         resized = cv2.resize(
-            image, (new_width, new_height), interpolation=cv2.INTER_LANCZOS4
+            image,
+            (new_width, new_height),
+            interpolation=cv2.INTER_LANCZOS4,
         )
 
         return resized, f"resize_{width}x{height}_to_{new_width}x{new_height}"
@@ -466,7 +471,9 @@ class ImagePreprocessor:
             # Find contours
             _, binary = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
             contours, _ = cv2.findContours(
-                binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+                binary,
+                cv2.RETR_EXTERNAL,
+                cv2.CHAIN_APPROX_SIMPLE,
             )
 
             if not contours:
@@ -494,8 +501,7 @@ class ImagePreprocessor:
 
             if cropped_area > 0.7 * original_area:  # At least 70% of original
                 return cropped
-            else:
-                return image
+            return image
 
         except Exception as e:
             logger.warning(f"Border removal failed: {e}")
@@ -576,7 +582,8 @@ class ImagePreprocessor:
             # 1. Sharpness (Laplacian variance)
             laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
             sharpness_score = min(
-                laplacian_var / self.quality_params["blur_threshold"], 1.0
+                laplacian_var / self.quality_params["blur_threshold"],
+                1.0,
             )
             score += sharpness_score * weights["sharpness"]
 
@@ -587,14 +594,16 @@ class ImagePreprocessor:
                 brightness_score = 1.0
             else:
                 brightness_score = max(
-                    0.0, 1.0 - abs(mean_brightness - np.mean(brightness_range)) / 128.0
+                    0.0,
+                    1.0 - abs(mean_brightness - np.mean(brightness_range)) / 128.0,
                 )
             score += brightness_score * weights["brightness"]
 
             # 3. Contrast
             contrast = np.std(gray)
             contrast_score = min(
-                contrast / self.quality_params["contrast_threshold"], 1.0
+                contrast / self.quality_params["contrast_threshold"],
+                1.0,
             )
             score += contrast_score * weights["contrast"]
 
@@ -610,8 +619,9 @@ class ImagePreprocessor:
             return 0.5  # Default moderate score
 
     def assess_image_quality(
-        self, image_path: Union[str, Path, Image.Image]
-    ) -> Dict[str, Any]:
+        self,
+        image_path: str | Path | Image.Image,
+    ) -> dict[str, Any]:
         """Assess image quality and provide recommendations."""
         try:
             image, metadata = self._load_image_with_metadata(image_path)
@@ -651,11 +661,11 @@ class ImagePreprocessor:
             ):
                 if metrics["brightness"] < brightness_range[0]:
                     recommendations.append(
-                        "Image is too dark - consider brightness enhancement"
+                        "Image is too dark - consider brightness enhancement",
                     )
                 else:
                     recommendations.append(
-                        "Image is too bright - consider brightness reduction"
+                        "Image is too bright - consider brightness reduction",
                     )
 
             if metrics["contrast"] < self.quality_params["contrast_threshold"]:
@@ -663,7 +673,7 @@ class ImagePreprocessor:
 
             if metadata.width < 800 or metadata.height < 600:
                 recommendations.append(
-                    "Low resolution - consider using higher resolution image"
+                    "Low resolution - consider using higher resolution image",
                 )
 
             return {

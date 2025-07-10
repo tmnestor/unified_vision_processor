@@ -1,5 +1,4 @@
-"""
-Computer Vision Module for Advanced Image Processing
+"""Computer Vision Module for Advanced Image Processing
 
 This module provides InternVL's advanced computer vision capabilities:
 - Multi-color highlight detection
@@ -16,9 +15,9 @@ from .ocr_processor import OCRProcessor
 from .spatial_correlator import SpatialCorrelator
 
 __all__ = [
-    "HighlightDetector",
-    "OCRProcessor",
     "BankStatementCV",
+    "HighlightDetector",
     "ImagePreprocessor",
+    "OCRProcessor",
     "SpatialCorrelator",
 ]

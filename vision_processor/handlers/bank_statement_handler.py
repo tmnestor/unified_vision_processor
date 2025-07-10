@@ -1,5 +1,4 @@
-"""
-Bank Statement Handler
+"""Bank Statement Handler
 
 Specialized handler for bank statements following the Llama 7-step pipeline
 with InternVL highlight detection integration and Australian banking expertise.
@@ -7,7 +6,7 @@ with InternVL highlight detection integration and Australian banking expertise.
 
 import logging
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 from .base_ato_handler import BaseATOHandler
 
@@ -15,8 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class BankStatementHandler(BaseATOHandler):
-    """
-    Handler for bank statements with Australian banking expertise and highlight integration.
+    """Handler for bank statements with Australian banking expertise and highlight integration.
 
     Supports major Australian banks:
     - Big Four: ANZ, Commonwealth Bank, Westpac, NAB
@@ -124,7 +122,7 @@ class BankStatementHandler(BaseATOHandler):
             "communications": r"\b(?:telstra|optus|vodafone|phone|internet|mobile)\b",
         }
 
-    def _extract_document_specific_fields(self, text: str) -> Dict[str, Any]:
+    def _extract_document_specific_fields(self, text: str) -> dict[str, Any]:
         """Extract bank statement specific fields."""
         fields = {}
 
@@ -275,7 +273,7 @@ class BankStatementHandler(BaseATOHandler):
 
         return self._extract_balance_amount(text, balance_patterns)
 
-    def _extract_balance_amount(self, text: str, patterns: List[str]) -> float:
+    def _extract_balance_amount(self, text: str, patterns: list[str]) -> float:
         """Extract balance amount using provided patterns."""
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE)
@@ -288,7 +286,7 @@ class BankStatementHandler(BaseATOHandler):
 
         return 0.0
 
-    def _extract_transactions(self, text: str) -> List[Dict[str, Any]]:
+    def _extract_transactions(self, text: str) -> list[dict[str, Any]]:
         """Extract transaction details from statement."""
         transactions = []
         lines = text.split("\n")
@@ -315,7 +313,7 @@ class BankStatementHandler(BaseATOHandler):
                             "description": description,
                             "amount": amount,
                             "type": "debit" if amount < 0 else "credit",
-                        }
+                        },
                     )
                 except ValueError:
                     continue
@@ -323,8 +321,9 @@ class BankStatementHandler(BaseATOHandler):
         return transactions
 
     def _identify_work_expenses(
-        self, transactions: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self,
+        transactions: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Identify work-related expenses from transactions."""
         if not transactions:
             return []
@@ -363,7 +362,7 @@ class BankStatementHandler(BaseATOHandler):
                         "work_score": work_score,
                         "expense_category": expense_category,
                         "confidence": min(work_score / 2.0, 1.0),  # Normalize to 0-1
-                    }
+                    },
                 )
                 work_expenses.append(work_expense)
 
@@ -383,23 +382,23 @@ class BankStatementHandler(BaseATOHandler):
 
         return ""
 
-    def _validate_document_specific_fields(self, fields: Dict[str, Any]) -> List[str]:
+    def _validate_document_specific_fields(self, fields: dict[str, Any]) -> list[str]:
         """Validate bank statement specific fields."""
         issues = []
 
         # Validate BSB format
-        if "bsb" in fields and fields["bsb"]:
+        if fields.get("bsb"):
             bsb = fields["bsb"]
             if not re.match(self.validation_rules["bsb_format"], bsb):
                 issues.append(f"Invalid BSB format: {bsb} (should be XXX-XXX)")
 
         # Validate account number length
-        if "account_number" in fields and fields["account_number"]:
+        if fields.get("account_number"):
             account_number = str(fields["account_number"])
             min_len, max_len = self.validation_rules["account_number_length"]
             if not (min_len <= len(account_number) <= max_len):
                 issues.append(
-                    f"Account number length {len(account_number)} outside range ({min_len}-{max_len})"
+                    f"Account number length {len(account_number)} outside range ({min_len}-{max_len})",
                 )
 
         # Validate balance ranges
@@ -410,13 +409,13 @@ class BankStatementHandler(BaseATOHandler):
                     min_balance, max_balance = self.validation_rules["balance_range"]
                     if not (min_balance <= balance <= max_balance):
                         issues.append(
-                            f"{balance_field.replace('_', ' ').title()} ${balance:,.2f} outside reasonable range"
+                            f"{balance_field.replace('_', ' ').title()} ${balance:,.2f} outside reasonable range",
                         )
                 except (ValueError, TypeError):
                     issues.append(f"Invalid {balance_field.replace('_', ' ')} format")
 
         # Validate transaction amounts
-        if "transactions" in fields and fields["transactions"]:
+        if fields.get("transactions"):
             for i, transaction in enumerate(fields["transactions"]):
                 if "amount" in transaction:
                     try:
@@ -426,7 +425,7 @@ class BankStatementHandler(BaseATOHandler):
                         ]
                         if not (min_amount <= amount <= max_amount):
                             issues.append(
-                                f"Transaction {i + 1} amount ${amount:,.2f} outside reasonable range"
+                                f"Transaction {i + 1} amount ${amount:,.2f} outside reasonable range",
                             )
                     except (ValueError, TypeError):
                         issues.append(f"Invalid amount format in transaction {i + 1}")
@@ -447,7 +446,7 @@ class BankStatementHandler(BaseATOHandler):
                 issues.append(f"Invalid statement period to date format: {to_date}")
 
         # Validate work expenses scoring
-        if "work_expenses" in fields and fields["work_expenses"]:
+        if fields.get("work_expenses"):
             work_expenses = fields["work_expenses"]
             if len(work_expenses) == 0 and "transactions" in fields:
                 # Might indicate missed work expenses
@@ -456,10 +455,11 @@ class BankStatementHandler(BaseATOHandler):
         return issues
 
     def enhance_with_highlights(
-        self, fields: Dict[str, Any], highlights: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """
-        Enhance bank statement extraction using InternVL highlight detection.
+        self,
+        fields: dict[str, Any],
+        highlights: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Enhance bank statement extraction using InternVL highlight detection.
 
         Bank statements benefit significantly from highlight detection for:
         - Transaction identification
@@ -475,7 +475,7 @@ class BankStatementHandler(BaseATOHandler):
         # Process highlights for transaction enhancement
         highlighted_transactions = []
         for highlight in highlights:
-            if "text" in highlight and highlight["text"]:
+            if highlight.get("text"):
                 highlight_text = highlight["text"]
 
                 # Try to extract transaction from highlighted region
@@ -485,7 +485,8 @@ class BankStatementHandler(BaseATOHandler):
                     for transaction in transaction_data:
                         transaction["highlighted"] = True
                         transaction["highlight_confidence"] = highlight.get(
-                            "confidence", 0.8
+                            "confidence",
+                            0.8,
                         )
                     highlighted_transactions.extend(transaction_data)
 
@@ -510,7 +511,7 @@ class BankStatementHandler(BaseATOHandler):
 
         return enhanced_fields
 
-    def _extract_balance_from_highlight(self, highlight_text: str) -> Dict[str, Any]:
+    def _extract_balance_from_highlight(self, highlight_text: str) -> dict[str, Any]:
         """Extract balance information from highlighted text."""
         balance_data = {}
 
@@ -527,8 +528,9 @@ class BankStatementHandler(BaseATOHandler):
         return balance_data
 
     def _deduplicate_transactions(
-        self, transactions: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+        self,
+        transactions: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
         """Remove duplicate transactions based on date and amount."""
         seen = set()
         unique_transactions = []
@@ -540,17 +542,16 @@ class BankStatementHandler(BaseATOHandler):
             if key not in seen:
                 seen.add(key)
                 unique_transactions.append(transaction)
-            else:
-                # If duplicate, prefer highlighted version
-                if transaction.get("highlighted", False):
-                    # Replace existing with highlighted version
-                    for i, existing in enumerate(unique_transactions):
-                        existing_key = (
-                            existing.get("date", ""),
-                            existing.get("amount", 0),
-                        )
-                        if existing_key == key:
-                            unique_transactions[i] = transaction
-                            break
+            # If duplicate, prefer highlighted version
+            elif transaction.get("highlighted", False):
+                # Replace existing with highlighted version
+                for i, existing in enumerate(unique_transactions):
+                    existing_key = (
+                        existing.get("date", ""),
+                        existing.get("amount", 0),
+                    )
+                    if existing_key == key:
+                        unique_transactions[i] = transaction
+                        break
 
         return unique_transactions

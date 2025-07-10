@@ -1,5 +1,4 @@
-"""
-Multi-Color Highlight Detection for Bank Statements
+"""Multi-Color Highlight Detection for Bank Statements
 
 This module implements InternVL's advanced highlight detection capabilities
 for identifying highlighted regions in bank statements and other documents.
@@ -8,7 +7,7 @@ for identifying highlighted regions in bank statements and other documents.
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -28,22 +27,21 @@ class HighlightRegion:
     color: str
     confidence: float
     area: int
-    text_content: Optional[str] = None
+    text_content: str | None = None
 
     @property
-    def bbox(self) -> Tuple[int, int, int, int]:
+    def bbox(self) -> tuple[int, int, int, int]:
         """Return bounding box as (x, y, x2, y2)."""
         return (self.x, self.y, self.x + self.width, self.y + self.height)
 
     @property
-    def center(self) -> Tuple[int, int]:
+    def center(self) -> tuple[int, int]:
         """Return center point."""
         return (self.x + self.width // 2, self.y + self.height // 2)
 
 
 class HighlightDetector:
-    """
-    Advanced highlight detection for bank statements and documents.
+    """Advanced highlight detection for bank statements and documents.
 
     Features:
     - Multi-color highlight detection (yellow, green, pink, blue)
@@ -104,16 +102,17 @@ class HighlightDetector:
         self.initialized = True
 
     def detect_highlights(
-        self, image_path: Union[str, Path, Image.Image]
-    ) -> List[HighlightRegion]:
-        """
-        Detect highlights in an image.
+        self,
+        image_path: str | Path | Image.Image,
+    ) -> list[HighlightRegion]:
+        """Detect highlights in an image.
 
         Args:
             image_path: Path to image file or PIL Image
 
         Returns:
             List of detected highlight regions
+
         """
         if not self.initialized:
             self.initialize()
@@ -146,7 +145,8 @@ class HighlightDetector:
 
             # Calculate confidence scores
             final_highlights = self._calculate_confidence_scores(
-                filtered_highlights, image
+                filtered_highlights,
+                image,
             )
 
             logger.info(f"Detected {len(final_highlights)} highlight regions")
@@ -157,8 +157,10 @@ class HighlightDetector:
             return []
 
     def _detect_color_highlights(
-        self, hsv_image: np.ndarray, color_info: Dict[str, Any]
-    ) -> List[HighlightRegion]:
+        self,
+        hsv_image: np.ndarray,
+        color_info: dict[str, Any],
+    ) -> list[HighlightRegion]:
         """Detect highlights of a specific color."""
         # Create color mask
         mask = cv2.inRange(hsv_image, color_info["lower"], color_info["upper"])
@@ -180,12 +182,16 @@ class HighlightDetector:
 
         # Dilate to enhance regions
         mask = cv2.dilate(
-            mask, kernel, iterations=self.detection_params["dilate_iterations"]
+            mask,
+            kernel,
+            iterations=self.detection_params["dilate_iterations"],
         )
 
         # Erode to clean up
         mask = cv2.erode(
-            mask, kernel, iterations=self.detection_params["erode_iterations"]
+            mask,
+            kernel,
+            iterations=self.detection_params["erode_iterations"],
         )
 
         # Find contours
@@ -217,8 +223,9 @@ class HighlightDetector:
         return highlights
 
     def _filter_and_merge_highlights(
-        self, highlights: List[HighlightRegion]
-    ) -> List[HighlightRegion]:
+        self,
+        highlights: list[HighlightRegion],
+    ) -> list[HighlightRegion]:
         """Filter and merge overlapping highlight regions."""
         if not highlights:
             return []
@@ -256,14 +263,16 @@ class HighlightDetector:
         return merged_highlights
 
     def _should_merge_highlights(
-        self, h1: HighlightRegion, h2: HighlightRegion
+        self,
+        h1: HighlightRegion,
+        h2: HighlightRegion,
     ) -> bool:
         """Check if two highlights should be merged."""
         # Calculate distance between centers
         center1 = h1.center
         center2 = h2.center
         distance = np.sqrt(
-            (center1[0] - center2[0]) ** 2 + (center1[1] - center2[1]) ** 2
+            (center1[0] - center2[0]) ** 2 + (center1[1] - center2[1]) ** 2,
         )
 
         # Check if they overlap or are very close
@@ -271,7 +280,9 @@ class HighlightDetector:
         return distance < threshold or self._rectangles_overlap(h1.bbox, h2.bbox)
 
     def _rectangles_overlap(
-        self, rect1: Tuple[int, int, int, int], rect2: Tuple[int, int, int, int]
+        self,
+        rect1: tuple[int, int, int, int],
+        rect2: tuple[int, int, int, int],
     ) -> bool:
         """Check if two rectangles overlap."""
         x1, y1, x2, y2 = rect1
@@ -280,7 +291,8 @@ class HighlightDetector:
         return not (x2 < x3 or x4 < x1 or y2 < y3 or y4 < y1)
 
     def _merge_highlight_group(
-        self, highlights: List[HighlightRegion]
+        self,
+        highlights: list[HighlightRegion],
     ) -> HighlightRegion:
         """Merge a group of highlights into a single region."""
         # Find bounding box that encompasses all highlights
@@ -308,8 +320,10 @@ class HighlightDetector:
         )
 
     def _calculate_confidence_scores(
-        self, highlights: List[HighlightRegion], image: np.ndarray
-    ) -> List[HighlightRegion]:
+        self,
+        highlights: list[HighlightRegion],
+        image: np.ndarray,
+    ) -> list[HighlightRegion]:
         """Calculate confidence scores for detected highlights."""
         if not highlights:
             return []
@@ -354,21 +368,21 @@ class HighlightDetector:
 
         if area < optimal_area:
             return area / optimal_area
-        else:
-            return max(0.0, 1.0 - (area - optimal_area) / (max_area - optimal_area))
+        return max(0.0, 1.0 - (area - optimal_area) / (max_area - optimal_area))
 
     def _calculate_aspect_score(self, aspect_ratio: float) -> float:
         """Calculate score based on aspect ratio."""
         # Prefer roughly rectangular regions (not too thin or too wide)
         if 0.2 <= aspect_ratio <= 5.0:
             return 1.0
-        elif 0.1 <= aspect_ratio <= 10.0:
+        if 0.1 <= aspect_ratio <= 10.0:
             return 0.5
-        else:
-            return 0.1
+        return 0.1
 
     def _calculate_color_score(
-        self, highlight: HighlightRegion, image: np.ndarray
+        self,
+        highlight: HighlightRegion,
+        image: np.ndarray,
     ) -> float:
         """Calculate score based on color consistency."""
         # Extract region from image
@@ -392,7 +406,9 @@ class HighlightDetector:
         return consistency_score
 
     def _calculate_position_score(
-        self, highlight: HighlightRegion, image_shape: Tuple[int, int, int]
+        self,
+        highlight: HighlightRegion,
+        image_shape: tuple[int, int, int],
     ) -> float:
         """Calculate score based on position in image."""
         height, width, _ = image_shape
@@ -405,20 +421,20 @@ class HighlightDetector:
         # This is a heuristic that can be adjusted
         if 0.1 <= rel_x <= 0.8 and 0.2 <= rel_y <= 0.8:
             return 1.0
-        else:
-            return 0.5
+        return 0.5
 
     def detect_bank_statement_highlights(
-        self, image_path: Union[str, Path, Image.Image]
-    ) -> List[HighlightRegion]:
-        """
-        Specialized highlight detection for bank statements.
+        self,
+        image_path: str | Path | Image.Image,
+    ) -> list[HighlightRegion]:
+        """Specialized highlight detection for bank statements.
 
         Args:
             image_path: Path to bank statement image
 
         Returns:
             List of detected highlight regions optimized for bank statements
+
         """
         # Use standard detection but with bank-specific parameters
         original_params = self.detection_params.copy()
@@ -431,7 +447,7 @@ class HighlightDetector:
                     "max_area": 30000,  # Reasonable maximum for statement rows
                     "min_confidence": 0.4,  # Higher confidence threshold
                     "merge_threshold": 5,  # Smaller merge threshold for precise detection
-                }
+                },
             )
 
             highlights = self.detect_highlights(image_path)
@@ -453,12 +469,11 @@ class HighlightDetector:
 
     def export_highlighted_regions(
         self,
-        image_path: Union[str, Path, Image.Image],
-        highlights: List[HighlightRegion],
-        output_dir: Union[str, Path],
-    ) -> List[Path]:
-        """
-        Export highlighted regions as separate image files.
+        image_path: str | Path | Image.Image,
+        highlights: list[HighlightRegion],
+        output_dir: str | Path,
+    ) -> list[Path]:
+        """Export highlighted regions as separate image files.
 
         Args:
             image_path: Original image path
@@ -467,6 +482,7 @@ class HighlightDetector:
 
         Returns:
             List of paths to exported region images
+
         """
         if not highlights:
             return []
@@ -501,7 +517,7 @@ class HighlightDetector:
                 exported_paths.append(output_path)
 
             logger.info(
-                f"Exported {len(exported_paths)} highlight regions to {output_dir}"
+                f"Exported {len(exported_paths)} highlight regions to {output_dir}",
             )
             return exported_paths
 

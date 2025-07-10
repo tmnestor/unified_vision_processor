@@ -1,5 +1,4 @@
-"""
-Batch Processing CLI
+"""Batch Processing CLI
 
 Scalable batch processing interface with comprehensive statistics,
 production monitoring, and parallel processing capabilities.
@@ -10,7 +9,6 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import List, Optional
 
 import typer
 from rich.console import Console
@@ -45,32 +43,52 @@ logger = logging.getLogger(__name__)
 def process(
     dataset_path: str = typer.Argument(..., help="Path to dataset directory"),
     model: str = typer.Option(
-        "internvl3", "--model", "-m", help="Vision model: internvl3 or llama32_vision"
+        "internvl3",
+        "--model",
+        "-m",
+        help="Vision model: internvl3 or llama32_vision",
     ),
     output_dir: str = typer.Option(
-        "./batch_output", "--output", "-o", help="Output directory for results"
+        "./batch_output",
+        "--output",
+        "-o",
+        help="Output directory for results",
     ),
-    max_documents: Optional[int] = typer.Option(
-        None, "--max", "-n", help="Maximum number of documents to process"
+    max_documents: int | None = typer.Option(
+        None,
+        "--max",
+        "-n",
+        help="Maximum number of documents to process",
     ),
     workers: int = typer.Option(
-        4, "--workers", "-w", help="Number of parallel workers (1-16)"
+        4,
+        "--workers",
+        "-w",
+        help="Number of parallel workers (1-16)",
     ),
     confidence_threshold: float = typer.Option(
-        0.7, "--threshold", "-t", help="Confidence threshold for production readiness"
+        0.7,
+        "--threshold",
+        "-t",
+        help="Confidence threshold for production readiness",
     ),
     generate_report: bool = typer.Option(
-        True, "--report/--no-report", help="Generate comprehensive HTML report"
+        True,
+        "--report/--no-report",
+        help="Generate comprehensive HTML report",
     ),
     monitor_quality: bool = typer.Option(
-        True, "--monitor/--no-monitor", help="Enable real-time quality monitoring"
+        True,
+        "--monitor/--no-monitor",
+        help="Enable real-time quality monitoring",
     ),
     fail_fast: bool = typer.Option(
-        False, "--fail-fast/--continue-on-error", help="Stop processing on first error"
+        False,
+        "--fail-fast/--continue-on-error",
+        help="Stop processing on first error",
     ),
 ) -> None:
-    """
-    Process multiple documents with production monitoring.
+    """Process multiple documents with production monitoring.
 
     Provides comprehensive batch processing with parallel execution,
     real-time quality monitoring, and detailed statistics using the
@@ -102,7 +120,7 @@ def process(
             f"Workers: [cyan]{workers}[/cyan]\n"
             f"Output: [blue]{output_directory}[/blue]",
             title="Batch Configuration",
-        )
+        ),
     )
 
     try:
@@ -125,11 +143,18 @@ def process(
 
         if workers == 1:
             results = _process_sequential(
-                image_files, config, monitor_quality, fail_fast
+                image_files,
+                config,
+                monitor_quality,
+                fail_fast,
             )
         else:
             results = _process_parallel(
-                image_files, config, workers, monitor_quality, fail_fast
+                image_files,
+                config,
+                workers,
+                monitor_quality,
+                fail_fast,
             )
 
         total_time = time.time() - start_time
@@ -152,7 +177,10 @@ def process(
                 output_directory / f"batch_report_{model}_{int(time.time())}.html"
             )
             _generate_comprehensive_report(
-                results, analysis, model_type.value, report_file
+                results,
+                analysis,
+                model_type.value,
+                report_file,
             )
             console.print(f"[green]📊 Comprehensive report: {report_file}[/green]")
 
@@ -160,7 +188,7 @@ def process(
         _display_production_summary(analysis)
 
         console.print(
-            f"[green]✅ Batch processing completed in {total_time:.1f}s[/green]"
+            f"[green]✅ Batch processing completed in {total_time:.1f}s[/green]",
         )
 
         # Exit with appropriate code
@@ -183,14 +211,19 @@ def monitor(
     dataset_path: str = typer.Argument(..., help="Path to dataset directory"),
     model: str = typer.Option("internvl3", "--model", "-m", help="Vision model to use"),
     sample_size: int = typer.Option(
-        10, "--sample", "-s", help="Number of documents to sample for monitoring"
+        10,
+        "--sample",
+        "-s",
+        help="Number of documents to sample for monitoring",
     ),
     refresh_interval: int = typer.Option(
-        30, "--interval", "-i", help="Monitoring refresh interval in seconds"
+        30,
+        "--interval",
+        "-i",
+        help="Monitoring refresh interval in seconds",
     ),
 ) -> None:
-    """
-    Real-time production monitoring of document processing.
+    """Real-time production monitoring of document processing.
 
     Continuously monitors processing quality and performance metrics
     for production deployment validation.
@@ -213,12 +246,15 @@ def monitor(
             f"Sample Size: [cyan]{sample_size}[/cyan]\n"
             f"Refresh: [green]{refresh_interval}s[/green]",
             title="Monitoring Configuration",
-        )
+        ),
     )
 
     try:
         _run_production_monitoring(
-            dataset_dir, model_type, sample_size, refresh_interval
+            dataset_dir,
+            model_type,
+            sample_size,
+            refresh_interval,
         )
     except KeyboardInterrupt:
         console.print("\n[yellow]📊 Monitoring stopped[/yellow]")
@@ -228,14 +264,18 @@ def monitor(
 def analyze(
     results_file: str = typer.Argument(..., help="Path to batch results JSON file"),
     output_format: str = typer.Option(
-        "table", "--format", "-f", help="Output format: table, json, detailed"
+        "table",
+        "--format",
+        "-f",
+        help="Output format: table, json, detailed",
     ),
-    export_csv: Optional[str] = typer.Option(
-        None, "--csv", help="Export statistics to CSV file"
+    export_csv: str | None = typer.Option(
+        None,
+        "--csv",
+        help="Export statistics to CSV file",
     ),
 ) -> None:
-    """
-    Analyze existing batch processing results.
+    """Analyze existing batch processing results.
 
     Provides detailed analysis of batch processing results including
     quality distributions, performance metrics, and recommendations.
@@ -274,7 +314,7 @@ def analyze(
         raise typer.Exit(1) from None
 
 
-def _find_image_files(dataset_dir: Path, max_documents: Optional[int]) -> List[Path]:
+def _find_image_files(dataset_dir: Path, max_documents: int | None) -> list[Path]:
     """Find all image files in dataset directory."""
     extensions = ["*.jpg", "*.jpeg", "*.png", "*.bmp", "*.tiff"]
     image_files = []
@@ -293,11 +333,11 @@ def _find_image_files(dataset_dir: Path, max_documents: Optional[int]) -> List[P
 
 
 def _process_sequential(
-    image_files: List[Path],
+    image_files: list[Path],
     config: UnifiedConfig,
     monitor_quality: bool,
     fail_fast: bool,
-) -> List[dict]:
+) -> list[dict]:
     """Process documents sequentially with progress tracking."""
     results = []
 
@@ -331,7 +371,7 @@ def _process_sequential(
                             "success": True,
                             "result": result,
                             "processing_order": i,
-                        }
+                        },
                     )
 
                     # Update progress with quality info
@@ -352,7 +392,7 @@ def _process_sequential(
                             "success": False,
                             "error": str(e),
                             "processing_order": i,
-                        }
+                        },
                     )
 
                     if fail_fast:
@@ -366,12 +406,12 @@ def _process_sequential(
 
 
 def _process_parallel(
-    image_files: List[Path],
+    image_files: list[Path],
     config: UnifiedConfig,
     workers: int,
     monitor_quality: bool,
     fail_fast: bool,
-) -> List[dict]:
+) -> list[dict]:
     """Process documents in parallel with progress tracking."""
     results = []
 
@@ -390,7 +430,8 @@ def _process_parallel(
 
     with progress:
         task = progress.add_task(
-            f"Processing with {workers} workers...", total=len(image_files)
+            f"Processing with {workers} workers...",
+            total=len(image_files),
         )
 
         with ThreadPoolExecutor(max_workers=workers) as executor:
@@ -398,7 +439,10 @@ def _process_parallel(
             future_to_image = {}
             for i, image_file in enumerate(image_files):
                 future = executor.submit(
-                    _process_single_document, image_file, config, i
+                    _process_single_document,
+                    image_file,
+                    config,
+                    i,
                 )
                 future_to_image[future] = image_file
 
@@ -439,7 +483,7 @@ def _process_parallel(
                             "success": False,
                             "error": str(e),
                             "processing_order": -1,
-                        }
+                        },
                     )
 
                     if fail_fast:
@@ -458,7 +502,9 @@ def _process_parallel(
 
 
 def _process_single_document(
-    image_file: Path, config: UnifiedConfig, order: int
+    image_file: Path,
+    config: UnifiedConfig,
+    order: int,
 ) -> dict:
     """Process a single document (for parallel execution)."""
     try:
@@ -482,7 +528,9 @@ def _process_single_document(
 
 
 def _analyze_batch_results(
-    results: List[dict], total_time: float, confidence_threshold: float
+    results: list[dict],
+    total_time: float,
+    confidence_threshold: float,
 ) -> dict:
     """Analyze batch processing results comprehensively."""
     successful_results = [r for r in results if r["success"]]
@@ -607,7 +655,9 @@ def _display_batch_analysis(analysis: dict, model_name: str) -> None:
     summary = analysis["summary"]
     summary_table.add_row("Total Documents", str(summary["total_documents"]), "📄")
     summary_table.add_row(
-        "Successful", f"{summary['successful']}/{summary['total_documents']}", "✅"
+        "Successful",
+        f"{summary['successful']}/{summary['total_documents']}",
+        "✅",
     )
     summary_table.add_row(
         "Success Rate",
@@ -620,13 +670,15 @@ def _display_batch_analysis(analysis: dict, model_name: str) -> None:
     )
     summary_table.add_row("Total Time", f"{summary['total_processing_time']:.1f}s", "⏱️")
     summary_table.add_row(
-        "Avg Time/Doc", f"{summary['average_processing_time']:.2f}s", "📈"
+        "Avg Time/Doc",
+        f"{summary['average_processing_time']:.2f}s",
+        "📈",
     )
 
     console.print(summary_table)
 
     # Quality distribution
-    if "quality_distribution" in analysis and analysis["quality_distribution"]:
+    if analysis.get("quality_distribution"):
         quality_table = Table(title="🎯 Quality Distribution")
         quality_table.add_column("Quality Grade", style="cyan")
         quality_table.add_column("Count", justify="center")
@@ -710,7 +762,10 @@ def _display_production_summary(analysis: dict) -> None:
 
 
 def _run_production_monitoring(
-    dataset_dir: Path, model_type: ModelType, sample_size: int, refresh_interval: int
+    dataset_dir: Path,
+    model_type: ModelType,
+    sample_size: int,
+    refresh_interval: int,
 ) -> None:
     """Run real-time production monitoring."""
     config = UnifiedConfig.from_env()
@@ -741,7 +796,9 @@ def _run_production_monitoring(
 
                 # Analyze sample
                 analysis = _analyze_batch_results(
-                    results, processing_time, config.confidence_threshold
+                    results,
+                    processing_time,
+                    config.confidence_threshold,
                 )
 
                 # Update monitoring table
@@ -774,7 +831,8 @@ def _run_production_monitoring(
 
                 # Processing speed
                 docs_per_sec = analysis.get("performance_metrics", {}).get(
-                    "documents_per_second", 0
+                    "documents_per_second",
+                    0,
                 )
                 monitoring_table.add_row(
                     "Processing Speed",
@@ -789,7 +847,8 @@ def _run_production_monitoring(
 
                 # Confidence
                 avg_confidence = analysis.get("confidence_analysis", {}).get(
-                    "average_confidence", 0
+                    "average_confidence",
+                    0,
                 )
                 monitoring_table.add_row(
                     "Avg Confidence",
@@ -818,7 +877,7 @@ def _run_production_monitoring(
                 time.sleep(refresh_interval)
 
 
-def _save_batch_results(results: List[dict], analysis: dict, output_file: Path) -> None:
+def _save_batch_results(results: list[dict], analysis: dict, output_file: Path) -> None:
     """Save batch results and analysis to JSON file."""
     # Convert results to JSON-serializable format
     serializable_results = []
@@ -862,7 +921,10 @@ def _save_batch_results(results: List[dict], analysis: dict, output_file: Path) 
 
 
 def _generate_comprehensive_report(
-    results: List[dict], analysis: dict, model_name: str, report_file: Path
+    results: list[dict],
+    analysis: dict,
+    model_name: str,
+    report_file: Path,
 ) -> None:
     """Generate comprehensive HTML report."""
     from datetime import datetime
@@ -975,7 +1037,7 @@ def _generate_comprehensive_report(
         f.write(html_content)
 
 
-def _display_detailed_analysis(results: List[dict], analysis: dict) -> None:
+def _display_detailed_analysis(results: list[dict], analysis: dict) -> None:
     """Display detailed analysis with individual document results."""
     _display_batch_analysis(analysis, "Detailed Analysis")
 
@@ -992,7 +1054,9 @@ def _display_detailed_analysis(results: List[dict], analysis: dict) -> None:
 
         # Show top 10 by confidence
         sorted_results = sorted(
-            successful_results, key=lambda x: x["result"].confidence_score, reverse=True
+            successful_results,
+            key=lambda x: x["result"].confidence_score,
+            reverse=True,
         )
 
         for result_entry in sorted_results[:10]:
@@ -1008,7 +1072,7 @@ def _display_detailed_analysis(results: List[dict], analysis: dict) -> None:
         console.print(doc_table)
 
 
-def _export_to_csv(results: List[dict], csv_file: str) -> None:
+def _export_to_csv(results: list[dict], csv_file: str) -> None:
     """Export results to CSV file."""
     import csv
 
@@ -1029,7 +1093,7 @@ def _export_to_csv(results: List[dict], csv_file: str) -> None:
                 "ATO Compliance",
                 "AWK Fallback",
                 "Highlights Detected",
-            ]
+            ],
         )
 
         # Write data
@@ -1046,7 +1110,7 @@ def _export_to_csv(results: List[dict], csv_file: str) -> None:
                     result.ato_compliance_score,
                     result.awk_fallback_used,
                     result.highlights_detected,
-                ]
+                ],
             )
 
 

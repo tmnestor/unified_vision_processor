@@ -1,11 +1,10 @@
-"""
-Accommodation Handler
+"""Accommodation Handler
 
 Specialized handler for accommodation receipts following the Llama 7-step pipeline.
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from .base_ato_handler import BaseATOHandler
 
@@ -22,8 +21,8 @@ class AccommodationHandler(BaseATOHandler):
     def _load_validation_rules(self) -> None:
         self.validation_rules = {"total_amount_range": (50.0, 5000.0)}
 
-    def _extract_document_specific_fields(self, _text: str) -> Dict[str, Any]:
+    def _extract_document_specific_fields(self, _text: str) -> dict[str, Any]:
         return {}
 
-    def _validate_document_specific_fields(self, _fields: Dict[str, Any]) -> List[str]:
+    def _validate_document_specific_fields(self, _fields: dict[str, Any]) -> list[str]:
         return []

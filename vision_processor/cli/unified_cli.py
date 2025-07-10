@@ -1,5 +1,4 @@
-"""
-Unified CLI - Main Command Interface
+"""Unified CLI - Main Command Interface
 
 Comprehensive command-line interface for the unified vision processor using
 the Llama 7-step pipeline with model selection and production features.
@@ -7,7 +6,6 @@ the Llama 7-step pipeline with model selection and production features.
 
 import logging
 from pathlib import Path
-from typing import List, Optional
 
 import typer
 from rich.console import Console
@@ -40,18 +38,26 @@ def process(
         "-m",
         help="Vision model to use: internvl3 or llama32_vision",
     ),
-    document_type: Optional[str] = typer.Option(
-        None, "--type", "-t", help="Document type (auto-detect if not specified)"
+    document_type: str | None = typer.Option(
+        None,
+        "--type",
+        "-t",
+        help="Document type (auto-detect if not specified)",
     ),
-    output_path: Optional[str] = typer.Option(
-        None, "--output", "-o", help="Output path for results (JSON format)"
+    output_path: str | None = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output path for results (JSON format)",
     ),
     verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Enable verbose output"
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose output",
     ),
 ) -> None:
-    """
-    Process a single document using the unified Llama pipeline.
+    """Process a single document using the unified Llama pipeline.
 
     Supports both InternVL3 and Llama-3.2-Vision models with identical
     7-step processing pipeline for fair comparison.
@@ -69,7 +75,7 @@ def process(
         except ValueError:
             console.print(f"[red]❌ Invalid model: {model}[/red]")
             console.print(
-                f"Available models: {', '.join([m.value for m in ModelType])}"
+                f"Available models: {', '.join([m.value for m in ModelType])}",
             )
             raise typer.Exit(1) from None
 
@@ -110,20 +116,30 @@ def batch(
     dataset_path: str = typer.Argument(..., help="Path to dataset directory"),
     model: str = typer.Option("internvl3", "--model", "-m", help="Vision model to use"),
     output_dir: str = typer.Option(
-        "./output", "--output", "-o", help="Output directory for results"
+        "./output",
+        "--output",
+        "-o",
+        help="Output directory for results",
     ),
-    max_documents: Optional[int] = typer.Option(
-        None, "--max", "-n", help="Maximum number of documents to process"
+    max_documents: int | None = typer.Option(
+        None,
+        "--max",
+        "-n",
+        help="Maximum number of documents to process",
     ),
     _workers: int = typer.Option(
-        1, "--workers", "-w", help="Number of parallel workers"
+        1,
+        "--workers",
+        "-w",
+        help="Number of parallel workers",
     ),
     generate_report: bool = typer.Option(
-        True, "--report/--no-report", help="Generate processing report"
+        True,
+        "--report/--no-report",
+        help="Generate processing report",
     ),
 ) -> None:
-    """
-    Process multiple documents in batch using the unified pipeline.
+    """Process multiple documents in batch using the unified pipeline.
 
     Provides comprehensive statistics and production readiness assessment
     using the Llama 5-level quality system.
@@ -157,7 +173,8 @@ def batch(
 
         with Progress() as progress:
             task = progress.add_task(
-                f"[green]Processing with {model}...", total=len(image_files)
+                f"[green]Processing with {model}...",
+                total=len(image_files),
             )
 
             with UnifiedExtractionManager(config) as extraction_manager:
@@ -169,7 +186,7 @@ def batch(
                                 "image_file": image_file.name,
                                 "success": True,
                                 "result": result,
-                            }
+                            },
                         )
 
                         progress.update(
@@ -184,7 +201,7 @@ def batch(
                                 "image_file": image_file.name,
                                 "success": False,
                                 "error": str(e),
-                            }
+                            },
                         )
 
                         progress.update(task, advance=1)
@@ -226,15 +243,20 @@ def compare(
         "-o",
         help="Output directory for comparison results",
     ),
-    max_documents: Optional[int] = typer.Option(
-        None, "--max", "-n", help="Maximum number of documents to evaluate"
+    max_documents: int | None = typer.Option(
+        None,
+        "--max",
+        "-n",
+        help="Maximum number of documents to evaluate",
     ),
     report_format: str = typer.Option(
-        "html", "--format", "-f", help="Report format: html, json, or text"
+        "html",
+        "--format",
+        "-f",
+        help="Report format: html, json, or text",
     ),
 ) -> None:
-    """
-    Compare multiple models using identical Llama pipeline for fairness.
+    """Compare multiple models using identical Llama pipeline for fairness.
 
     Ensures unbiased comparison by using the same 7-step processing pipeline
     for all models, eliminating architectural differences.
@@ -256,7 +278,7 @@ def compare(
 
         if not gt_dir.exists():
             console.print(
-                f"[red]❌ Ground truth directory not found: {ground_truth_path}[/red]"
+                f"[red]❌ Ground truth directory not found: {ground_truth_path}[/red]",
             )
             raise typer.Exit(1) from None
 
@@ -305,11 +327,12 @@ def evaluate(
         help="Output directory for evaluation results",
     ),
     enhanced_fields: bool = typer.Option(
-        True, "--enhanced/--standard", help="Use enhanced Australian tax fields"
+        True,
+        "--enhanced/--standard",
+        help="Use enhanced Australian tax fields",
     ),
 ) -> None:
-    """
-    Evaluate model on SROIE dataset with Australian tax enhancements.
+    """Evaluate model on SROIE dataset with Australian tax enhancements.
 
     Provides specialized evaluation for receipt processing with ATO compliance
     and Australian business context validation.
@@ -333,7 +356,10 @@ def evaluate(
         # Perform SROIE evaluation
         with console.status(f"[bold green]Evaluating {model} on SROIE dataset..."):
             evaluation_result = evaluator.evaluate_sroie_dataset(
-                dataset_path, ground_truth_path, model, enhanced_fields
+                dataset_path,
+                ground_truth_path,
+                model,
+                enhanced_fields,
             )
 
         # Display evaluation results
@@ -371,13 +397,17 @@ def _display_processing_result(result) -> None:
     table.add_row("Confidence Score", f"{result.confidence_score:.3f}", "📊")
     table.add_row("Quality Grade", result.quality_grade.value.title(), "🎯")
     table.add_row(
-        "Production Ready", "✅ Yes" if result.production_ready else "❌ No", "🏭"
+        "Production Ready",
+        "✅ Yes" if result.production_ready else "❌ No",
+        "🏭",
     )
     table.add_row("ATO Compliance", f"{result.ato_compliance_score:.3f}", "🇦🇺")
 
     # Add pipeline info
     table.add_row(
-        "AWK Fallback Used", "Yes" if result.awk_fallback_used else "No", "🔄"
+        "AWK Fallback Used",
+        "Yes" if result.awk_fallback_used else "No",
+        "🔄",
     )
     table.add_row("Highlights Detected", str(result.highlights_detected), "🔍")
 
@@ -396,7 +426,7 @@ def _display_processing_result(result) -> None:
         console.print(field_table)
 
 
-def _display_batch_statistics(results: List[dict], model: str) -> None:
+def _display_batch_statistics(results: list[dict], model: str) -> None:
     """Display batch processing statistics."""
     successful = [r for r in results if r["success"]]
     failed = [r for r in results if not r["success"]]
@@ -432,7 +462,8 @@ def _display_batch_statistics(results: List[dict], model: str) -> None:
             f"{production_ready}/{len(successful)} ({production_ready / len(successful):.1%})",
         )
         stats_table.add_row(
-            "Avg Processing Time", f"{total_time / len(successful):.2f}s"
+            "Avg Processing Time",
+            f"{total_time / len(successful):.2f}s",
         )
 
         # Quality distribution
@@ -469,16 +500,17 @@ def _display_comparison_results(comparison_result) -> None:
 
     # Deployment recommendation
     deployment = comparison_result.deployment_recommendations.get(
-        "production_deployment", {}
+        "production_deployment",
+        {},
     )
 
     if deployment.get("status") == "ready":
         console.print(
-            f"[green]✅ Recommended for production: {deployment['model']}[/green]"
+            f"[green]✅ Recommended for production: {deployment['model']}[/green]",
         )
     elif deployment.get("status") == "conditional":
         console.print(
-            f"[yellow]⚠️ Conditional recommendation: {deployment['model']}[/yellow]"
+            f"[yellow]⚠️ Conditional recommendation: {deployment['model']}[/yellow]",
         )
     else:
         console.print("[red]❌ No model ready for production deployment[/red]")
@@ -497,7 +529,8 @@ def _display_sroie_results(evaluation_result: dict) -> None:
     overall_table.add_row("Success Rate", f"{overall['success_rate']:.1%}")
     overall_table.add_row("Total Documents", str(overall["total_documents"]))
     overall_table.add_row(
-        "Successful Extractions", str(overall["successful_documents"])
+        "Successful Extractions",
+        str(overall["successful_documents"]),
     )
 
     console.print(overall_table)
@@ -547,7 +580,7 @@ def _save_processing_result(result, output_path: str) -> None:
         json.dump(result_dict, f, indent=2, default=str)
 
 
-def _save_batch_results(results: List[dict], output_file: Path) -> None:
+def _save_batch_results(results: list[dict], output_file: Path) -> None:
     """Save batch results to JSON file."""
     import json
 
@@ -580,7 +613,7 @@ def _save_batch_results(results: List[dict], output_file: Path) -> None:
         json.dump(serializable_results, f, indent=2, default=str)
 
 
-def _generate_batch_report(results: List[dict], model: str, report_file: Path) -> None:
+def _generate_batch_report(results: list[dict], model: str, report_file: Path) -> None:
     """Generate HTML batch processing report."""
     successful = [r for r in results if r["success"]]
 

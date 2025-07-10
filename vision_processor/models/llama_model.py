@@ -1,5 +1,4 @@
-"""
-Llama-3.2-Vision Model Implementation
+"""Llama-3.2-Vision Model Implementation
 
 Implements Llama-3.2-Vision with graceful degradation, 7-step pipeline integration,
 and production optimizations for single GPU deployment.
@@ -10,7 +9,7 @@ import logging
 import time
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import torch
 from PIL import Image
@@ -27,8 +26,7 @@ logger = logging.getLogger(__name__)
 
 
 class LlamaVisionModel(BaseVisionModel):
-    """
-    Llama-3.2-Vision implementation with production optimizations.
+    """Llama-3.2-Vision implementation with production optimizations.
 
     Features:
     - Single GPU optimization with 8-bit quantization
@@ -71,7 +69,7 @@ class LlamaVisionModel(BaseVisionModel):
 
         return device
 
-    def _get_quantization_config(self) -> Optional[BitsAndBytesConfig]:
+    def _get_quantization_config(self) -> BitsAndBytesConfig | None:
         """Get quantization configuration if enabled."""
         if not self.enable_quantization:
             return None
@@ -88,17 +86,15 @@ class LlamaVisionModel(BaseVisionModel):
             logger.warning("BitsAndBytesConfig not available - falling back to FP16")
             return None
 
-    def _detect_device_mapping(self) -> Union[str, Dict[str, int]]:
+    def _detect_device_mapping(self) -> str | dict[str, int]:
         """Detect optimal device mapping based on hardware."""
         if self.device.type == "cuda":
             if torch.cuda.device_count() > 1:
                 return "balanced"  # Distribute across multiple GPUs
-            else:
-                return "cuda:0"  # Single GPU
-        elif self.device.type == "mps":
+            return "cuda:0"  # Single GPU
+        if self.device.type == "mps":
             return "mps"
-        else:
-            return "cpu"
+        return "cpu"
 
     def load_model(self) -> None:
         """Load Llama-3.2-Vision model with auto-configuration."""
@@ -151,13 +147,16 @@ class LlamaVisionModel(BaseVisionModel):
                 processor_config["local_files_only"] = True
 
             self.processor = AutoProcessor.from_pretrained(
-                str(self.model_path), trust_remote_code=True, **processor_config
+                str(self.model_path),
+                trust_remote_code=True,
+                **processor_config,
             )
             logger.info("Processor loaded successfully")
 
             # Load model
             self.model = MllamaForConditionalGeneration.from_pretrained(
-                str(self.model_path), **model_loading_args
+                str(self.model_path),
+                **model_loading_args,
             ).eval()
 
             # Move to device if needed (CPU only)
@@ -239,7 +238,8 @@ class LlamaVisionModel(BaseVisionModel):
             logger.warning(f"Model functionality test failed: {e}")
 
     def _preprocess_image(
-        self, image_path: Union[str, Path, Image.Image]
+        self,
+        image_path: str | Path | Image.Image,
     ) -> Image.Image:
         """Preprocess image for Llama-3.2-Vision compatibility."""
         # Load image
@@ -260,7 +260,7 @@ class LlamaVisionModel(BaseVisionModel):
 
         return image
 
-    def _prepare_inputs(self, image: Image.Image, prompt: str) -> Dict[str, Any]:
+    def _prepare_inputs(self, image: Image.Image, prompt: str) -> dict[str, Any]:
         """Prepare inputs for model inference."""
         # Ensure prompt includes image token
         if not prompt.startswith("<|image|>"):
@@ -270,11 +270,13 @@ class LlamaVisionModel(BaseVisionModel):
 
         # Process inputs
         inputs = self.processor(
-            text=prompt_with_image, images=image, return_tensors="pt"
+            text=prompt_with_image,
+            images=image,
+            return_tensors="pt",
         )
 
         logger.debug(
-            f"Input shapes - IDs: {inputs['input_ids'].shape}, Pixels: {inputs['pixel_values'].shape}"
+            f"Input shapes - IDs: {inputs['input_ids'].shape}, Pixels: {inputs['pixel_values'].shape}",
         )
 
         # Move to correct device
@@ -296,12 +298,18 @@ class LlamaVisionModel(BaseVisionModel):
 
         # Remove excessive repetition of longer phrases
         response = re.sub(
-            r"\b((?:\w+\s+){1,3})(?:\1){2,}", r"\1", response, flags=re.IGNORECASE
+            r"\b((?:\w+\s+){1,3})(?:\1){2,}",
+            r"\1",
+            response,
+            flags=re.IGNORECASE,
         )
 
         # Remove excessive repetition of short tokens
         response = re.sub(
-            r"\b(\w{1,5})\s+(?:\1\s+){4,}", "", response, flags=re.IGNORECASE
+            r"\b(\w{1,5})\s+(?:\1\s+){4,}",
+            "",
+            response,
+            flags=re.IGNORECASE,
         )
 
         # Stop at common receipt endings
@@ -328,10 +336,12 @@ class LlamaVisionModel(BaseVisionModel):
         return response.strip()
 
     def process_image(
-        self, image_path: Union[str, Path, Image.Image], prompt: str, **kwargs
+        self,
+        image_path: str | Path | Image.Image,
+        prompt: str,
+        **kwargs,
     ) -> ModelResponse:
-        """
-        Process image with Llama-3.2-Vision model.
+        """Process image with Llama-3.2-Vision model.
 
         Args:
             image_path: Path to image file or PIL Image
@@ -340,6 +350,7 @@ class LlamaVisionModel(BaseVisionModel):
 
         Returns:
             ModelResponse with standardized format
+
         """
         if not self.is_loaded:
             self.load_model()
@@ -407,10 +418,10 @@ class LlamaVisionModel(BaseVisionModel):
 
     def process_batch(
         self,
-        image_paths: List[Union[str, Path, Image.Image]],
-        prompts: List[str],
+        image_paths: list[str | Path | Image.Image],
+        prompts: list[str],
         **kwargs,
-    ) -> List[ModelResponse]:
+    ) -> list[ModelResponse]:
         """Process multiple images in batch."""
         results = []
 
@@ -422,7 +433,7 @@ class LlamaVisionModel(BaseVisionModel):
                 logger.error(f"Failed to process image: {e}")
                 # Create error response
                 error_response = ModelResponse(
-                    raw_text=f"Error: {str(e)}",
+                    raw_text=f"Error: {e!s}",
                     confidence=0.0,
                     processing_time=0.0,
                     device_used=str(self.device),
@@ -436,16 +447,17 @@ class LlamaVisionModel(BaseVisionModel):
         return results
 
     def classify_document(
-        self, image_path: Union[str, Path, Image.Image]
-    ) -> Dict[str, Any]:
-        """
-        Classify document type using Llama-3.2-Vision.
+        self,
+        image_path: str | Path | Image.Image,
+    ) -> dict[str, Any]:
+        """Classify document type using Llama-3.2-Vision.
 
         Args:
             image_path: Path to image file or PIL Image
 
         Returns:
             Classification result dictionary
+
         """
         classification_prompt = """<|image|>Analyze document structure and format. Classify based on layout patterns:
 
@@ -497,7 +509,7 @@ Output document type only."""
             return {
                 "document_type": "unknown",
                 "confidence": 0.0,
-                "classification_response": f"Error: {str(e)}",
+                "classification_response": f"Error: {e!s}",
                 "is_business_document": False,
             }
 

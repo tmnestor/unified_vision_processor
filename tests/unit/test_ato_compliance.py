@@ -7,6 +7,7 @@ validation rules from both InternVL and Llama systems.
 
 import pytest
 
+from vision_processor.classification import DocumentType
 from vision_processor.compliance.ato_compliance_validator import ATOComplianceValidator
 from vision_processor.compliance.australian_business_registry import (
     AustralianBusinessRegistry,
@@ -17,7 +18,6 @@ from vision_processor.compliance.field_validators import (
     DateValidator,
     GSTValidator,
 )
-from vision_processor.extraction.pipeline_components import DocumentType
 
 
 class TestATOComplianceValidator:

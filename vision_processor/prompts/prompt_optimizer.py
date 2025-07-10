@@ -1,11 +1,10 @@
-"""
-Prompt Optimizer
+"""Prompt Optimizer
 
 Performance optimization system for prompt selection and effectiveness tracking.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from ..extraction.pipeline_components import DocumentType
 
@@ -13,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class PromptOptimizer:
-    """
-    Optimize prompt performance and selection based on extraction results.
+    """Optimize prompt performance and selection based on extraction results.
 
     Features:
     - Performance tracking by document type and prompt strategy
@@ -28,8 +26,8 @@ class PromptOptimizer:
         self.initialized = False
 
         # Performance tracking
-        self.performance_data: Dict[str, Dict[str, List[float]]] = {}
-        self.usage_statistics: Dict[str, Dict[str, int]] = {}
+        self.performance_data: dict[str, dict[str, list[float]]] = {}
+        self.usage_statistics: dict[str, dict[str, int]] = {}
 
         # Optimization settings
         self.min_samples_for_optimization = 10
@@ -58,8 +56,7 @@ class PromptOptimizer:
         extraction_accuracy: float,
         _processing_time: float = 0.0,
     ) -> None:
-        """
-        Record performance metrics for a prompt strategy.
+        """Record performance metrics for a prompt strategy.
 
         Args:
             document_type: Type of document processed
@@ -67,6 +64,7 @@ class PromptOptimizer:
             confidence_score: Confidence in extraction (0-1)
             extraction_accuracy: Accuracy of extraction (0-1)
             processing_time: Time taken for processing (seconds)
+
         """
         if not self.initialized:
             self.initialize()
@@ -89,18 +87,18 @@ class PromptOptimizer:
         self.usage_statistics[doc_type_str][prompt_strategy] += 1
 
         logger.debug(
-            f"Recorded performance for {doc_type_str}/{prompt_strategy}: {performance_score:.3f}"
+            f"Recorded performance for {doc_type_str}/{prompt_strategy}: {performance_score:.3f}",
         )
 
-    def get_optimal_strategy(self, document_type: DocumentType) -> Optional[str]:
-        """
-        Get the optimal prompt strategy for a document type.
+    def get_optimal_strategy(self, document_type: DocumentType) -> str | None:
+        """Get the optimal prompt strategy for a document type.
 
         Args:
             document_type: Type of document
 
         Returns:
             Optimal prompt strategy name, or None if insufficient data
+
         """
         if not self.initialized:
             self.initialize()
@@ -129,15 +127,15 @@ class PromptOptimizer:
 
         return None
 
-    def get_performance_analysis(self, document_type: DocumentType) -> Dict[str, Any]:
-        """
-        Get detailed performance analysis for a document type.
+    def get_performance_analysis(self, document_type: DocumentType) -> dict[str, Any]:
+        """Get detailed performance analysis for a document type.
 
         Args:
             document_type: Type of document
 
         Returns:
             Dictionary with performance statistics
+
         """
         doc_type_str = document_type.value
         strategies = self.performance_data[doc_type_str]
@@ -169,7 +167,7 @@ class PromptOptimizer:
 
         return analysis
 
-    def _generate_recommendations(self, analysis: Dict[str, Any]) -> List[str]:
+    def _generate_recommendations(self, analysis: dict[str, Any]) -> list[str]:
         """Generate optimization recommendations based on analysis."""
         recommendations = []
         strategies = analysis["strategies"]
@@ -180,10 +178,12 @@ class PromptOptimizer:
 
         # Find best and worst performing strategies
         best_strategy = max(
-            strategies.items(), key=lambda x: x[1]["average_performance"]
+            strategies.items(),
+            key=lambda x: x[1]["average_performance"],
         )
         worst_strategy = min(
-            strategies.items(), key=lambda x: x[1]["average_performance"]
+            strategies.items(),
+            key=lambda x: x[1]["average_performance"],
         )
 
         # Performance gap analysis
@@ -194,30 +194,32 @@ class PromptOptimizer:
 
         if performance_gap > 0.2:
             recommendations.append(
-                f"Significant performance gap detected. Prefer '{best_strategy[0]}' over '{worst_strategy[0]}'"
+                f"Significant performance gap detected. Prefer '{best_strategy[0]}' over '{worst_strategy[0]}'",
             )
 
         # Sample size recommendations
         for strategy, stats in strategies.items():
             if stats["sample_count"] < self.min_samples_for_optimization:
                 recommendations.append(
-                    f"Strategy '{strategy}' needs more samples ({stats['sample_count']}/{self.min_samples_for_optimization})"
+                    f"Strategy '{strategy}' needs more samples ({stats['sample_count']}/{self.min_samples_for_optimization})",
                 )
 
         # Performance threshold recommendations
         for strategy, stats in strategies.items():
             if stats["average_performance"] < self.performance_threshold:
                 recommendations.append(
-                    f"Strategy '{strategy}' below performance threshold ({stats['average_performance']:.3f} < {self.performance_threshold})"
+                    f"Strategy '{strategy}' below performance threshold ({stats['average_performance']:.3f} < {self.performance_threshold})",
                 )
 
         return recommendations
 
     def compare_strategies(
-        self, document_type: DocumentType, strategy1: str, strategy2: str
-    ) -> Dict[str, Any]:
-        """
-        Compare performance between two strategies.
+        self,
+        document_type: DocumentType,
+        strategy1: str,
+        strategy2: str,
+    ) -> dict[str, Any]:
+        """Compare performance between two strategies.
 
         Args:
             document_type: Type of document
@@ -226,6 +228,7 @@ class PromptOptimizer:
 
         Returns:
             Comparison results
+
         """
         doc_type_str = document_type.value
 
@@ -244,13 +247,13 @@ class PromptOptimizer:
 
         if strategy1_data:
             comparison["strategy1"]["performance"] = sum(strategy1_data) / len(
-                strategy1_data
+                strategy1_data,
             )
             comparison["strategy1"]["samples"] = len(strategy1_data)
 
         if strategy2_data:
             comparison["strategy2"]["performance"] = sum(strategy2_data) / len(
-                strategy2_data
+                strategy2_data,
             )
             comparison["strategy2"]["samples"] = len(strategy2_data)
 
@@ -265,7 +268,8 @@ class PromptOptimizer:
             if perf1 > perf2:
                 comparison["winner"] = strategy1
                 comparison["confidence"] = min(
-                    (perf1 - perf2) * 5, 1.0
+                    (perf1 - perf2) * 5,
+                    1.0,
                 )  # Scale difference
             elif perf2 > perf1:
                 comparison["winner"] = strategy2
@@ -293,7 +297,7 @@ class PromptOptimizer:
 
         return comparison
 
-    def get_optimization_summary(self) -> Dict[str, Any]:
+    def get_optimization_summary(self) -> dict[str, Any]:
         """Get comprehensive optimization summary across all document types."""
         summary = {
             "total_document_types": 0,
@@ -342,12 +346,12 @@ class PromptOptimizer:
         # Generate global recommendations
         if summary["total_samples"] < 100:
             summary["recommendations"].append(
-                "Collect more performance data for better optimization"
+                "Collect more performance data for better optimization",
             )
 
         if len(summary["optimal_strategies"]) < summary["total_document_types"] / 2:
             summary["recommendations"].append(
-                "Many document types lack clear optimal strategies"
+                "Many document types lack clear optimal strategies",
             )
 
         return summary

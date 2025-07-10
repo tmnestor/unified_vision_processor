@@ -1,5 +1,4 @@
-"""
-Australian Tax Office Field Validators
+"""Australian Tax Office Field Validators
 
 This module provides comprehensive validation for Australian business
 and tax-related fields including ABN, BSB, GST calculations, and dates.
@@ -7,12 +6,10 @@ and tax-related fields including ABN, BSB, GST calculations, and dates.
 
 import re
 from datetime import datetime
-from typing import Dict, List, Optional, Tuple
 
 
 class ABNValidator:
-    """
-    Australian Business Number (ABN) validator with checksum verification.
+    """Australian Business Number (ABN) validator with checksum verification.
 
     Features:
     - Format validation (11 digits)
@@ -24,15 +21,15 @@ class ABNValidator:
         # ABN checksum weights
         self.weights = [10, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
 
-    def validate(self, abn: str) -> Tuple[bool, str, List[str]]:
-        """
-        Validate ABN format and checksum.
+    def validate(self, abn: str) -> tuple[bool, str, list[str]]:
+        """Validate ABN format and checksum.
 
         Args:
             abn: ABN string to validate
 
         Returns:
             Tuple of (is_valid, formatted_abn, validation_issues)
+
         """
         issues = []
 
@@ -80,8 +77,7 @@ class ABNValidator:
 
 
 class BSBValidator:
-    """
-    Bank State Branch (BSB) validator for Australian banks.
+    """Bank State Branch (BSB) validator for Australian banks.
 
     Features:
     - Format validation (XXX-XXX)
@@ -103,15 +99,15 @@ class BSBValidator:
             "Bank of Queensland": [(124, 124)],
         }
 
-    def validate(self, bsb: str) -> Tuple[bool, str, List[str], Optional[str]]:
-        """
-        Validate BSB format and identify institution.
+    def validate(self, bsb: str) -> tuple[bool, str, list[str], str | None]:
+        """Validate BSB format and identify institution.
 
         Args:
             bsb: BSB string to validate
 
         Returns:
             Tuple of (is_valid, formatted_bsb, validation_issues, bank_name)
+
         """
         issues = []
 
@@ -137,7 +133,7 @@ class BSBValidator:
 
         return len(issues) == 0, formatted, issues, bank_name
 
-    def _identify_bank(self, bsb: str) -> Optional[str]:
+    def _identify_bank(self, bsb: str) -> str | None:
         """Identify bank from BSB prefix."""
         try:
             prefix = int(bsb[:3])
@@ -154,8 +150,7 @@ class BSBValidator:
 
 
 class DateValidator:
-    """
-    Australian date format validator with business context.
+    """Australian date format validator with business context.
 
     Features:
     - DD/MM/YYYY format validation
@@ -175,16 +170,17 @@ class DateValidator:
         ]
 
     def validate(
-        self, date_str: str
-    ) -> Tuple[bool, Optional[datetime], str, List[str]]:
-        """
-        Validate Australian date format.
+        self,
+        date_str: str,
+    ) -> tuple[bool, datetime | None, str, list[str]]:
+        """Validate Australian date format.
 
         Args:
             date_str: Date string to validate
 
         Returns:
             Tuple of (is_valid, parsed_date, formatted_date, validation_issues)
+
         """
         issues = []
 
@@ -208,7 +204,7 @@ class DateValidator:
         current_year = datetime.now().year
         if parsed_date.year < 1950 or parsed_date.year > current_year + 2:
             issues.append(
-                f"Date year {parsed_date.year} outside reasonable range (1950-{current_year + 2})"
+                f"Date year {parsed_date.year} outside reasonable range (1950-{current_year + 2})",
             )
 
         # Format as Australian standard (DD/MM/YYYY)
@@ -220,13 +216,12 @@ class DateValidator:
         """Get Australian financial year (July 1 - June 30)."""
         if date.month >= 7:  # July-December
             return f"{date.year}-{date.year + 1}"
-        else:  # January-June
-            return f"{date.year - 1}-{date.year}"
+        # January-June
+        return f"{date.year - 1}-{date.year}"
 
 
 class GSTValidator:
-    """
-    Goods and Services Tax (GST) validator for Australian tax calculations.
+    """Goods and Services Tax (GST) validator for Australian tax calculations.
 
     Features:
     - 10% GST rate validation
@@ -240,10 +235,12 @@ class GSTValidator:
         self.tolerance = 0.02  # 2 cent tolerance for rounding
 
     def validate_gst_calculation(
-        self, subtotal: float, gst_amount: float, total: float
-    ) -> Tuple[bool, Dict[str, float], List[str]]:
-        """
-        Validate GST calculation correctness.
+        self,
+        subtotal: float,
+        gst_amount: float,
+        total: float,
+    ) -> tuple[bool, dict[str, float], list[str]]:
+        """Validate GST calculation correctness.
 
         Args:
             subtotal: Subtotal amount (excluding GST)
@@ -252,6 +249,7 @@ class GSTValidator:
 
         Returns:
             Tuple of (is_valid, calculated_values, validation_issues)
+
         """
         issues = []
 
@@ -272,14 +270,14 @@ class GSTValidator:
         if abs(gst_amount - expected_gst) > self.tolerance:
             issues.append(
                 f"GST amount {gst_amount:.2f} does not match expected "
-                f"{expected_gst:.2f} (10% of {subtotal:.2f})"
+                f"{expected_gst:.2f} (10% of {subtotal:.2f})",
             )
 
         # Validate total
         if abs(total - expected_total) > self.tolerance:
             issues.append(
                 f"Total amount {total:.2f} does not match expected "
-                f"{expected_total:.2f} (subtotal + GST)"
+                f"{expected_total:.2f} (subtotal + GST)",
             )
 
         # Check if amounts are positive
@@ -292,15 +290,15 @@ class GSTValidator:
 
         return len(issues) == 0, calculated_values, issues
 
-    def extract_gst_from_total(self, total_including_gst: float) -> Dict[str, float]:
-        """
-        Extract GST and subtotal from GST-inclusive amount.
+    def extract_gst_from_total(self, total_including_gst: float) -> dict[str, float]:
+        """Extract GST and subtotal from GST-inclusive amount.
 
         Args:
             total_including_gst: Total amount including GST
 
         Returns:
             Dictionary with subtotal, gst_amount, and calculations
+
         """
         # GST = Total × (GST rate / (1 + GST rate))
         gst_amount = total_including_gst * (self.gst_rate / (1 + self.gst_rate))
@@ -315,22 +313,23 @@ class GSTValidator:
         }
 
     def validate_business_gst_registration(
-        self, annual_turnover: Optional[float]
-    ) -> Tuple[bool, List[str]]:
-        """
-        Validate if business should be GST registered based on turnover.
+        self,
+        annual_turnover: float | None,
+    ) -> tuple[bool, list[str]]:
+        """Validate if business should be GST registered based on turnover.
 
         Args:
             annual_turnover: Annual business turnover
 
         Returns:
             Tuple of (should_be_registered, compliance_notes)
+
         """
         notes = []
 
         if annual_turnover is None:
             notes.append(
-                "Cannot determine GST registration requirement without turnover data"
+                "Cannot determine GST registration requirement without turnover data",
             )
             return False, notes
 
@@ -339,11 +338,10 @@ class GSTValidator:
 
         if annual_turnover >= gst_threshold:
             notes.append(
-                f"Business must be GST registered (turnover ${annual_turnover:,.2f} ≥ ${gst_threshold:,.2f})"
+                f"Business must be GST registered (turnover ${annual_turnover:,.2f} ≥ ${gst_threshold:,.2f})",
             )
             return True, notes
-        else:
-            notes.append(
-                f"GST registration optional (turnover ${annual_turnover:,.2f} < ${gst_threshold:,.2f})"
-            )
-            return False, notes
+        notes.append(
+            f"GST registration optional (turnover ${annual_turnover:,.2f} < ${gst_threshold:,.2f})",
+        )
+        return False, notes

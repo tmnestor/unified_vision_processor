@@ -1,5 +1,4 @@
-"""
-Document Handlers Module
+"""Document Handlers Module
 
 This module provides specialized document handlers for the 11 Australian tax document types,
 following the Llama-3.2 7-step processing pipeline foundation with InternVL feature integration.
@@ -19,16 +18,16 @@ from .tax_invoice_handler import TaxInvoiceHandler
 from .travel_document_handler import TravelDocumentHandler
 
 __all__ = [
-    "BaseATOHandler",
-    "FuelReceiptHandler",
-    "TaxInvoiceHandler",
-    "BusinessReceiptHandler",
-    "BankStatementHandler",
-    "MealReceiptHandler",
     "AccommodationHandler",
-    "TravelDocumentHandler",
+    "BankStatementHandler",
+    "BaseATOHandler",
+    "BusinessReceiptHandler",
+    "EquipmentSuppliesHandler",
+    "FuelReceiptHandler",
+    "MealReceiptHandler",
+    "OtherDocumentHandler",
     "ParkingTollHandler",
     "ProfessionalServicesHandler",
-    "EquipmentSuppliesHandler",
-    "OtherDocumentHandler",
+    "TaxInvoiceHandler",
+    "TravelDocumentHandler",
 ]

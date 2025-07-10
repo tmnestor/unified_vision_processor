@@ -1,5 +1,4 @@
-"""
-Model Factory for Unified Vision Processing
+"""Model Factory for Unified Vision Processing
 
 Creates and configures vision models with optimal settings for different hardware configurations.
 Integrates InternVL multi-GPU optimization with Llama processing capabilities.
@@ -7,7 +6,7 @@ Integrates InternVL multi-GPU optimization with Llama processing capabilities.
 
 import logging
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Type, Union
+from typing import TYPE_CHECKING, Optional
 
 import torch
 
@@ -20,8 +19,7 @@ logger = logging.getLogger(__name__)
 
 
 class ModelFactory:
-    """
-    Factory for creating and configuring vision models.
+    """Factory for creating and configuring vision models.
 
     Handles:
     - Model selection and instantiation
@@ -32,11 +30,13 @@ class ModelFactory:
     """
 
     # Registry of available models
-    _model_registry: Dict[ModelType, Type[BaseVisionModel]] = {}
+    _model_registry: dict[ModelType, type[BaseVisionModel]] = {}
 
     @classmethod
     def register_model(
-        cls, model_type: ModelType, model_class: Type[BaseVisionModel]
+        cls,
+        model_type: ModelType,
+        model_class: type[BaseVisionModel],
     ) -> None:
         """Register a model class for the given type."""
         cls._model_registry[model_type] = model_class
@@ -46,12 +46,11 @@ class ModelFactory:
     def create_model(
         cls,
         model_type: ModelType,
-        model_path: Union[str, Path],
+        model_path: str | Path,
         config: Optional["UnifiedConfig"] = None,
         **kwargs,
     ) -> BaseVisionModel:
-        """
-        Create a vision model instance with optimal configuration.
+        """Create a vision model instance with optimal configuration.
 
         Args:
             model_type: Type of model to create
@@ -65,12 +64,13 @@ class ModelFactory:
         Raises:
             ValueError: If model type is not registered
             RuntimeError: If model creation fails
+
         """
         if model_type not in cls._model_registry:
             available_models = list(cls._model_registry.keys())
             raise ValueError(
                 f"Model type {model_type.value} not registered. "
-                f"Available models: {[m.value for m in available_models]}"
+                f"Available models: {[m.value for m in available_models]}",
             )
 
         try:
@@ -87,7 +87,7 @@ class ModelFactory:
 
             # Create model instance
             logger.info(
-                f"Creating {model_type.value} model with config: {model_config}"
+                f"Creating {model_type.value} model with config: {model_config}",
             )
             model = model_class(model_path, **model_config)
 
@@ -102,10 +102,12 @@ class ModelFactory:
 
     @classmethod
     def _prepare_model_config(
-        cls, model_type: ModelType, config: Optional["UnifiedConfig"], **kwargs
-    ) -> Dict:
+        cls,
+        model_type: ModelType,
+        config: Optional["UnifiedConfig"],
+        **kwargs,
+    ) -> dict:
         """Prepare model-specific configuration."""
-
         # Base configuration
         model_config = {
             "device_config": DeviceConfig.AUTO,
@@ -120,7 +122,7 @@ class ModelFactory:
                     "device_config": config.device_config,
                     "enable_quantization": config.enable_8bit_quantization,
                     "memory_limit_mb": config.gpu_memory_limit,
-                }
+                },
             )
 
         # Apply model-specific optimizations
@@ -135,7 +137,7 @@ class ModelFactory:
         return model_config
 
     @classmethod
-    def _get_internvl_config(cls, config: Optional["UnifiedConfig"]) -> Dict:
+    def _get_internvl_config(cls, config: Optional["UnifiedConfig"]) -> dict:
         """Get InternVL-specific configuration optimizations."""
         internvl_config = {
             # Multi-GPU optimization settings
@@ -159,13 +161,13 @@ class ModelFactory:
                     "enable_multi_gpu": config.multi_gpu_dev,
                     "enable_highlight_detection": config.highlight_detection,
                     "enable_computer_vision": config.computer_vision,
-                }
+                },
             )
 
         return internvl_config
 
     @classmethod
-    def _get_llama_config(cls, config: Optional["UnifiedConfig"]) -> Dict:
+    def _get_llama_config(cls, config: Optional["UnifiedConfig"]) -> dict:
         """Get Llama-3.2-Vision specific configuration."""
         llama_config = {
             # Llama-specific optimizations
@@ -190,17 +192,18 @@ class ModelFactory:
                     "enable_awk_fallback": config.awk_fallback,
                     "processing_pipeline": config.processing_pipeline,
                     "extraction_method": config.extraction_method,
-                }
+                },
             )
 
         return llama_config
 
     @classmethod
     def _apply_optimizations(
-        cls, model: BaseVisionModel, config: Optional["UnifiedConfig"]
+        cls,
+        model: BaseVisionModel,
+        config: Optional["UnifiedConfig"],
     ) -> None:
         """Apply post-creation optimizations to the model."""
-
         try:
             # Device-specific optimizations
             if model.device.type == "cuda":
@@ -217,10 +220,11 @@ class ModelFactory:
 
     @classmethod
     def _apply_cuda_optimizations(
-        cls, model: BaseVisionModel, _config: Optional["UnifiedConfig"]
+        cls,
+        model: BaseVisionModel,
+        _config: Optional["UnifiedConfig"],
     ) -> None:
         """Apply CUDA-specific optimizations."""
-
         # Enable optimized attention if available
         try:
             torch.backends.cuda.enable_flash_sdp(True)
@@ -248,10 +252,11 @@ class ModelFactory:
 
     @classmethod
     def _apply_mps_optimizations(
-        cls, model: BaseVisionModel, _config: Optional["UnifiedConfig"]
+        cls,
+        model: BaseVisionModel,
+        _config: Optional["UnifiedConfig"],
     ) -> None:
         """Apply MPS (Apple Silicon) optimizations."""
-
         # MPS optimizations for Mac M1 development
         try:
             # Reduce memory pressure on unified memory
@@ -263,10 +268,11 @@ class ModelFactory:
 
     @classmethod
     def _apply_cpu_optimizations(
-        cls, model: BaseVisionModel, _config: Optional["UnifiedConfig"]
+        cls,
+        model: BaseVisionModel,
+        _config: Optional["UnifiedConfig"],
     ) -> None:
         """Apply CPU-specific optimizations."""
-
         try:
             # Enable CPU optimizations
             torch.set_num_threads(torch.get_num_threads())
@@ -280,7 +286,7 @@ class ModelFactory:
 
                 if hasattr(model, "model") and model.model is not None:
                     model.model = QuantizationHelper.apply_dynamic_quantization(
-                        model.model
+                        model.model,
                     )
                     logger.info("Applied CPU quantization optimization")
 
@@ -288,7 +294,7 @@ class ModelFactory:
             logger.warning(f"CPU optimization failed: {e}")
 
     @classmethod
-    def get_available_models(cls) -> Dict[str, str]:
+    def get_available_models(cls) -> dict[str, str]:
         """Get list of available model types and their descriptions."""
         descriptions = {
             ModelType.INTERNVL3: "Advanced multi-modal model with highlight detection and multi-GPU support",
@@ -302,10 +308,11 @@ class ModelFactory:
 
     @classmethod
     def get_recommended_config(
-        cls, model_type: ModelType, hardware_profile: str = "auto"
-    ) -> Dict:
-        """
-        Get recommended configuration for a model type and hardware profile.
+        cls,
+        model_type: ModelType,
+        hardware_profile: str = "auto",
+    ) -> dict:
+        """Get recommended configuration for a model type and hardware profile.
 
         Args:
             model_type: Type of model
@@ -313,8 +320,8 @@ class ModelFactory:
 
         Returns:
             Recommended configuration dictionary
-        """
 
+        """
         base_config = {
             "device_config": DeviceConfig.AUTO,
             "enable_quantization": True,
@@ -328,7 +335,7 @@ class ModelFactory:
                     "device_config": DeviceConfig.AUTO,  # Will select MPS
                     "enable_quantization": False,  # MPS doesn't support quantization
                     "memory_limit_mb": 16384,  # Conservative for unified memory
-                }
+                },
             )
         elif hardware_profile == "h200_dev":
             base_config.update(
@@ -336,7 +343,7 @@ class ModelFactory:
                     "device_config": DeviceConfig.MULTI_GPU,
                     "enable_quantization": False,  # High memory, no quantization needed
                     "memory_limit_mb": None,
-                }
+                },
             )
         elif hardware_profile == "v100_prod":
             base_config.update(
@@ -344,7 +351,7 @@ class ModelFactory:
                     "device_config": DeviceConfig.SINGLE_GPU,
                     "enable_quantization": True,  # Required for 16GB memory
                     "memory_limit_mb": 15360,  # V100 16GB with buffer
-                }
+                },
             )
 
         # Model-specific adjustments
@@ -363,7 +370,6 @@ class ModelFactory:
 # Auto-register models when available
 def _auto_register_models():
     """Automatically register available model implementations."""
-
     # Try to register actual models first
     try:
         from ..models.internvl_model import InternVLModel
@@ -389,7 +395,8 @@ def _auto_register_models():
             from ..models.placeholder_models import PlaceholderLlamaVisionModel
 
             ModelFactory.register_model(
-                ModelType.LLAMA32_VISION, PlaceholderLlamaVisionModel
+                ModelType.LLAMA32_VISION,
+                PlaceholderLlamaVisionModel,
             )
             logger.debug("Using placeholder Llama Vision model")
         except ImportError:

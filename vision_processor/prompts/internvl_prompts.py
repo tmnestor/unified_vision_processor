@@ -1,12 +1,10 @@
-"""
-InternVL Prompts
+"""InternVL Prompts
 
 Collection of 47 specialized prompts from the InternVL system optimized for
 document processing with computer vision and highlight detection capabilities.
 """
 
 import logging
-from typing import Dict
 
 from ..extraction.pipeline_components import DocumentType
 
@@ -14,8 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class InternVLPrompts:
-    """
-    InternVL specialized prompt library with 47 optimized prompts.
+    """InternVL specialized prompt library with 47 optimized prompts.
 
     Features:
     - Document-specific extraction prompts
@@ -27,7 +24,7 @@ class InternVLPrompts:
 
     def __init__(self):
         self.initialized = False
-        self.prompts: Dict[str, Dict[str, str]] = {}
+        self.prompts: dict[str, dict[str, str]] = {}
 
     def initialize(self) -> None:
         """Initialize all InternVL prompts."""
@@ -39,7 +36,7 @@ class InternVLPrompts:
         self._load_specialized_prompts()
 
         logger.info(
-            f"InternVL prompts initialized with {self.get_prompt_count()} prompts"
+            f"InternVL prompts initialized with {self.get_prompt_count()} prompts",
         )
         self.initialized = True
 
@@ -607,17 +604,21 @@ Ensure GST compliance accuracy.""",
     def get_base_prompt(self, document_type: DocumentType) -> str:
         """Get base prompt for a document type."""
         return self.prompts["base"].get(
-            document_type.value, self.prompts["base"][DocumentType.OTHER.value]
+            document_type.value,
+            self.prompts["base"][DocumentType.OTHER.value],
         )
 
     def get_highlight_prompt(self, document_type: DocumentType) -> str:
         """Get highlight-aware prompt for a document type."""
         return self.prompts["highlight"].get(
-            document_type.value, self.prompts["highlight"][DocumentType.OTHER.value]
+            document_type.value,
+            self.prompts["highlight"][DocumentType.OTHER.value],
         )
 
     def get_specialized_prompt(
-        self, document_type: DocumentType, variant: str = "detailed"
+        self,
+        document_type: DocumentType,
+        variant: str = "detailed",
     ) -> str:
         """Get specialized prompt for a document type and variant."""
         key = f"{document_type.value}_{variant}"
@@ -653,6 +654,6 @@ Ensure GST compliance accuracy.""",
 
         return variants
 
-    def get_category_statistics(self) -> Dict[str, int]:
+    def get_category_statistics(self) -> dict[str, int]:
         """Get prompt count by category."""
         return {category: len(prompts) for category, prompts in self.prompts.items()}

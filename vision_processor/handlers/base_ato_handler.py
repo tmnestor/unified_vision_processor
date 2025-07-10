@@ -1,5 +1,4 @@
-"""
-Base ATO Handler
+"""Base ATO Handler
 
 Foundation handler implementing the Llama-3.2 7-step processing pipeline
 for Australian Tax Office document processing, enhanced with InternVL features.
@@ -9,7 +8,7 @@ import logging
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -18,17 +17,16 @@ logger = logging.getLogger(__name__)
 class HandlerResult:
     """Result from document handler processing."""
 
-    extracted_fields: Dict[str, Any]
+    extracted_fields: dict[str, Any]
     validation_passed: bool
-    validation_issues: List[str]
+    validation_issues: list[str]
     confidence_score: float
-    processing_notes: List[str]
+    processing_notes: list[str]
     highlight_enhanced: bool = False
 
 
 class BaseATOHandler(ABC):
-    """
-    Base Australian Tax Office document handler implementing Llama 7-step pipeline.
+    """Base Australian Tax Office document handler implementing Llama 7-step pipeline.
 
     This handler provides the foundation for all 11 Australian tax document types,
     following the sophisticated 7-step processing approach from Llama-3.2 with
@@ -53,9 +51,9 @@ class BaseATOHandler(ABC):
         self.supports_enhanced_parsing = getattr(config, "enhanced_parsing", False)
 
         # ATO compliance requirements
-        self.required_fields: List[str] = []
-        self.optional_fields: List[str] = []
-        self.validation_rules: Dict[str, Any] = {}
+        self.required_fields: list[str] = []
+        self.optional_fields: list[str] = []
+        self.validation_rules: dict[str, Any] = {}
 
     def initialize(self) -> None:
         """Initialize handler with document-specific configuration."""
@@ -77,12 +75,10 @@ class BaseATOHandler(ABC):
     @abstractmethod
     def _load_field_requirements(self) -> None:
         """Load required and optional fields for this document type."""
-        pass
 
     @abstractmethod
     def _load_validation_rules(self) -> None:
         """Load validation rules specific to this document type."""
-        pass
 
     def _load_australian_patterns(self) -> None:
         """Load Australian business and format patterns."""
@@ -116,15 +112,15 @@ class BaseATOHandler(ABC):
         # This will be enhanced when computer vision module is fully integrated
         logger.info("Highlight integration initialized for enhanced extraction")
 
-    def extract_fields_primary(self, raw_text: str) -> Dict[str, Any]:
-        """
-        Step 3: Primary field extraction using document-specific logic.
+    def extract_fields_primary(self, raw_text: str) -> dict[str, Any]:
+        """Step 3: Primary field extraction using document-specific logic.
 
         Args:
             raw_text: Raw text from model response
 
         Returns:
             Dictionary of extracted fields
+
         """
         if not self.initialized:
             self.initialize()
@@ -142,12 +138,13 @@ class BaseATOHandler(ABC):
         if self.supports_enhanced_parsing:
             enhanced_fields = self._apply_enhanced_parsing(raw_text)
             extracted_fields = self._merge_field_extractions(
-                extracted_fields, enhanced_fields
+                extracted_fields,
+                enhanced_fields,
             )
 
         return extracted_fields
 
-    def _extract_common_fields(self, text: str) -> Dict[str, Any]:
+    def _extract_common_fields(self, text: str) -> dict[str, Any]:
         """Extract fields common to all Australian tax documents."""
         fields = {}
 
@@ -183,19 +180,20 @@ class BaseATOHandler(ABC):
         return fields
 
     @abstractmethod
-    def _extract_document_specific_fields(self, text: str) -> Dict[str, Any]:
+    def _extract_document_specific_fields(self, text: str) -> dict[str, Any]:
         """Extract fields specific to this document type."""
-        pass
 
-    def _apply_enhanced_parsing(self, _text: str) -> Dict[str, Any]:
+    def _apply_enhanced_parsing(self, _text: str) -> dict[str, Any]:
         """Apply InternVL enhanced parsing techniques."""
         # Placeholder for enhanced parsing integration
         # This will be implemented when InternVL features are fully integrated
         return {}
 
     def _merge_field_extractions(
-        self, primary: Dict[str, Any], enhanced: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        primary: dict[str, Any],
+        enhanced: dict[str, Any],
+    ) -> dict[str, Any]:
         """Merge primary and enhanced field extractions with conflict resolution."""
         merged = primary.copy()
 
@@ -210,15 +208,15 @@ class BaseATOHandler(ABC):
 
         return merged
 
-    def validate_fields(self, fields: Dict[str, Any]) -> HandlerResult:
-        """
-        Step 5: Validate extracted fields using ATO compliance rules.
+    def validate_fields(self, fields: dict[str, Any]) -> HandlerResult:
+        """Step 5: Validate extracted fields using ATO compliance rules.
 
         Args:
             fields: Extracted fields to validate
 
         Returns:
             HandlerResult with validation status and issues
+
         """
         if not self.initialized:
             self.initialize()
@@ -251,16 +249,15 @@ class BaseATOHandler(ABC):
         )
 
     @abstractmethod
-    def _validate_document_specific_fields(self, fields: Dict[str, Any]) -> List[str]:
+    def _validate_document_specific_fields(self, fields: dict[str, Any]) -> list[str]:
         """Validate fields specific to this document type."""
-        pass
 
-    def _validate_australian_tax_fields(self, fields: Dict[str, Any]) -> List[str]:
+    def _validate_australian_tax_fields(self, fields: dict[str, Any]) -> list[str]:
         """Validate Australian tax-specific fields."""
         issues = []
 
         # Validate ABN format if present
-        if "abn" in fields and fields["abn"]:
+        if fields.get("abn"):
             abn = str(fields["abn"]).replace(" ", "")
             if len(abn) != 11 or not abn.isdigit():
                 issues.append("Invalid ABN format (must be 11 digits)")
@@ -278,13 +275,13 @@ class BaseATOHandler(ABC):
 
                 if gst_difference > 0.05:  # 5 cent tolerance
                     issues.append(
-                        f"GST amount {gst:.2f} may be incorrect (expected ~{expected_gst:.2f})"
+                        f"GST amount {gst:.2f} may be incorrect (expected ~{expected_gst:.2f})",
                     )
             except (ValueError, TypeError):
                 issues.append("Invalid numeric values for GST calculation")
 
         # Validate date format (Australian DD/MM/YYYY)
-        if "date" in fields and fields["date"]:
+        if fields.get("date"):
             date_str = str(fields["date"])
             if not re.match(r"\d{1,2}/\d{1,2}/\d{4}", date_str):
                 issues.append("Date should be in DD/MM/YYYY format")
@@ -292,7 +289,9 @@ class BaseATOHandler(ABC):
         return issues
 
     def _calculate_field_confidence(
-        self, fields: Dict[str, Any], validation_issues: List[str]
+        self,
+        fields: dict[str, Any],
+        validation_issues: list[str],
     ) -> float:
         """Calculate confidence score based on field extraction and validation."""
         # Base confidence from field completeness
@@ -303,7 +302,7 @@ class BaseATOHandler(ABC):
             extracted_count = sum(
                 1
                 for field in self.required_fields + self.optional_fields
-                if field in fields and fields[field]
+                if fields.get(field)
             )
             field_completeness = extracted_count / total_fields
 
@@ -312,21 +311,23 @@ class BaseATOHandler(ABC):
 
         # Bonus for high-quality extractions
         quality_bonus = 0.0
-        if "abn" in fields and fields["abn"]:
+        if fields.get("abn"):
             quality_bonus += 0.1
-        if "gst_amount" in fields and fields["gst_amount"]:
+        if fields.get("gst_amount"):
             quality_bonus += 0.1
 
         confidence = max(
-            0.0, min(1.0, field_completeness - validation_penalty + quality_bonus)
+            0.0,
+            min(1.0, field_completeness - validation_penalty + quality_bonus),
         )
         return confidence
 
     def enhance_with_highlights(
-        self, fields: Dict[str, Any], highlights: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
-        """
-        Enhance extracted fields using InternVL highlight detection.
+        self,
+        fields: dict[str, Any],
+        highlights: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Enhance extracted fields using InternVL highlight detection.
 
         Args:
             fields: Currently extracted fields
@@ -334,6 +335,7 @@ class BaseATOHandler(ABC):
 
         Returns:
             Enhanced fields dictionary
+
         """
         if not highlights or not self.supports_highlights:
             return fields
@@ -343,7 +345,7 @@ class BaseATOHandler(ABC):
         # Process highlights to extract additional information
         for highlight in highlights:
             # Extract text from highlight region
-            if "text" in highlight and highlight["text"]:
+            if highlight.get("text"):
                 highlight_text = highlight["text"]
 
                 # Try to extract missing fields from highlighted text
@@ -355,7 +357,7 @@ class BaseATOHandler(ABC):
 
         return enhanced_fields
 
-    def _extract_first_match(self, text: str, patterns: List[str]) -> Optional[str]:
+    def _extract_first_match(self, text: str, patterns: list[str]) -> str | None:
         """Extract the first match from a list of regex patterns."""
         for pattern in patterns:
             match = re.search(pattern, text, re.IGNORECASE)
@@ -364,7 +366,7 @@ class BaseATOHandler(ABC):
                 return match.group(1) if match.groups() else match.group(0)
         return None
 
-    def _extract_australian_business_name(self, text: str) -> Optional[str]:
+    def _extract_australian_business_name(self, text: str) -> str | None:
         """Extract Australian business names from text."""
         # Common Australian business names
         australian_businesses = [
@@ -399,7 +401,7 @@ class BaseATOHandler(ABC):
 
         return None
 
-    def get_processing_summary(self) -> Dict[str, Any]:
+    def get_processing_summary(self) -> dict[str, Any]:
         """Get summary of handler processing capabilities."""
         return {
             "document_type": self.__class__.__name__.replace("Handler", ""),

@@ -1,5 +1,4 @@
-"""
-Unified Evaluation Framework
+"""Unified Evaluation Framework
 
 Cross-model evaluation system using Llama pipeline for fair comparison.
 Ensures identical processing pipeline for both InternVL and Llama models.
@@ -9,7 +8,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from ..config.unified_config import UnifiedConfig
 from ..extraction.hybrid_extraction_manager import (
@@ -30,9 +29,9 @@ class EvaluationResult:
     processing_time: float
 
     # Extraction results
-    extracted_fields: Dict[str, Any]
-    ground_truth_fields: Dict[str, Any]
-    field_accuracy: Dict[str, float]
+    extracted_fields: dict[str, Any]
+    ground_truth_fields: dict[str, Any]
+    field_accuracy: dict[str, float]
 
     # Pipeline results
     confidence_score: float
@@ -49,11 +48,11 @@ class EvaluationResult:
     # Processing details
     awk_fallback_used: bool
     highlights_detected: int
-    stages_completed: List[str]
+    stages_completed: list[str]
 
     # Error handling
     success: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 @dataclass
@@ -84,30 +83,29 @@ class DatasetEvaluationResult:
     highlight_detection_rate: float
 
     # Per-document results
-    document_results: List[EvaluationResult]
+    document_results: list[EvaluationResult]
 
     # Quality distribution
-    quality_distribution: Dict[str, int]
+    quality_distribution: dict[str, int]
 
     # Error analysis
-    failed_documents: List[str]
-    error_analysis: Dict[str, int]
+    failed_documents: list[str]
+    error_analysis: dict[str, int]
 
 
 class UnifiedEvaluator:
-    """
-    Unified evaluation framework for fair model comparison.
+    """Unified evaluation framework for fair model comparison.
 
     Uses identical Llama 7-step pipeline for both models to ensure
     unbiased comparison and eliminate architectural differences.
     """
 
     def __init__(self, config: UnifiedConfig):
-        """
-        Initialize unified evaluator.
+        """Initialize unified evaluator.
 
         Args:
             config: Unified configuration object
+
         """
         self.config = config
         self.metrics_calculator = MetricsCalculator(config)
@@ -140,13 +138,12 @@ class UnifiedEvaluator:
 
     def evaluate_document(
         self,
-        image_path: Union[str, Path],
-        ground_truth: Dict[str, Any],
+        image_path: str | Path,
+        ground_truth: dict[str, Any],
         model_name: str,
-        document_type: Optional[str] = None,
+        document_type: str | None = None,
     ) -> EvaluationResult:
-        """
-        Evaluate single document using unified Llama pipeline.
+        """Evaluate single document using unified Llama pipeline.
 
         Args:
             image_path: Path to document image
@@ -156,6 +153,7 @@ class UnifiedEvaluator:
 
         Returns:
             EvaluationResult with comprehensive metrics
+
         """
         start_time = time.time()
 
@@ -167,31 +165,35 @@ class UnifiedEvaluator:
             with UnifiedExtractionManager(model_config) as extraction_manager:
                 # Process document through unified pipeline
                 processing_result = extraction_manager.process_document(
-                    image_path, document_type
+                    image_path,
+                    document_type,
                 )
 
                 processing_time = time.time() - start_time
 
                 # Standardize extracted fields for comparison
                 standardized_extracted = self._standardize_fields(
-                    processing_result.extracted_fields
+                    processing_result.extracted_fields,
                 )
                 standardized_ground_truth = self._standardize_fields(ground_truth)
 
                 # Calculate field-level accuracy
                 field_accuracy = self._calculate_field_accuracy(
-                    standardized_extracted, standardized_ground_truth
+                    standardized_extracted,
+                    standardized_ground_truth,
                 )
 
                 # Calculate evaluation metrics
                 precision, recall, f1_score = (
                     self.metrics_calculator.calculate_prf_metrics(
-                        standardized_extracted, standardized_ground_truth
+                        standardized_extracted,
+                        standardized_ground_truth,
                     )
                 )
 
                 exact_match_score = self.metrics_calculator.calculate_exact_match(
-                    standardized_extracted, standardized_ground_truth
+                    standardized_extracted,
+                    standardized_ground_truth,
                 )
 
                 return EvaluationResult(
@@ -245,13 +247,12 @@ class UnifiedEvaluator:
 
     def evaluate_dataset(
         self,
-        dataset_path: Union[str, Path],
-        ground_truth_path: Union[str, Path],
+        dataset_path: str | Path,
+        ground_truth_path: str | Path,
         model_name: str,
-        max_documents: Optional[int] = None,
+        max_documents: int | None = None,
     ) -> DatasetEvaluationResult:
-        """
-        Evaluate entire dataset using unified pipeline.
+        """Evaluate entire dataset using unified pipeline.
 
         Args:
             dataset_path: Path to dataset images
@@ -261,6 +262,7 @@ class UnifiedEvaluator:
 
         Returns:
             DatasetEvaluationResult with aggregated metrics
+
         """
         dataset_path = Path(dataset_path)
         ground_truth_path = Path(ground_truth_path)
@@ -269,7 +271,7 @@ class UnifiedEvaluator:
 
         # Find all images and corresponding ground truth
         image_files = list(dataset_path.glob("*.jpg")) + list(
-            dataset_path.glob("*.png")
+            dataset_path.glob("*.png"),
         )
         if max_documents:
             image_files = image_files[:max_documents]
@@ -339,13 +341,12 @@ class UnifiedEvaluator:
 
     def compare_models(
         self,
-        dataset_path: Union[str, Path],
-        ground_truth_path: Union[str, Path],
-        model_names: List[str],
-        max_documents: Optional[int] = None,
-    ) -> Dict[str, DatasetEvaluationResult]:
-        """
-        Compare multiple models using identical Llama pipeline.
+        dataset_path: str | Path,
+        ground_truth_path: str | Path,
+        model_names: list[str],
+        max_documents: int | None = None,
+    ) -> dict[str, DatasetEvaluationResult]:
+        """Compare multiple models using identical Llama pipeline.
 
         Args:
             dataset_path: Path to dataset images
@@ -355,6 +356,7 @@ class UnifiedEvaluator:
 
         Returns:
             Dictionary mapping model names to evaluation results
+
         """
         logger.info(f"Starting fair model comparison: {model_names}")
 
@@ -364,7 +366,10 @@ class UnifiedEvaluator:
             logger.info(f"Evaluating model: {model_name}")
 
             result = self.evaluate_dataset(
-                dataset_path, ground_truth_path, model_name, max_documents
+                dataset_path,
+                ground_truth_path,
+                model_name,
+                max_documents,
             )
 
             comparison_results[model_name] = result
@@ -373,7 +378,7 @@ class UnifiedEvaluator:
                 f"Model {model_name} completed: "
                 f"F1={result.average_f1_score:.3f}, "
                 f"Confidence={result.average_confidence:.3f}, "
-                f"Production Ready={result.production_ready_rate:.1%}"
+                f"Production Ready={result.production_ready_rate:.1%}",
             )
 
         return comparison_results
@@ -398,7 +403,7 @@ class UnifiedEvaluator:
 
         return config
 
-    def _standardize_fields(self, fields: Dict[str, Any]) -> Dict[str, Any]:
+    def _standardize_fields(self, fields: dict[str, Any]) -> dict[str, Any]:
         """Standardize field names for consistent comparison."""
         standardized = {}
 
@@ -407,7 +412,7 @@ class UnifiedEvaluator:
 
             # Find first matching variation
             for variation in variations:
-                if variation in fields and fields[variation]:
+                if fields.get(variation):
                     value = fields[variation]
                     break
 
@@ -417,12 +422,14 @@ class UnifiedEvaluator:
         return standardized
 
     def _calculate_field_accuracy(
-        self, extracted: Dict[str, Any], ground_truth: Dict[str, Any]
-    ) -> Dict[str, float]:
+        self,
+        extracted: dict[str, Any],
+        ground_truth: dict[str, Any],
+    ) -> dict[str, float]:
         """Calculate accuracy for each field."""
         field_accuracy = {}
 
-        for field in ground_truth.keys():
+        for field in ground_truth:
             if field in extracted:
                 # Exact match for now - could be enhanced with fuzzy matching
                 if (
@@ -438,8 +445,9 @@ class UnifiedEvaluator:
         return field_accuracy
 
     def _calculate_aggregated_metrics(
-        self, results: List[EvaluationResult]
-    ) -> Dict[str, Any]:
+        self,
+        results: list[EvaluationResult],
+    ) -> dict[str, Any]:
         """Calculate aggregated metrics from individual results."""
         successful_results = [r for r in results if r.success]
 
@@ -459,12 +467,12 @@ class UnifiedEvaluator:
 
         # Calculate averages
         avg_precision = sum(r.precision for r in successful_results) / len(
-            successful_results
+            successful_results,
         )
         avg_recall = sum(r.recall for r in successful_results) / len(successful_results)
         avg_f1 = sum(r.f1_score for r in successful_results) / len(successful_results)
         avg_confidence = sum(r.confidence_score for r in successful_results) / len(
-            successful_results
+            successful_results,
         )
 
         # Production readiness statistics
@@ -511,11 +519,10 @@ class UnifiedEvaluator:
 
     def generate_comparison_report(
         self,
-        comparison_results: Dict[str, DatasetEvaluationResult],
-        output_path: Optional[Union[str, Path]] = None,
+        comparison_results: dict[str, DatasetEvaluationResult],
+        output_path: str | Path | None = None,
     ) -> str:
-        """
-        Generate comprehensive comparison report.
+        """Generate comprehensive comparison report.
 
         Args:
             comparison_results: Results from model comparison
@@ -523,7 +530,9 @@ class UnifiedEvaluator:
 
         Returns:
             Report content as string
+
         """
         return self.report_generator.generate_model_comparison_report(
-            comparison_results, output_path
+            comparison_results,
+            output_path,
         )

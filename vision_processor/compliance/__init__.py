@@ -1,5 +1,4 @@
-"""
-ATO Compliance Module
+"""ATO Compliance Module
 
 This module provides comprehensive Australian Taxation Office compliance
 validation for document processing, combining features from both InternVL
@@ -16,9 +15,9 @@ from .field_validators import (
 )
 
 __all__ = [
+    "ABNValidator",
     "ATOComplianceValidator",
     "AustralianBusinessRegistry",
-    "ABNValidator",
     "BSBValidator",
     "DateValidator",
     "GSTValidator",

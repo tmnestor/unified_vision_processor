@@ -1,5 +1,4 @@
-"""
-Single Document Processing CLI
+"""Single Document Processing CLI
 
 Specialized command-line interface for processing individual documents
 with detailed output and debugging capabilities.
@@ -8,7 +7,6 @@ with detailed output and debugging capabilities.
 import json
 import logging
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
@@ -17,9 +15,9 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
+from ..classification import DocumentType
 from ..config.unified_config import ModelType, UnifiedConfig
 from ..extraction.hybrid_extraction_manager import UnifiedExtractionManager
-from ..extraction.pipeline_components import DocumentType
 
 # Initialize app and console
 app = typer.Typer(
@@ -36,29 +34,43 @@ logger = logging.getLogger(__name__)
 def process(
     image_path: str = typer.Argument(..., help="Path to document image"),
     model: str = typer.Option(
-        "internvl3", "--model", "-m", help="Vision model: internvl3 or llama32_vision"
+        "internvl3",
+        "--model",
+        "-m",
+        help="Vision model: internvl3 or llama32_vision",
     ),
-    document_type: Optional[str] = typer.Option(
+    document_type: str | None = typer.Option(
         None,
         "--type",
         "-t",
         help="Document type (fuel_receipt, tax_invoice, business_receipt, etc.)",
     ),
     output_format: str = typer.Option(
-        "table", "--format", "-f", help="Output format: table, json, detailed"
+        "table",
+        "--format",
+        "-f",
+        help="Output format: table, json, detailed",
     ),
-    save_output: Optional[str] = typer.Option(
-        None, "--save", "-s", help="Save results to file (JSON format)"
+    save_output: str | None = typer.Option(
+        None,
+        "--save",
+        "-s",
+        help="Save results to file (JSON format)",
     ),
     debug: bool = typer.Option(
-        False, "--debug", "-d", help="Enable debug mode with detailed pipeline info"
+        False,
+        "--debug",
+        "-d",
+        help="Enable debug mode with detailed pipeline info",
     ),
     confidence_threshold: float = typer.Option(
-        0.7, "--threshold", "-c", help="Confidence threshold for production readiness"
+        0.7,
+        "--threshold",
+        "-c",
+        help="Confidence threshold for production readiness",
     ),
 ) -> None:
-    """
-    Process a single document with comprehensive analysis.
+    """Process a single document with comprehensive analysis.
 
     Provides detailed extraction results, confidence scoring, and
     production readiness assessment using the Llama 7-step pipeline.
@@ -99,7 +111,7 @@ def process(
             f"Model: [yellow]{model_type.value}[/yellow]\n"
             f"Type: [cyan]{document_type or 'auto-detect'}[/cyan]",
             title="Document Analysis",
-        )
+        ),
     )
 
     try:
@@ -121,7 +133,9 @@ def process(
                 # Step-by-step processing with progress updates
                 if debug:
                     progress.update(
-                        task, description="Step 1: Document Classification", advance=1
+                        task,
+                        description="Step 1: Document Classification",
+                        advance=1,
                     )
                     console.print("[dim]🎯 Classifying document type...[/dim]")
 
@@ -130,27 +144,37 @@ def process(
                     console.print("[dim]🧠 Processing with vision model...[/dim]")
 
                 progress.update(
-                    task, description="Step 3: Primary Extraction", advance=1
+                    task,
+                    description="Step 3: Primary Extraction",
+                    advance=1,
                 )
                 if debug:
                     console.print("[dim]📝 Extracting fields...[/dim]")
 
                 progress.update(
-                    task, description="Step 4: AWK Fallback Check", advance=1
+                    task,
+                    description="Step 4: AWK Fallback Check",
+                    advance=1,
                 )
                 progress.update(task, description="Step 5: Field Validation", advance=1)
                 progress.update(
-                    task, description="Step 6: ATO Compliance Check", advance=1
+                    task,
+                    description="Step 6: ATO Compliance Check",
+                    advance=1,
                 )
                 progress.update(
-                    task, description="Step 7: Confidence Integration", advance=1
+                    task,
+                    description="Step 7: Confidence Integration",
+                    advance=1,
                 )
 
                 # Process document
                 result = extraction_manager.process_document(image_file, document_type)
 
                 progress.update(
-                    task, description="✅ Processing complete!", completed=7
+                    task,
+                    description="✅ Processing complete!",
+                    completed=7,
                 )
 
         # Display results based on format
@@ -172,15 +196,15 @@ def process(
         # Exit with appropriate code based on production readiness
         if result.production_ready:
             console.print(
-                "[green]✅ Document processing successful - Production ready[/green]"
+                "[green]✅ Document processing successful - Production ready[/green]",
             )
         else:
             console.print(
-                "[yellow]⚠️ Document processing completed - Manual review recommended[/yellow]"
+                "[yellow]⚠️ Document processing completed - Manual review recommended[/yellow]",
             )
             if not debug:
                 console.print(
-                    "[dim]💡 Use --debug for detailed pipeline information[/dim]"
+                    "[dim]💡 Use --debug for detailed pipeline information[/dim]",
                 )
 
     except Exception as e:
@@ -198,14 +222,17 @@ def analyze(
     image_path: str = typer.Argument(..., help="Path to document image"),
     model: str = typer.Option("internvl3", "--model", "-m", help="Vision model to use"),
     compare_models: bool = typer.Option(
-        False, "--compare/--no-compare", help="Compare results from both models"
+        False,
+        "--compare/--no-compare",
+        help="Compare results from both models",
     ),
     show_pipeline: bool = typer.Option(
-        False, "--pipeline/--no-pipeline", help="Show detailed pipeline execution"
+        False,
+        "--pipeline/--no-pipeline",
+        help="Show detailed pipeline execution",
     ),
 ) -> None:
-    """
-    Analyze document with comprehensive pipeline breakdown.
+    """Analyze document with comprehensive pipeline breakdown.
 
     Provides detailed analysis of each processing step including
     confidence scores, quality assessment, and recommendations.
@@ -221,7 +248,7 @@ def analyze(
             f"File: [green]{image_file.name}[/green]\n"
             f"Analysis Mode: [yellow]{'Comparison' if compare_models else 'Single Model'}[/yellow]",
             title="Advanced Analysis",
-        )
+        ),
     )
 
     try:
@@ -246,7 +273,9 @@ def _display_table_results(result) -> None:
     # Add processing information
     main_table.add_row("Model", result.model_type, "🤖")
     main_table.add_row(
-        "Document Type", result.document_type.replace("_", " ").title(), "📄"
+        "Document Type",
+        result.document_type.replace("_", " ").title(),
+        "📄",
     )
     main_table.add_row("Processing Time", f"{result.processing_time:.2f}s", "⏱️")
 
@@ -259,7 +288,9 @@ def _display_table_results(result) -> None:
         else "🔴"
     )
     main_table.add_row(
-        "Confidence Score", f"{result.confidence_score:.3f}", confidence_status
+        "Confidence Score",
+        f"{result.confidence_score:.3f}",
+        confidence_status,
     )
 
     quality_emoji = {
@@ -276,7 +307,9 @@ def _display_table_results(result) -> None:
     )
 
     main_table.add_row(
-        "Production Ready", "✅ Yes" if result.production_ready else "❌ No", "🏭"
+        "Production Ready",
+        "✅ Yes" if result.production_ready else "❌ No",
+        "🏭",
     )
     main_table.add_row("ATO Compliance", f"{result.ato_compliance_score:.3f}", "🇦🇺")
 
@@ -350,7 +383,9 @@ def _display_detailed_results(result, debug: bool = False) -> None:
     overview_table.add_column("Details", style="dim")
 
     overview_table.add_row(
-        "Model Engine", result.model_type, "Unified pipeline processing"
+        "Model Engine",
+        result.model_type,
+        "Unified pipeline processing",
     )
     overview_table.add_row(
         "Document Classification",

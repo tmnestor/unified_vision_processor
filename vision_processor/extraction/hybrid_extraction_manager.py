@@ -1,5 +1,4 @@
-"""
-Hybrid Extraction Manager - Unified 7-Step Processing Pipeline
+"""Hybrid Extraction Manager - Unified 7-Step Processing Pipeline
 
 Implements the Llama-3.2 7-step processing pipeline as the foundation for unified vision processing.
 Integrates InternVL advanced features while maintaining graceful degradation capabilities.
@@ -14,19 +13,18 @@ import time
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from PIL import Image
 
+from ..classification import DocumentClassifier, DocumentType
+from ..confidence import ConfidenceManager
 from ..config.model_factory import ModelFactory
 from ..config.unified_config import ExtractionMethod, UnifiedConfig
 from ..models.base_model import BaseVisionModel, ModelResponse
 from .awk_extractor import AWKExtractor
 from .pipeline_components import (
     ATOComplianceHandler,
-    ConfidenceManager,
-    DocumentClassifier,
-    DocumentType,
     EnhancedKeyValueParser,
     HighlightDetector,
     PromptManager,
@@ -72,7 +70,7 @@ class ProcessingResult:
     model_confidence: float
 
     # Extraction results
-    extracted_fields: Dict[str, Any]
+    extracted_fields: dict[str, Any]
     awk_fallback_used: bool
     highlights_detected: int
 
@@ -86,17 +84,17 @@ class ProcessingResult:
     validation_passed: bool
 
     # Processing pipeline info
-    stages_completed: List[ProcessingStage]
-    quality_flags: List[str]
-    recommendations: List[str]
+    stages_completed: list[ProcessingStage]
+    quality_flags: list[str]
+    recommendations: list[str]
 
     # Technical metrics
     memory_usage_mb: float = 0.0
     gpu_utilization: float = 0.0
 
     # Error handling
-    errors: List[str] = None
-    warnings: List[str] = None
+    errors: list[str] = None
+    warnings: list[str] = None
 
     def __post_init__(self):
         if self.errors is None:
@@ -106,24 +104,23 @@ class ProcessingResult:
 
 
 class UnifiedExtractionManager:
-    """
-    Unified extraction manager implementing Llama 7-step pipeline.
+    """Unified extraction manager implementing Llama 7-step pipeline.
 
     Serves as the foundation for model-agnostic document processing,
     integrating InternVL advanced capabilities with Llama processing excellence.
     """
 
     def __init__(self, config: UnifiedConfig):
-        """
-        Initialize the unified extraction manager.
+        """Initialize the unified extraction manager.
 
         Args:
             config: Unified configuration object
+
         """
         self.config = config
 
         # Initialize model
-        self.model: Optional[BaseVisionModel] = None
+        self.model: BaseVisionModel | None = None
         self._initialize_model()
 
         # Initialize pipeline components
@@ -155,7 +152,7 @@ class UnifiedExtractionManager:
         }
 
         logger.info(
-            f"Initialized UnifiedExtractionManager with {config.model_type.value} model"
+            f"Initialized UnifiedExtractionManager with {config.model_type.value} model",
         )
 
     def _initialize_model(self) -> None:
@@ -164,14 +161,16 @@ class UnifiedExtractionManager:
             # Log offline mode status
             if self.config.offline_mode:
                 logger.info(
-                    f"Offline mode enabled - loading {self.config.model_type.value} from {self.config.model_path}"
+                    f"Offline mode enabled - loading {self.config.model_type.value} from {self.config.model_path}",
                 )
 
             self.model = ModelFactory.create_model(
-                self.config.model_type, self.config.model_path, self.config
+                self.config.model_type,
+                self.config.model_path,
+                self.config,
             )
             logger.info(
-                f"Model {self.config.model_type.value} initialized successfully"
+                f"Model {self.config.model_type.value} initialized successfully",
             )
         except Exception as e:
             logger.error(f"Failed to initialize model: {e}")
@@ -197,17 +196,16 @@ class UnifiedExtractionManager:
                 component.ensure_initialized()
             except Exception as e:
                 logger.warning(
-                    f"Failed to initialize {component.__class__.__name__}: {e}"
+                    f"Failed to initialize {component.__class__.__name__}: {e}",
                 )
 
     def process_document(
         self,
-        image_path: Union[str, Path, Image.Image],
-        document_type: Optional[str] = None,
+        image_path: str | Path | Image.Image,
+        document_type: str | None = None,
         **_kwargs,
     ) -> ProcessingResult:
-        """
-        Process document using unified 7-step Llama pipeline.
+        """Process document using unified 7-step Llama pipeline.
 
         Args:
             image_path: Path to image file or PIL Image
@@ -216,8 +214,8 @@ class UnifiedExtractionManager:
 
         Returns:
             ProcessingResult with comprehensive analysis
-        """
 
+        """
         start_time = time.time()
         stages_completed = []
         quality_flags = []
@@ -251,7 +249,7 @@ class UnifiedExtractionManager:
                     self.classifier.classify_from_text(model_response.raw_text)
                 )
                 logger.info(
-                    f"Classification: {classified_type.value} (confidence: {classification_confidence:.2f})"
+                    f"Classification: {classified_type.value} (confidence: {classification_confidence:.2f})",
                 )
 
             # Graceful degradation: proceed even with lower confidence
@@ -259,7 +257,7 @@ class UnifiedExtractionManager:
                 quality_flags.append("low_classification_confidence")
                 if classification_confidence < 0.3:
                     recommendations.append(
-                        "Manual document type verification recommended"
+                        "Manual document type verification recommended",
                     )
 
             # =================================================
@@ -270,7 +268,8 @@ class UnifiedExtractionManager:
 
             # Get prompt from prompt manager
             prompt = self.prompt_manager.get_prompt(
-                classified_type, has_highlights=False
+                classified_type,
+                has_highlights=False,
             )
 
             # Process with model
@@ -304,7 +303,8 @@ class UnifiedExtractionManager:
             ):
                 enhanced_fields = self.enhanced_parser.parse(model_response.raw_text)
                 extracted_fields = self._merge_extractions(
-                    extracted_fields, enhanced_fields
+                    extracted_fields,
+                    enhanced_fields,
                 )
 
             # =================================================
@@ -315,11 +315,12 @@ class UnifiedExtractionManager:
 
             awk_used = False
             if self.config.awk_fallback and self._extraction_quality_insufficient(
-                extracted_fields
+                extracted_fields,
             ):
                 # Use AWK extractor component
                 awk_fields = self.awk_extractor.extract(
-                    model_response.raw_text, classified_type
+                    model_response.raw_text,
+                    classified_type,
                 )
                 extracted_fields = self._merge_extractions(extracted_fields, awk_fields)
                 awk_used = True
@@ -342,7 +343,8 @@ class UnifiedExtractionManager:
             # InternVL Integration: Highlight Enhancement (placeholder for Phase 4)
             if highlights and classified_type == DocumentType.BANK_STATEMENT:
                 validated_fields = self._enhance_with_highlights(
-                    validated_fields, highlights
+                    validated_fields,
+                    highlights,
                 )
 
             # =================================================
@@ -353,7 +355,8 @@ class UnifiedExtractionManager:
 
             # Use ATO compliance component
             compliance_result = self.ato_compliance.assess_compliance(
-                validated_fields, classified_type
+                validated_fields,
+                classified_type,
             )
             ato_compliance_score = compliance_result.compliance_score
 
@@ -408,7 +411,7 @@ class UnifiedExtractionManager:
 
         except Exception as e:
             logger.error(
-                f"Processing failed at stage {stages_completed[-1] if stages_completed else 'initialization'}: {e}"
+                f"Processing failed at stage {stages_completed[-1] if stages_completed else 'initialization'}: {e}",
             )
             errors.append(str(e))
 
@@ -436,7 +439,9 @@ class UnifiedExtractionManager:
             )
 
     def _process_with_model(
-        self, image_path: Union[Path, Image.Image], prompt: str
+        self,
+        image_path: Path | Image.Image,
+        prompt: str,
     ) -> ModelResponse:
         """Process image with the vision model."""
         if not self.model:
@@ -444,14 +449,16 @@ class UnifiedExtractionManager:
 
         return self.model.process_image(image_path, prompt)
 
-    def _extraction_quality_insufficient(self, fields: Dict[str, Any]) -> bool:
+    def _extraction_quality_insufficient(self, fields: dict[str, Any]) -> bool:
         """Assess if extraction quality is insufficient for AWK fallback."""
         # Simple heuristic - will be enhanced in Phase 4
         return len(fields) < 3 or "extracted_method" in fields
 
     def _merge_extractions(
-        self, primary: Dict[str, Any], fallback: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self,
+        primary: dict[str, Any],
+        fallback: dict[str, Any],
+    ) -> dict[str, Any]:
         """Merge primary and fallback extractions."""
         merged = primary.copy()
         for key, value in fallback.items():
@@ -460,8 +467,10 @@ class UnifiedExtractionManager:
         return merged
 
     def _enhance_with_highlights(
-        self, fields: Dict[str, Any], highlights: List
-    ) -> Dict[str, Any]:
+        self,
+        fields: dict[str, Any],
+        highlights: list,
+    ) -> dict[str, Any]:
         """Enhance fields with highlight information (placeholder)."""
         # This will be implemented in Phase 4
         fields["highlights_processed"] = len(highlights)
@@ -469,12 +478,11 @@ class UnifiedExtractionManager:
 
     def process_batch(
         self,
-        image_paths: List[Union[str, Path, Image.Image]],
-        document_types: Optional[List[str]] = None,
+        image_paths: list[str | Path | Image.Image],
+        document_types: list[str] | None = None,
         **kwargs,
-    ) -> List[ProcessingResult]:
-        """
-        Process multiple documents in batch.
+    ) -> list[ProcessingResult]:
+        """Process multiple documents in batch.
 
         Args:
             image_paths: List of image paths or PIL Images
@@ -483,8 +491,8 @@ class UnifiedExtractionManager:
 
         Returns:
             List of ProcessingResult objects
-        """
 
+        """
         if document_types and len(document_types) != len(image_paths):
             raise ValueError("document_types length must match image_paths length")
 
@@ -497,7 +505,7 @@ class UnifiedExtractionManager:
                 result = self.process_document(image_path, document_type, **kwargs)
                 results.append(result)
                 logger.info(
-                    f"Processed document {i + 1}/{len(image_paths)}: {result.quality_grade.value}"
+                    f"Processed document {i + 1}/{len(image_paths)}: {result.quality_grade.value}",
                 )
             except Exception as e:
                 logger.error(f"Failed to process document {i + 1}: {e}")
@@ -525,7 +533,7 @@ class UnifiedExtractionManager:
 
         return results
 
-    def get_processing_stats(self) -> Dict[str, Any]:
+    def get_processing_stats(self) -> dict[str, Any]:
         """Get processing statistics."""
         stats = self.processing_stats.copy()
 

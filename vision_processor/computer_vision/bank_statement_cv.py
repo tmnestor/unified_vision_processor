@@ -1,5 +1,4 @@
-"""
-Bank Statement Computer Vision Processing
+"""Bank Statement Computer Vision Processing
 
 This module provides specialized computer vision processing for bank statements,
 combining highlight detection, OCR, and transaction parsing.
@@ -8,7 +7,7 @@ combining highlight detection, OCR, and transaction parsing.
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import cv2
 import numpy as np
@@ -24,13 +23,13 @@ logger = logging.getLogger(__name__)
 class Transaction:
     """Represents a parsed transaction from bank statement."""
 
-    date: Optional[str]
+    date: str | None
     description: str
     amount: float
-    balance: Optional[float] = None
-    reference: Optional[str] = None
-    transaction_type: Optional[str] = None  # debit, credit
-    highlight_region: Optional[HighlightRegion] = None
+    balance: float | None = None
+    reference: str | None = None
+    transaction_type: str | None = None  # debit, credit
+    highlight_region: HighlightRegion | None = None
     confidence: float = 0.0
 
     def __post_init__(self):
@@ -44,20 +43,19 @@ class Transaction:
 class BankStatementResult:
     """Complete result from bank statement processing."""
 
-    account_info: Dict[str, Any]
-    transactions: List[Transaction]
+    account_info: dict[str, Any]
+    transactions: list[Transaction]
     highlights_detected: int
     highlights_processed: int
     total_amount: float
-    statement_period: Optional[str] = None
-    opening_balance: Optional[float] = None
-    closing_balance: Optional[float] = None
-    processing_metadata: Optional[Dict[str, Any]] = None
+    statement_period: str | None = None
+    opening_balance: float | None = None
+    closing_balance: float | None = None
+    processing_metadata: dict[str, Any] | None = None
 
 
 class BankStatementCV:
-    """
-    Specialized computer vision processor for bank statements.
+    """Specialized computer vision processor for bank statements.
 
     Features:
     - Bank statement layout detection
@@ -115,16 +113,17 @@ class BankStatementCV:
         self.initialized = True
 
     def process_bank_statement(
-        self, image_path: Union[str, Path, Image.Image]
+        self,
+        image_path: str | Path | Image.Image,
     ) -> BankStatementResult:
-        """
-        Process a complete bank statement.
+        """Process a complete bank statement.
 
         Args:
             image_path: Path to bank statement image
 
         Returns:
             Complete bank statement processing result
+
         """
         if not self.initialized:
             self.initialize()
@@ -132,21 +131,23 @@ class BankStatementCV:
         try:
             # Step 1: Detect highlights
             highlights = self.highlight_detector.detect_bank_statement_highlights(
-                image_path
+                image_path,
             )
             logger.info(f"Detected {len(highlights)} potential transaction highlights")
 
             # Step 2: Filter highlights for transactions
             transaction_highlights = self._filter_transaction_highlights(
-                highlights, image_path
+                highlights,
+                image_path,
             )
             logger.info(
-                f"Filtered to {len(transaction_highlights)} transaction highlights"
+                f"Filtered to {len(transaction_highlights)} transaction highlights",
             )
 
             # Step 3: Process OCR on highlights
             ocr_data = self.ocr_processor.process_bank_statement_highlights(
-                image_path, transaction_highlights
+                image_path,
+                transaction_highlights,
             )
 
             # Step 4: Parse transactions
@@ -185,7 +186,7 @@ class BankStatementCV:
 
             logger.info(
                 f"Successfully processed bank statement: {len(transactions)} transactions, "
-                f"${total_amount:.2f} total amount"
+                f"${total_amount:.2f} total amount",
             )
 
             return result
@@ -203,9 +204,9 @@ class BankStatementCV:
 
     def _filter_transaction_highlights(
         self,
-        highlights: List[HighlightRegion],
-        image_path: Union[str, Path, Image.Image],
-    ) -> List[HighlightRegion]:
+        highlights: list[HighlightRegion],
+        image_path: str | Path | Image.Image,
+    ) -> list[HighlightRegion]:
         """Filter highlights to keep only those likely to be transactions."""
         if not highlights:
             return []
@@ -253,7 +254,7 @@ class BankStatementCV:
             logger.error(f"Error filtering transaction highlights: {e}")
             return highlights
 
-    def _parse_transactions(self, ocr_results: List[OCRResult]) -> List[Transaction]:
+    def _parse_transactions(self, ocr_results: list[OCRResult]) -> list[Transaction]:
         """Parse transactions from OCR results."""
         transactions = []
 
@@ -264,12 +265,12 @@ class BankStatementCV:
 
         # Sort transactions by position (top to bottom)
         transactions.sort(
-            key=lambda t: t.highlight_region.y if t.highlight_region else 0
+            key=lambda t: t.highlight_region.y if t.highlight_region else 0,
         )
 
         return transactions
 
-    def _parse_single_transaction(self, ocr_result: OCRResult) -> Optional[Transaction]:
+    def _parse_single_transaction(self, ocr_result: OCRResult) -> Transaction | None:
         """Parse a single transaction from OCR result."""
         import re
 
@@ -288,11 +289,17 @@ class BankStatementCV:
         if date:
             description = re.sub(self.bank_patterns["date"][0], "", description)
             description = re.sub(
-                self.bank_patterns["date"][1], "", description, flags=re.IGNORECASE
+                self.bank_patterns["date"][1],
+                "",
+                description,
+                flags=re.IGNORECASE,
             )
         if reference:
             description = re.sub(
-                self.bank_patterns["reference"], "", description, flags=re.IGNORECASE
+                self.bank_patterns["reference"],
+                "",
+                description,
+                flags=re.IGNORECASE,
             )
 
         # Remove amount patterns
@@ -316,7 +323,7 @@ class BankStatementCV:
             confidence=ocr_result.confidence,
         )
 
-    def _extract_date(self, text: str) -> Optional[str]:
+    def _extract_date(self, text: str) -> str | None:
         """Extract date from text."""
         import re
 
@@ -327,7 +334,7 @@ class BankStatementCV:
 
         return None
 
-    def _extract_amount(self, text: str) -> Optional[float]:
+    def _extract_amount(self, text: str) -> float | None:
         """Extract amount from text."""
         import re
 
@@ -352,7 +359,7 @@ class BankStatementCV:
         # Return the largest amount (most likely to be the transaction amount)
         return max(parsed_amounts)
 
-    def _extract_reference(self, text: str) -> Optional[str]:
+    def _extract_reference(self, text: str) -> str | None:
         """Extract reference number from text."""
         import re
 
@@ -363,8 +370,9 @@ class BankStatementCV:
         return None
 
     def _extract_account_information(
-        self, image_path: Union[str, Path, Image.Image]
-    ) -> Dict[str, Any]:
+        self,
+        image_path: str | Path | Image.Image,
+    ) -> dict[str, Any]:
         """Extract account information from bank statement."""
         try:
             # Load image
@@ -381,7 +389,7 @@ class BankStatementCV:
 
             # Extract top section for account information
             top_section_height = int(
-                height * self.bank_config["account_info_regions"]["top_section"]
+                height * self.bank_config["account_info_regions"]["top_section"],
             )
             account_section = image[:top_section_height, :]
 
@@ -395,7 +403,7 @@ class BankStatementCV:
                 try:
                     # Run OCR on entire account section
                     account_text = self.ocr_processor.tesseract.image_to_string(
-                        account_section
+                        account_section,
                     )
 
                     # Extract account information using patterns
@@ -410,7 +418,7 @@ class BankStatementCV:
             logger.error(f"Error processing account information: {e}")
             return {}
 
-    def _parse_account_text(self, text: str) -> Dict[str, Any]:
+    def _parse_account_text(self, text: str) -> dict[str, Any]:
         """Parse account information from text."""
         import re
 
@@ -440,8 +448,9 @@ class BankStatementCV:
         return account_info
 
     def _detect_statement_period(
-        self, _image_path: Union[str, Path, Image.Image]
-    ) -> Optional[str]:
+        self,
+        _image_path: str | Path | Image.Image,
+    ) -> str | None:
         """Detect statement period from bank statement."""
         try:
             # This would typically look for "Statement Period" text
@@ -451,8 +460,9 @@ class BankStatementCV:
             return None
 
     def _extract_balances(
-        self, _image_path: Union[str, Path, Image.Image]
-    ) -> tuple[Optional[float], Optional[float]]:
+        self,
+        _image_path: str | Path | Image.Image,
+    ) -> tuple[float | None, float | None]:
         """Extract opening and closing balances."""
         try:
             # This would typically look for balance information
@@ -462,8 +472,9 @@ class BankStatementCV:
             return None, None
 
     def analyze_transaction_patterns(
-        self, transactions: List[Transaction]
-    ) -> Dict[str, Any]:
+        self,
+        transactions: list[Transaction],
+    ) -> dict[str, Any]:
         """Analyze patterns in transactions."""
         if not transactions:
             return {"error": "No transactions to analyze"}
@@ -524,7 +535,9 @@ class BankStatementCV:
         return analysis
 
     def export_transaction_data(
-        self, result: BankStatementResult, output_path: Union[str, Path]
+        self,
+        result: BankStatementResult,
+        output_path: str | Path,
     ) -> Path:
         """Export transaction data to CSV format."""
         import csv
@@ -564,6 +577,6 @@ class BankStatementCV:
                 writer.writerow(row)
 
         logger.info(
-            f"Exported {len(result.transactions)} transactions to {output_path}"
+            f"Exported {len(result.transactions)} transactions to {output_path}",
         )
         return output_path

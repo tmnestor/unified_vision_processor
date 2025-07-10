@@ -1,5 +1,4 @@
-"""
-InternVL Model Implementation
+"""InternVL Model Implementation
 
 Implements InternVL3 with multi-GPU auto-configuration, quantization support,
 and advanced features like highlight detection integration.
@@ -10,7 +9,7 @@ import math
 import time
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 import torch
 import torchvision.transforms as T
@@ -29,8 +28,7 @@ IMAGENET_STD = (0.229, 0.224, 0.225)
 
 
 class InternVLModel(BaseVisionModel):
-    """
-    InternVL3 implementation with multi-GPU support and advanced features.
+    """InternVL3 implementation with multi-GPU support and advanced features.
 
     Features:
     - Multi-GPU auto-configuration
@@ -73,9 +71,8 @@ class InternVLModel(BaseVisionModel):
 
         return device
 
-    def _split_model(self, model_name: str) -> Dict[str, int]:
-        """
-        Create device mapping for multi-GPU configuration.
+    def _split_model(self, model_name: str) -> dict[str, int]:
+        """Create device mapping for multi-GPU configuration.
         Based on the model architecture, distributes layers across available GPUs.
         """
         device_map = {}
@@ -95,7 +92,7 @@ class InternVLModel(BaseVisionModel):
 
         # Extract model size from path
         model_size = None
-        for size_key in num_layers_mapping.keys():
+        for size_key in num_layers_mapping:
             if (
                 size_key in str(model_name)
                 or size_key.replace("-", "_").lower() in str(model_name).lower()
@@ -106,7 +103,7 @@ class InternVLModel(BaseVisionModel):
         if model_size is None:
             # Default to InternVL3-8B
             logger.warning(
-                f"Could not determine model size from {model_name}, defaulting to InternVL3-8B"
+                f"Could not determine model size from {model_name}, defaulting to InternVL3-8B",
             )
             model_size = "InternVL3-8B"
 
@@ -171,33 +168,32 @@ class InternVLModel(BaseVisionModel):
 
                     model_loading_args["load_in_8bit"] = True
                     logger.info(
-                        "Loading model on single GPU with 8-bit quantization..."
+                        "Loading model on single GPU with 8-bit quantization...",
                     )
                 except ImportError:
                     logger.warning(
-                        "bitsandbytes not available, loading without quantization"
+                        "bitsandbytes not available, loading without quantization",
                     )
             else:
                 logger.info("Loading model on single GPU...")
-        else:  # Multi-GPU - Choose between device mapping or single GPU
-            if hasattr(self, "kwargs") and self.kwargs.get("force_multi_gpu", False):
-                logger.info(
-                    f"Multi-GPU mode requested, distributing across {self.num_gpus} GPUs"
-                )
-                model_loading_args["torch_dtype"] = torch.bfloat16
-                device_map = self._split_model(self.model_path)
-                model_loading_args["device_map"] = device_map
-                logger.info(f"Device mapping: {device_map}")
-            else:
-                logger.warning(
-                    f"Multi-GPU detected ({self.num_gpus} GPUs), but using single GPU mode (safer)"
-                )
-                model_loading_args["torch_dtype"] = torch.bfloat16
-                # Force single GPU mode instead of device mapping
-                model_loading_args["device_map"] = {"": 0}  # Put everything on GPU 0
-                logger.info(
-                    "Loading model on single GPU (GPU 0) with device_map override..."
-                )
+        elif hasattr(self, "kwargs") and self.kwargs.get("force_multi_gpu", False):
+            logger.info(
+                f"Multi-GPU mode requested, distributing across {self.num_gpus} GPUs",
+            )
+            model_loading_args["torch_dtype"] = torch.bfloat16
+            device_map = self._split_model(self.model_path)
+            model_loading_args["device_map"] = device_map
+            logger.info(f"Device mapping: {device_map}")
+        else:
+            logger.warning(
+                f"Multi-GPU detected ({self.num_gpus} GPUs), but using single GPU mode (safer)",
+            )
+            model_loading_args["torch_dtype"] = torch.bfloat16
+            # Force single GPU mode instead of device mapping
+            model_loading_args["device_map"] = {"": 0}  # Put everything on GPU 0
+            logger.info(
+                "Loading model on single GPU (GPU 0) with device_map override...",
+            )
 
         # Add flash attention if requested
         if hasattr(self, "kwargs") and self.kwargs.get("use_flash_attention", True):
@@ -210,13 +206,15 @@ class InternVLModel(BaseVisionModel):
                 tokenizer_config["local_files_only"] = True
 
             self.tokenizer = AutoTokenizer.from_pretrained(
-                str(self.model_path), **tokenizer_config
+                str(self.model_path),
+                **tokenizer_config,
             )
             logger.info("Tokenizer loaded successfully")
 
             # Load model
             self.model = AutoModel.from_pretrained(
-                str(self.model_path), **model_loading_args
+                str(self.model_path),
+                **model_loading_args,
             ).eval()
 
             # Move to device if needed (single GPU only)
@@ -256,11 +254,12 @@ class InternVLModel(BaseVisionModel):
             [
                 T.Lambda(lambda img: img.convert("RGB") if img.mode != "RGB" else img),
                 T.Resize(
-                    (input_size, input_size), interpolation=InterpolationMode.BICUBIC
+                    (input_size, input_size),
+                    interpolation=InterpolationMode.BICUBIC,
                 ),
                 T.ToTensor(),
                 T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
-            ]
+            ],
         )
         return transform
 
@@ -271,10 +270,8 @@ class InternVLModel(BaseVisionModel):
         max_num: int = 12,
         image_size: int = 448,
         use_thumbnail: bool = False,
-    ) -> List[Image.Image]:
-        """
-        Process images with dynamic tiling based on aspect ratio.
-        """
+    ) -> list[Image.Image]:
+        """Process images with dynamic tiling based on aspect ratio."""
         orig_width, orig_height = image.size
         aspect_ratio = orig_width / orig_height
 
@@ -290,7 +287,11 @@ class InternVLModel(BaseVisionModel):
 
         # Find best aspect ratio
         best_ratio = self._find_closest_aspect_ratio(
-            aspect_ratio, target_ratios, orig_width, orig_height, image_size
+            aspect_ratio,
+            target_ratios,
+            orig_width,
+            orig_height,
+            image_size,
         )
 
         target_width = image_size * best_ratio[0]
@@ -320,11 +321,11 @@ class InternVLModel(BaseVisionModel):
     def _find_closest_aspect_ratio(
         self,
         aspect_ratio: float,
-        target_ratios: List[Tuple[int, int]],
+        target_ratios: list[tuple[int, int]],
         width: int,
         height: int,
         image_size: int,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """Find the closest valid aspect ratio for image tiling."""
         best_ratio_diff = float("inf")
         best_ratio = (1, 1)
@@ -343,10 +344,12 @@ class InternVLModel(BaseVisionModel):
         return best_ratio
 
     def process_image(
-        self, image_path: Union[str, Path, Image.Image], prompt: str, **kwargs
+        self,
+        image_path: str | Path | Image.Image,
+        prompt: str,
+        **kwargs,
     ) -> ModelResponse:
-        """
-        Process image with InternVL model.
+        """Process image with InternVL model.
 
         Args:
             image_path: Path to image file or PIL Image
@@ -355,6 +358,7 @@ class InternVLModel(BaseVisionModel):
 
         Returns:
             ModelResponse with standardized format
+
         """
         if not self.is_loaded:
             self.load_model()
@@ -397,7 +401,7 @@ class InternVLModel(BaseVisionModel):
                 logger.info(f"Model device: {self.model.device}")
             elif hasattr(self.model, "vision_model"):
                 logger.info(
-                    f"Vision model device: {next(self.model.vision_model.parameters()).device}"
+                    f"Vision model device: {next(self.model.vision_model.parameters()).device}",
                 )
 
             logger.info("Processed image as single tile")
@@ -436,7 +440,8 @@ class InternVLModel(BaseVisionModel):
                             **generation_config,
                         )
                     response = self.tokenizer.decode(
-                        outputs[0], skip_special_tokens=True
+                        outputs[0],
+                        skip_special_tokens=True,
                     )
                     logger.info("Alternative inference successful")
                 except Exception as e2:
@@ -469,10 +474,10 @@ class InternVLModel(BaseVisionModel):
 
     def process_batch(
         self,
-        image_paths: List[Union[str, Path, Image.Image]],
-        prompts: List[str],
+        image_paths: list[str | Path | Image.Image],
+        prompts: list[str],
         **kwargs,
-    ) -> List[ModelResponse]:
+    ) -> list[ModelResponse]:
         """Process multiple images in batch."""
         # InternVL doesn't support true batch processing
         # Process sequentially but reuse loaded model
@@ -486,7 +491,7 @@ class InternVLModel(BaseVisionModel):
                 logger.error(f"Failed to process image: {e}")
                 # Create error response
                 error_response = ModelResponse(
-                    raw_text=f"Error: {str(e)}",
+                    raw_text=f"Error: {e!s}",
                     confidence=0.0,
                     processing_time=0.0,
                     device_used=str(self.device),
@@ -500,16 +505,17 @@ class InternVLModel(BaseVisionModel):
         return results
 
     def classify_document(
-        self, image_path: Union[str, Path, Image.Image]
-    ) -> Dict[str, Any]:
-        """
-        Classify document type using InternVL model.
+        self,
+        image_path: str | Path | Image.Image,
+    ) -> dict[str, Any]:
+        """Classify document type using InternVL model.
 
         Args:
             image_path: Path to image file or PIL Image
 
         Returns:
             Classification result dictionary
+
         """
         classification_prompt = """Analyze document structure and format. Classify based on layout patterns:
 
@@ -561,7 +567,7 @@ Output document type only."""
             return {
                 "document_type": "unknown",
                 "confidence": 0.0,
-                "classification_response": f"Error: {str(e)}",
+                "classification_response": f"Error: {e!s}",
                 "is_business_document": False,
             }
 

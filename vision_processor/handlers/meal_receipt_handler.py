@@ -1,12 +1,11 @@
-"""
-Meal Receipt Handler
+"""Meal Receipt Handler
 
 Specialized handler for meal receipts following the Llama 7-step pipeline
 with Australian restaurant and food service recognition.
 """
 
 import logging
-from typing import Any, Dict, List
+from typing import Any
 
 from .base_ato_handler import BaseATOHandler
 
@@ -34,10 +33,10 @@ class MealReceiptHandler(BaseATOHandler):
             "meal_types": ["breakfast", "lunch", "dinner", "snack"],
         }
 
-    def _extract_document_specific_fields(self, text: str) -> Dict[str, Any]:
+    def _extract_document_specific_fields(self, text: str) -> dict[str, Any]:
         """Extract meal receipt specific fields."""
         return {"restaurant_name": self._extract_australian_business_name(text)}
 
-    def _validate_document_specific_fields(self, _fields: Dict[str, Any]) -> List[str]:
+    def _validate_document_specific_fields(self, _fields: dict[str, Any]) -> list[str]:
         """Validate meal receipt specific fields."""
         return []

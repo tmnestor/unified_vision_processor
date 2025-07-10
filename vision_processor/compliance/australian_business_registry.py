@@ -1,5 +1,4 @@
-"""
-Australian Business Registry
+"""Australian Business Registry
 
 This module provides comprehensive Australian business recognition and validation,
 combining data from both InternVL and Llama-3.2 systems with 100+ businesses.
@@ -7,14 +6,12 @@ combining data from both InternVL and Llama-3.2 systems with 100+ businesses.
 
 import logging
 import re
-from typing import Dict, List, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 class AustralianBusinessRegistry:
-    """
-    Comprehensive Australian business registry for recognition and validation.
+    """Comprehensive Australian business registry for recognition and validation.
 
     Features:
     - 100+ major Australian businesses
@@ -26,9 +23,9 @@ class AustralianBusinessRegistry:
 
     def __init__(self):
         self.initialized = False
-        self.business_registry: Dict[str, Dict[str, any]] = {}
-        self.industry_keywords: Dict[str, List[str]] = {}
-        self.business_aliases: Dict[str, List[str]] = {}
+        self.business_registry: dict[str, dict[str, any]] = {}
+        self.industry_keywords: dict[str, list[str]] = {}
+        self.business_aliases: dict[str, list[str]] = {}
 
     def initialize(self) -> None:
         """Initialize the business registry with comprehensive Australian business data."""
@@ -45,13 +42,12 @@ class AustralianBusinessRegistry:
         self._load_business_aliases()
 
         logger.info(
-            f"Australian Business Registry initialized with {len(self.business_registry)} businesses"
+            f"Australian Business Registry initialized with {len(self.business_registry)} businesses",
         )
         self.initialized = True
 
     def _load_business_registry(self) -> None:
         """Load comprehensive Australian business registry."""
-
         # Major retail chains
         retail_businesses = {
             "woolworths": {
@@ -1020,15 +1016,15 @@ class AustralianBusinessRegistry:
             "virgin_australia": ["virgin blue", "virgin air"],
         }
 
-    def recognize_business(self, text: str) -> List[Dict[str, any]]:
-        """
-        Recognize Australian businesses in text.
+    def recognize_business(self, text: str) -> list[dict[str, any]]:
+        """Recognize Australian businesses in text.
 
         Args:
             text: Text to search for business names
 
         Returns:
             List of recognized businesses with details
+
         """
         if not self.initialized:
             self.initialize()
@@ -1041,7 +1037,8 @@ class AustralianBusinessRegistry:
                 if keyword.lower() in text_lower:
                     # Calculate confidence based on keyword specificity
                     confidence = self._calculate_recognition_confidence(
-                        keyword, text_lower
+                        keyword,
+                        text_lower,
                     )
 
                     recognized.append(
@@ -1054,7 +1051,7 @@ class AustralianBusinessRegistry:
                             "matched_keyword": keyword,
                             "confidence": confidence,
                             "states": business_info["states"],
-                        }
+                        },
                     )
                     break  # Only match once per business
 
@@ -1064,10 +1061,12 @@ class AustralianBusinessRegistry:
         return recognized
 
     def validate_business_context(
-        self, business_name: str, document_type: str, extracted_fields: Dict[str, any]
-    ) -> Tuple[bool, List[str], List[str]]:
-        """
-        Validate business context for document consistency.
+        self,
+        business_name: str,
+        document_type: str,
+        extracted_fields: dict[str, any],
+    ) -> tuple[bool, list[str], list[str]]:
+        """Validate business context for document consistency.
 
         Args:
             business_name: Recognized business name
@@ -1076,6 +1075,7 @@ class AustralianBusinessRegistry:
 
         Returns:
             Tuple of (is_valid, validation_issues, recommendations)
+
         """
         if not self.initialized:
             self.initialize()
@@ -1094,20 +1094,20 @@ class AustralianBusinessRegistry:
 
         if not business_info:
             issues.append(
-                f"Business '{business_name}' not found in Australian business registry"
+                f"Business '{business_name}' not found in Australian business registry",
             )
             return False, issues, recommendations
 
         # Validate document type consistency
         expected_doc_types = self._get_expected_document_types(
-            business_info["industry"]
+            business_info["industry"],
         )
         if document_type not in expected_doc_types:
             issues.append(
-                f"Document type '{document_type}' unusual for {business_info['industry']} business"
+                f"Document type '{document_type}' unusual for {business_info['industry']} business",
             )
             recommendations.append(
-                f"Expected document types: {', '.join(expected_doc_types)}"
+                f"Expected document types: {', '.join(expected_doc_types)}",
             )
 
         # Validate ABN if present
@@ -1118,12 +1118,13 @@ class AustralianBusinessRegistry:
             if extracted_abn != registry_abn:
                 issues.append(
                     f"ABN mismatch: extracted {extracted_fields['abn']} "
-                    f"vs registered {business_info['abn']}"
+                    f"vs registered {business_info['abn']}",
                 )
 
         # Industry-specific validations
         industry_issues = self._validate_industry_specific_fields(
-            business_info["industry"], extracted_fields
+            business_info["industry"],
+            extracted_fields,
         )
         issues.extend(industry_issues)
 
@@ -1154,7 +1155,7 @@ class AustralianBusinessRegistry:
 
         return min(confidence, 1.0)
 
-    def _get_expected_document_types(self, industry: str) -> List[str]:
+    def _get_expected_document_types(self, industry: str) -> list[str]:
         """Get expected document types for an industry."""
         industry_docs = {
             "retail_supermarket": ["business_receipt", "tax_invoice"],
@@ -1172,8 +1173,10 @@ class AustralianBusinessRegistry:
         return industry_docs.get(industry, ["business_receipt", "tax_invoice"])
 
     def _validate_industry_specific_fields(
-        self, industry: str, extracted_fields: Dict[str, any]
-    ) -> List[str]:
+        self,
+        industry: str,
+        extracted_fields: dict[str, any],
+    ) -> list[str]:
         """Validate industry-specific field requirements."""
         issues = []
 
@@ -1185,7 +1188,7 @@ class AustralianBusinessRegistry:
             ]
             if missing_fuel_fields:
                 issues.append(
-                    f"Missing fuel-specific fields: {', '.join(missing_fuel_fields)}"
+                    f"Missing fuel-specific fields: {', '.join(missing_fuel_fields)}",
                 )
 
         elif industry == "banking":
@@ -1196,7 +1199,7 @@ class AustralianBusinessRegistry:
             ]
             if missing_banking_fields:
                 issues.append(
-                    f"Missing banking fields: {', '.join(missing_banking_fields)}"
+                    f"Missing banking fields: {', '.join(missing_banking_fields)}",
                 )
 
         elif industry == "airline":
@@ -1207,12 +1210,12 @@ class AustralianBusinessRegistry:
             ]
             if missing_travel_fields:
                 issues.append(
-                    f"Missing travel fields: {', '.join(missing_travel_fields)}"
+                    f"Missing travel fields: {', '.join(missing_travel_fields)}",
                 )
 
         return issues
 
-    def get_business_statistics(self) -> Dict[str, any]:
+    def get_business_statistics(self) -> dict[str, any]:
         """Get statistics about the business registry."""
         if not self.initialized:
             self.initialize()

@@ -1,12 +1,11 @@
-"""
-Prompt Validator
+"""Prompt Validator
 
 Validation system for prompt compatibility and effectiveness across models.
 """
 
 import logging
 import re
-from typing import Any, Dict
+from typing import Any
 
 from ..extraction.pipeline_components import DocumentType
 
@@ -14,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class PromptValidator:
-    """
-    Validate prompt compatibility and effectiveness across different models.
+    """Validate prompt compatibility and effectiveness across different models.
 
     Features:
     - Cross-model compatibility checking
@@ -58,10 +56,12 @@ class PromptValidator:
         self.initialized = True
 
     def validate_prompt(
-        self, prompt: str, document_type: DocumentType, target_model: str = "both"
-    ) -> Dict[str, Any]:
-        """
-        Validate a prompt for effectiveness and compatibility.
+        self,
+        prompt: str,
+        document_type: DocumentType,
+        target_model: str = "both",
+    ) -> dict[str, Any]:
+        """Validate a prompt for effectiveness and compatibility.
 
         Args:
             prompt: Prompt text to validate
@@ -70,6 +70,7 @@ class PromptValidator:
 
         Returns:
             Validation results with scores and recommendations
+
         """
         if not self.initialized:
             self.initialize()
@@ -94,12 +95,15 @@ class PromptValidator:
 
         # Model compatibility validation
         compatibility_score = self._validate_compatibility(
-            prompt, target_model, validation_result
+            prompt,
+            target_model,
+            validation_result,
         )
 
         # Australian tax compliance validation
         compliance_score = self._validate_australian_compliance(
-            prompt, validation_result
+            prompt,
+            validation_result,
         )
 
         # Calculate overall scores
@@ -119,14 +123,14 @@ class PromptValidator:
                     issue
                     for issue in validation_result["issues"]
                     if issue["severity"] == "critical"
-                ]
+                ],
             )
             == 0
         )
 
         return validation_result
 
-    def _validate_structure(self, prompt: str, result: Dict[str, Any]) -> float:
+    def _validate_structure(self, prompt: str, result: dict[str, Any]) -> float:
         """Validate basic prompt structure."""
         score = 1.0
 
@@ -137,7 +141,7 @@ class PromptValidator:
                     "type": "structure",
                     "severity": "critical",
                     "message": f"Prompt too short ({len(prompt)} < {self.min_prompt_length} characters)",
-                }
+                },
             )
             score -= 0.5
 
@@ -147,7 +151,7 @@ class PromptValidator:
                     "type": "structure",
                     "severity": "warning",
                     "message": f"Prompt very long ({len(prompt)} > {self.max_prompt_length} characters)",
-                }
+                },
             )
             score -= 0.2
 
@@ -158,27 +162,32 @@ class PromptValidator:
                     "type": "structure",
                     "severity": "warning",
                     "message": "Missing clear instruction verbs (extract, analyze, process)",
-                }
+                },
             )
             score -= 0.1
 
         # Check for clear sections
         if not re.search(
-            r"(?:requirements?|fields?|information):", prompt, re.IGNORECASE
+            r"(?:requirements?|fields?|information):",
+            prompt,
+            re.IGNORECASE,
         ):
             result["issues"].append(
                 {
                     "type": "structure",
                     "severity": "minor",
                     "message": "Consider adding clear section headers for requirements",
-                }
+                },
             )
             score -= 0.05
 
         return max(score, 0.0)
 
     def _validate_content(
-        self, prompt: str, document_type: DocumentType, result: Dict[str, Any]
+        self,
+        prompt: str,
+        document_type: DocumentType,
+        result: dict[str, Any],
     ) -> float:
         """Validate prompt content relevance and completeness."""
         score = 1.0
@@ -233,7 +242,7 @@ class PromptValidator:
                         "type": "content",
                         "severity": "warning",
                         "message": f"Low document-specific keyword coverage ({found_keywords}/{len(expected_keywords)})",
-                    }
+                    },
                 )
                 score -= 0.3
             elif keyword_coverage < 0.8:
@@ -242,7 +251,7 @@ class PromptValidator:
                         "type": "content",
                         "severity": "minor",
                         "message": f"Moderate document-specific keyword coverage ({found_keywords}/{len(expected_keywords)})",
-                    }
+                    },
                 )
                 score -= 0.1
 
@@ -253,14 +262,17 @@ class PromptValidator:
                     "type": "content",
                     "severity": "warning",
                     "message": "Consider specifying desired output format",
-                }
+                },
             )
             score -= 0.1
 
         return max(score, 0.0)
 
     def _validate_compatibility(
-        self, prompt: str, target_model: str, result: Dict[str, Any]
+        self,
+        prompt: str,
+        target_model: str,
+        result: dict[str, Any],
     ) -> float:
         """Validate model compatibility."""
         if target_model not in self.model_requirements and target_model != "both":
@@ -269,26 +281,34 @@ class PromptValidator:
                     "type": "compatibility",
                     "severity": "warning",
                     "message": f"Unknown target model: {target_model}",
-                }
+                },
             )
             return 0.5
 
         if target_model == "both":
             # Validate for both models
             internvl_score = self._validate_single_model_compatibility(
-                prompt, "internvl3", result
+                prompt,
+                "internvl3",
+                result,
             )
             llama_score = self._validate_single_model_compatibility(
-                prompt, "llama32_vision", result
+                prompt,
+                "llama32_vision",
+                result,
             )
             return (internvl_score + llama_score) / 2
-        else:
-            return self._validate_single_model_compatibility(
-                prompt, target_model, result
-            )
+        return self._validate_single_model_compatibility(
+            prompt,
+            target_model,
+            result,
+        )
 
     def _validate_single_model_compatibility(
-        self, prompt: str, model: str, result: Dict[str, Any]
+        self,
+        prompt: str,
+        model: str,
+        result: dict[str, Any],
     ) -> float:
         """Validate compatibility with a specific model."""
         if model not in self.model_requirements:
@@ -305,7 +325,7 @@ class PromptValidator:
                     "type": "compatibility",
                     "severity": "minor",
                     "message": f"Prompt length ({len(prompt)}) outside optimal range for {model} ({min_length}-{max_length})",
-                }
+                },
             )
             score -= 0.1
 
@@ -323,7 +343,7 @@ class PromptValidator:
                     "type": "compatibility",
                     "severity": "warning",
                     "message": f"Missing {model} keywords: {found_required}/{len(required_keywords)} found",
-                }
+                },
             )
             score -= 0.2
 
@@ -334,14 +354,16 @@ class PromptValidator:
                     "type": "compatibility",
                     "severity": "warning",
                     "message": f"{model} does not support highlight detection features",
-                }
+                },
             )
             score -= 0.2
 
         return max(score, 0.0)
 
     def _validate_australian_compliance(
-        self, prompt: str, result: Dict[str, Any]
+        self,
+        prompt: str,
+        result: dict[str, Any],
     ) -> float:
         """Validate Australian tax compliance elements."""
         score = 1.0
@@ -359,7 +381,7 @@ class PromptValidator:
                     "type": "compliance",
                     "severity": "warning",
                     "message": f"Limited Australian tax context ({australian_terms_found}/{len(self.required_australian_terms)} terms)",
-                }
+                },
             )
             score -= 0.3
 
@@ -370,7 +392,7 @@ class PromptValidator:
                     "type": "compliance",
                     "severity": "minor",
                     "message": "Consider specifying Australian GST rate (10%)",
-                }
+                },
             )
             score -= 0.1
 
@@ -381,7 +403,7 @@ class PromptValidator:
                     "type": "compliance",
                     "severity": "minor",
                     "message": "Consider specifying Australian date format (DD/MM/YYYY)",
-                }
+                },
             )
             score -= 0.1
 
@@ -392,13 +414,13 @@ class PromptValidator:
                     "type": "compliance",
                     "severity": "minor",
                     "message": "Consider specifying ABN format (XX XXX XXX XXX)",
-                }
+                },
             )
             score -= 0.1
 
         return max(score, 0.0)
 
-    def validate_prompt_library(self, prompts: Dict[str, str]) -> Dict[str, Any]:
+    def validate_prompt_library(self, prompts: dict[str, str]) -> dict[str, Any]:
         """Validate an entire prompt library."""
         library_results = {
             "total_prompts": len(prompts),
@@ -442,19 +464,19 @@ class PromptValidator:
         # Generate library-level recommendations
         if library_results["average_score"] < 0.7:
             library_results["recommendations"].append(
-                "Overall prompt quality below threshold - review and improve prompts"
+                "Overall prompt quality below threshold - review and improve prompts",
             )
 
         if library_results["failed_prompts"] > library_results["passed_prompts"]:
             library_results["recommendations"].append(
-                "More prompts failed than passed - significant improvements needed"
+                "More prompts failed than passed - significant improvements needed",
             )
 
         # Top issue recommendations
         if issue_counts:
             top_issue = max(issue_counts.items(), key=lambda x: x[1])
             library_results["recommendations"].append(
-                f"Most common issue: {top_issue[0]} ({top_issue[1]} occurrences)"
+                f"Most common issue: {top_issue[0]} ({top_issue[1]} occurrences)",
             )
 
         return library_results
@@ -465,28 +487,27 @@ class PromptValidator:
 
         if "fuel" in prompt_id_lower:
             return DocumentType.FUEL_RECEIPT
-        elif "tax_invoice" in prompt_id_lower:
+        if "tax_invoice" in prompt_id_lower:
             return DocumentType.TAX_INVOICE
-        elif "business" in prompt_id_lower:
+        if "business" in prompt_id_lower:
             return DocumentType.BUSINESS_RECEIPT
-        elif "bank" in prompt_id_lower:
+        if "bank" in prompt_id_lower:
             return DocumentType.BANK_STATEMENT
-        elif "meal" in prompt_id_lower:
+        if "meal" in prompt_id_lower:
             return DocumentType.MEAL_RECEIPT
-        elif "accommodation" in prompt_id_lower:
+        if "accommodation" in prompt_id_lower:
             return DocumentType.ACCOMMODATION
-        elif "travel" in prompt_id_lower:
+        if "travel" in prompt_id_lower:
             return DocumentType.TRAVEL_DOCUMENT
-        elif "parking" in prompt_id_lower or "toll" in prompt_id_lower:
+        if "parking" in prompt_id_lower or "toll" in prompt_id_lower:
             return DocumentType.PARKING_TOLL
-        elif "professional" in prompt_id_lower:
+        if "professional" in prompt_id_lower:
             return DocumentType.PROFESSIONAL_SERVICES
-        elif "equipment" in prompt_id_lower or "supplies" in prompt_id_lower:
+        if "equipment" in prompt_id_lower or "supplies" in prompt_id_lower:
             return DocumentType.EQUIPMENT_SUPPLIES
-        else:
-            return DocumentType.OTHER
+        return DocumentType.OTHER
 
-    def get_validation_statistics(self) -> Dict[str, Any]:
+    def get_validation_statistics(self) -> dict[str, Any]:
         """Get validation system statistics."""
         return {
             "validation_criteria": {

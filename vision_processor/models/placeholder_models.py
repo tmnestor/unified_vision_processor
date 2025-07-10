@@ -1,5 +1,4 @@
-"""
-Placeholder Model Implementations for Phase 1 Testing
+"""Placeholder Model Implementations for Phase 1 Testing
 
 These are temporary implementations to verify the pipeline framework.
 They will be replaced with actual model implementations in Phase 2.
@@ -7,7 +6,6 @@ They will be replaced with actual model implementations in Phase 2.
 
 import time
 from pathlib import Path
-from typing import List, Union
 
 import torch
 from PIL import Image
@@ -35,10 +33,9 @@ class PlaceholderInternVLModel(BaseVisionModel):
         # Simple device selection for testing
         if torch.cuda.is_available():
             return torch.device("cuda:0")
-        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             return torch.device("mps")
-        else:
-            return torch.device("cpu")
+        return torch.device("cpu")
 
     def load_model(self) -> None:
         """Placeholder model loading."""
@@ -55,7 +52,10 @@ class PlaceholderInternVLModel(BaseVisionModel):
         self.processor = None
 
     def process_image(
-        self, _image_path: Union[str, Path, Image.Image], prompt: str, **_kwargs
+        self,
+        _image_path: str | Path | Image.Image,
+        prompt: str,
+        **_kwargs,
     ) -> ModelResponse:
         """Process image with placeholder logic."""
         if not self.is_loaded:
@@ -87,10 +87,10 @@ class PlaceholderInternVLModel(BaseVisionModel):
 
     def process_batch(
         self,
-        image_paths: List[Union[str, Path, Image.Image]],
-        prompts: List[str],
+        image_paths: list[str | Path | Image.Image],
+        prompts: list[str],
         **_kwargs,
-    ) -> List[ModelResponse]:
+    ) -> list[ModelResponse]:
         """Process batch of images."""
         return [
             self.process_image(img, prompt)
@@ -99,7 +99,6 @@ class PlaceholderInternVLModel(BaseVisionModel):
 
     def _apply_quantization(self) -> None:
         """Placeholder quantization."""
-        pass
 
 
 class PlaceholderLlamaVisionModel(BaseVisionModel):
@@ -122,10 +121,9 @@ class PlaceholderLlamaVisionModel(BaseVisionModel):
         # Simple device selection for testing
         if torch.cuda.is_available():
             return torch.device("cuda:0")
-        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             return torch.device("mps")
-        else:
-            return torch.device("cpu")
+        return torch.device("cpu")
 
     def load_model(self) -> None:
         """Placeholder model loading."""
@@ -142,7 +140,10 @@ class PlaceholderLlamaVisionModel(BaseVisionModel):
         self.processor = None
 
     def process_image(
-        self, _image_path: Union[str, Path, Image.Image], prompt: str, **_kwargs
+        self,
+        _image_path: str | Path | Image.Image,
+        prompt: str,
+        **_kwargs,
     ) -> ModelResponse:
         """Process image with placeholder logic."""
         if not self.is_loaded:
@@ -174,10 +175,10 @@ class PlaceholderLlamaVisionModel(BaseVisionModel):
 
     def process_batch(
         self,
-        image_paths: List[Union[str, Path, Image.Image]],
-        prompts: List[str],
+        image_paths: list[str | Path | Image.Image],
+        prompts: list[str],
         **_kwargs,
-    ) -> List[ModelResponse]:
+    ) -> list[ModelResponse]:
         """Process batch of images."""
         return [
             self.process_image(img, prompt)
@@ -186,4 +187,3 @@ class PlaceholderLlamaVisionModel(BaseVisionModel):
 
     def _apply_quantization(self) -> None:
         """Placeholder quantization."""
-        pass

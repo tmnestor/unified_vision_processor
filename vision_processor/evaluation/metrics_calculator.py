@@ -1,5 +1,4 @@
-"""
-Advanced Metrics Calculator
+"""Advanced Metrics Calculator
 
 Comprehensive metrics computation for document processing evaluation.
 Supports precision, recall, F1, exact match, and Australian tax-specific metrics.
@@ -7,14 +6,13 @@ Supports precision, recall, F1, exact match, and Australian tax-specific metrics
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 
 class MetricsCalculator:
-    """
-    Advanced metrics calculator for document processing evaluation.
+    """Advanced metrics calculator for document processing evaluation.
 
     Supports standard NLP metrics and Australian tax document-specific
     evaluation criteria.
@@ -30,7 +28,7 @@ class MetricsCalculator:
         self.date_patterns = [
             re.compile(r"^\d{1,2}[/-]\d{1,2}[/-]\d{2,4}$"),
             re.compile(
-                r"^\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}$"
+                r"^\d{1,2}\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}$",
             ),
         ]
 
@@ -40,10 +38,11 @@ class MetricsCalculator:
         logger.info("MetricsCalculator initialized with Australian tax validation")
 
     def calculate_prf_metrics(
-        self, extracted: Dict[str, Any], ground_truth: Dict[str, Any]
-    ) -> Tuple[float, float, float]:
-        """
-        Calculate precision, recall, and F1 score.
+        self,
+        extracted: dict[str, Any],
+        ground_truth: dict[str, Any],
+    ) -> tuple[float, float, float]:
+        """Calculate precision, recall, and F1 score.
 
         Args:
             extracted: Extracted fields from model
@@ -51,6 +50,7 @@ class MetricsCalculator:
 
         Returns:
             Tuple of (precision, recall, f1_score)
+
         """
         if not ground_truth:
             return 0.0, 0.0, 0.0
@@ -86,10 +86,11 @@ class MetricsCalculator:
         return precision, recall, f1_score
 
     def calculate_exact_match(
-        self, extracted: Dict[str, Any], ground_truth: Dict[str, Any]
+        self,
+        extracted: dict[str, Any],
+        ground_truth: dict[str, Any],
     ) -> float:
-        """
-        Calculate exact match score for extracted values.
+        """Calculate exact match score for extracted values.
 
         Args:
             extracted: Extracted fields from model
@@ -97,6 +98,7 @@ class MetricsCalculator:
 
         Returns:
             Exact match score (0.0 to 1.0)
+
         """
         if not ground_truth:
             return 0.0
@@ -116,12 +118,11 @@ class MetricsCalculator:
 
     def calculate_fuzzy_match(
         self,
-        extracted: Dict[str, Any],
-        ground_truth: Dict[str, Any],
+        extracted: dict[str, Any],
+        ground_truth: dict[str, Any],
         threshold: float = 0.8,
     ) -> float:
-        """
-        Calculate fuzzy match score using string similarity.
+        """Calculate fuzzy match score using string similarity.
 
         Args:
             extracted: Extracted fields from model
@@ -130,6 +131,7 @@ class MetricsCalculator:
 
         Returns:
             Fuzzy match score (0.0 to 1.0)
+
         """
         if not ground_truth:
             return 0.0
@@ -143,7 +145,8 @@ class MetricsCalculator:
 
                 # Calculate similarity
                 similarity = self._calculate_string_similarity(
-                    str(extracted_value), str(true_value)
+                    str(extracted_value),
+                    str(true_value),
                 )
 
                 if similarity >= threshold:
@@ -152,10 +155,11 @@ class MetricsCalculator:
         return fuzzy_matches / total_fields
 
     def calculate_ato_compliance_score(
-        self, extracted: Dict[str, Any], ground_truth: Dict[str, Any]
+        self,
+        extracted: dict[str, Any],
+        ground_truth: dict[str, Any],
     ) -> float:
-        """
-        Calculate ATO compliance score for Australian tax documents.
+        """Calculate ATO compliance score for Australian tax documents.
 
         Args:
             extracted: Extracted fields from model
@@ -163,6 +167,7 @@ class MetricsCalculator:
 
         Returns:
             ATO compliance score (0.0 to 1.0)
+
         """
         compliance_score = 0.0
         total_checks = 0
@@ -204,12 +209,11 @@ class MetricsCalculator:
 
     def calculate_field_confidence_correlation(
         self,
-        extracted: Dict[str, Any],
-        ground_truth: Dict[str, Any],
-        confidence_scores: Dict[str, float],
+        extracted: dict[str, Any],
+        ground_truth: dict[str, Any],
+        confidence_scores: dict[str, float],
     ) -> float:
-        """
-        Calculate correlation between field confidence and accuracy.
+        """Calculate correlation between field confidence and accuracy.
 
         Args:
             extracted: Extracted fields from model
@@ -218,6 +222,7 @@ class MetricsCalculator:
 
         Returns:
             Confidence correlation score
+
         """
         if not confidence_scores:
             return 0.0
@@ -233,7 +238,9 @@ class MetricsCalculator:
                     accuracy = (
                         1.0
                         if self._exact_match_comparison(
-                            extracted[field], ground_truth[field], field
+                            extracted[field],
+                            ground_truth[field],
+                            field,
                         )
                         else 0.0
                     )
@@ -250,10 +257,11 @@ class MetricsCalculator:
         return self._calculate_correlation(field_confidences, field_accuracies)
 
     def calculate_processing_efficiency(
-        self, processing_time: float, document_complexity: float = 1.0
-    ) -> Dict[str, float]:
-        """
-        Calculate processing efficiency metrics.
+        self,
+        processing_time: float,
+        document_complexity: float = 1.0,
+    ) -> dict[str, float]:
+        """Calculate processing efficiency metrics.
 
         Args:
             processing_time: Time taken to process document
@@ -261,6 +269,7 @@ class MetricsCalculator:
 
         Returns:
             Dictionary of efficiency metrics
+
         """
         # Baseline processing times (seconds)
         baseline_times = {
@@ -305,7 +314,10 @@ class MetricsCalculator:
         }
 
     def _exact_match_comparison(
-        self, extracted_value: Any, true_value: Any, field_name: str
+        self,
+        extracted_value: Any,
+        true_value: Any,
+        field_name: str,
     ) -> bool:
         """Compare two values for exact match with field-specific logic."""
         # Convert to strings and normalize
@@ -319,7 +331,7 @@ class MetricsCalculator:
             true_clean = re.sub(r"[\s-]", "", true_str)
             return extracted_clean == true_clean
 
-        elif field_name in ["total_amount", "amount", "subtotal", "gst_amount"]:
+        if field_name in ["total_amount", "amount", "subtotal", "gst_amount"]:
             # Remove currency symbols and normalize amounts
             extracted_amount = re.sub(r"[$,\s]", "", extracted_str)
             true_amount = re.sub(r"[$,\s]", "", true_str)
@@ -388,7 +400,7 @@ class MetricsCalculator:
         cleaned_abn = re.sub(r"\s", "", str(abn))
         return bool(re.match(r"^\d{11}$", cleaned_abn))
 
-    def _validate_gst_calculation(self, fields: Dict[str, Any]) -> bool:
+    def _validate_gst_calculation(self, fields: dict[str, Any]) -> bool:
         """Validate GST calculation (10% in Australia)."""
         try:
             if "total_amount" not in fields or "subtotal" not in fields:
@@ -432,7 +444,9 @@ class MetricsCalculator:
         return normalized
 
     def _calculate_correlation(
-        self, x_values: List[float], y_values: List[float]
+        self,
+        x_values: list[float],
+        y_values: list[float],
     ) -> float:
         """Calculate Pearson correlation coefficient."""
         if len(x_values) != len(y_values) or len(x_values) < 2:
@@ -462,13 +476,12 @@ class MetricsCalculator:
 
     def get_metrics_summary(
         self,
-        extracted: Dict[str, Any],
-        ground_truth: Dict[str, Any],
+        extracted: dict[str, Any],
+        ground_truth: dict[str, Any],
         processing_time: float = 0.0,
-        confidence_scores: Optional[Dict[str, float]] = None,
-    ) -> Dict[str, Any]:
-        """
-        Get comprehensive metrics summary.
+        confidence_scores: dict[str, float] | None = None,
+    ) -> dict[str, Any]:
+        """Get comprehensive metrics summary.
 
         Args:
             extracted: Extracted fields from model
@@ -478,10 +491,12 @@ class MetricsCalculator:
 
         Returns:
             Comprehensive metrics dictionary
+
         """
         # Calculate basic metrics
         precision, recall, f1_score = self.calculate_prf_metrics(
-            extracted, ground_truth
+            extracted,
+            ground_truth,
         )
         exact_match = self.calculate_exact_match(extracted, ground_truth)
         fuzzy_match = self.calculate_fuzzy_match(extracted, ground_truth)
@@ -494,7 +509,9 @@ class MetricsCalculator:
         confidence_correlation = 0.0
         if confidence_scores:
             confidence_correlation = self.calculate_field_confidence_correlation(
-                extracted, ground_truth, confidence_scores
+                extracted,
+                ground_truth,
+                confidence_scores,
             )
 
         return {
