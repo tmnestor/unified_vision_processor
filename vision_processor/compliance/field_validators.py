@@ -90,11 +90,19 @@ class ABNValidator:
     def _validate_checksum(self, abn: str) -> bool:
         """Validate ABN using the official checksum algorithm."""
         try:
+            # Ensure ABN is exactly 11 digits
+            if len(abn) != 11 or not abn.isdigit():
+                return False
+
             # Convert to list of integers
             digits = [int(d) for d in abn]
 
             # Subtract 1 from the first digit
             digits[0] -= 1
+
+            # Handle case where first digit becomes -1
+            if digits[0] < 0:
+                return False
 
             # Calculate weighted sum
             weighted_sum = sum(
@@ -406,8 +414,8 @@ class AmountValidator:
     """
 
     def __init__(self):
-        # Currency patterns
-        self.currency_pattern = re.compile(r"^-?\$?[\d,]+\.?\d{0,2}$")
+        # Currency patterns - allow for optional currency symbol and decimal places
+        self.currency_pattern = re.compile(r"^-?\$?[\d,]+(\.\d{1,2})?$")
 
     def validate(self, amount_str: str) -> tuple[bool, float | None, str, list[str]]:
         """Validate and parse Australian currency amount.
@@ -435,6 +443,11 @@ class AmountValidator:
             # Remove currency symbol and commas
             numeric_str = clean_amount.replace("$", "").replace(",", "")
             parsed_amount = float(numeric_str)
+
+            # Check for negative amounts
+            if parsed_amount < 0:
+                issues.append("Amount cannot be negative")
+                return False, None, clean_amount, issues
 
             # Format as currency
             formatted_amount = f"${parsed_amount:,.2f}"

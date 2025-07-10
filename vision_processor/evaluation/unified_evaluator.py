@@ -157,6 +157,12 @@ class UnifiedEvaluator:
         Returns:
             EvaluationResult with comprehensive metrics
         """
+        # Handle None inputs gracefully
+        if extracted_fields is None:
+            extracted_fields = {}
+        if ground_truth is None:
+            ground_truth = {}
+
         # Standardize fields for comparison
         standardized_extracted = self._standardize_fields(extracted_fields)
         standardized_ground_truth = self._standardize_fields(ground_truth)
@@ -491,6 +497,10 @@ class UnifiedEvaluator:
     def _standardize_fields(self, fields: dict[str, Any]) -> dict[str, Any]:
         """Standardize field names for consistent comparison."""
         standardized = {}
+
+        # Handle None input
+        if fields is None:
+            return standardized
 
         for standard_field, variations in self.standard_fields.items():
             value = None

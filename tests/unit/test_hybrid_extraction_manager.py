@@ -33,27 +33,43 @@ class TestUnifiedExtractionManager:
             # Setup mocks for all components
             mock_model = MagicMock()
             mock_model.model_type = "internvl3"
+            mock_model.get_memory_usage.return_value = 1024.0
             mock_factory.return_value = mock_model
 
             with patch(
                 "vision_processor.classification.DocumentClassifier"
-            ) as mock_classifier:
+            ) as mock_classifier_class:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
-                ) as mock_awk:
+                ) as mock_awk_class:
                     with patch(
                         "vision_processor.confidence.ConfidenceManager"
-                    ) as mock_confidence:
+                    ) as mock_confidence_class:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
-                        ) as mock_ato:
+                        ) as mock_ato_class:
                             with patch(
                                 "vision_processor.extraction.hybrid_extraction_manager.HighlightDetector"
-                            ) as mock_highlights:
+                            ) as mock_highlights_class:
+                                # Create mock instances that will be returned by the classes
+                                mock_classifier = MagicMock()
+                                mock_awk = MagicMock()
+                                mock_confidence = MagicMock()
+                                mock_ato = MagicMock()
+                                mock_highlights = MagicMock()
+
+                                # Configure the class mocks to return our instances
+                                mock_classifier_class.return_value = mock_classifier
+                                mock_awk_class.return_value = mock_awk
+                                mock_confidence_class.return_value = mock_confidence
+                                mock_ato_class.return_value = mock_ato
+                                mock_highlights_class.return_value = mock_highlights
+
+                                # Create the manager
                                 manager = UnifiedExtractionManager(test_config)
 
                                 # Setup mock responses
-                                mock_classifier.return_value.classify_with_evidence.return_value = (
+                                mock_classifier.classify_with_evidence.return_value = (
                                     DocumentType.BUSINESS_RECEIPT,
                                     0.85,
                                     ["evidence"],
@@ -65,28 +81,26 @@ class TestUnifiedExtractionManager:
                                     processing_time=1.5,
                                 )
 
-                                mock_awk.return_value.extract.return_value = {
+                                mock_awk.extract.return_value = {
                                     "awk_supplier": "AWK Store"
                                 }
 
-                                mock_confidence.return_value.assess_document_confidence.return_value = Mock(
+                                mock_confidence.assess_document_confidence.return_value = Mock(
                                     overall_confidence=0.82,
-                                    quality_grade=QualityGrade.GOOD,
+                                    quality_grade="good",  # String instead of enum for Mock compatibility
                                     production_ready=True,
                                     quality_flags=[],
                                     recommendations=[],
                                 )
 
-                                mock_ato.return_value.assess_compliance.return_value = (
-                                    Mock(
-                                        compliance_score=0.90,
-                                        passed=True,
-                                        violations=[],
-                                        warnings=[],
-                                    )
+                                mock_ato.assess_compliance.return_value = Mock(
+                                    compliance_score=0.90,
+                                    passed=True,
+                                    violations=[],
+                                    warnings=[],
                                 )
 
-                                mock_highlights.return_value.detect_highlights.return_value = []
+                                mock_highlights.detect_highlights.return_value = []
 
                                 return manager
 

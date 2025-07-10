@@ -99,7 +99,13 @@ class TestModelFactory:
             )
 
             assert model.device == "cuda:0"
-            mock_model.assert_called_once_with("mock_path", test_config)
+            # Verify model was called with path and prepared config kwargs
+            mock_model.assert_called_once()
+            call_args = mock_model.call_args
+            assert call_args[0][0] == "mock_path"  # First positional arg is model_path
+            assert (
+                "device_config" in call_args[1]
+            )  # Prepared config contains device_config
 
     def test_model_factory_memory_optimization(self, test_config, mock_model_factory):
         """Test model factory memory optimization features."""
@@ -135,7 +141,10 @@ class TestModelFactory:
             )
 
             assert model.supports_multi_gpu is True
-            mock_model.assert_called_once_with("mock_path", test_config)
+            # Verify model was called with path and prepared config kwargs
+            mock_model.assert_called_once()
+            call_args = mock_model.call_args
+            assert call_args[0][0] == "mock_path"  # First positional arg is model_path
 
     def test_model_factory_auto_device_selection(self, test_config, mock_model_factory):
         """Test automatic device selection in factory."""
@@ -277,4 +286,7 @@ class TestModelFactory:
             )
 
             assert model.cross_platform_compatible is True
-            mock_model.assert_called_once_with("mock_path", test_config)
+            # Verify model was called with path and prepared config kwargs
+            mock_model.assert_called_once()
+            call_args = mock_model.call_args
+            assert call_args[0][0] == "mock_path"  # First positional arg is model_path

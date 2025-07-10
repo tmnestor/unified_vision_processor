@@ -53,8 +53,8 @@ class ModelFactory:
     @classmethod
     def create_model(
         cls,
-        model_type: ModelType,
-        model_path: str | Path,
+        model_type: ModelType | str,
+        model_path: str | Path | None,
         config: Optional["UnifiedConfig"] = None,
         **kwargs,
     ) -> BaseVisionModel:
@@ -70,14 +70,27 @@ class ModelFactory:
             Configured model instance
 
         Raises:
-            ValueError: If model type is not registered
-            RuntimeError: If model creation fails
+            ValueError: If model type is not registered or invalid parameters
+            ModelCreationError: If model creation fails
 
         """
+        # Validate path first
+        if model_path is None or (
+            isinstance(model_path, str) and not model_path.strip()
+        ):
+            raise ValueError("Model path cannot be None or empty")
+
+        # Convert string model_type to enum if needed
+        if isinstance(model_type, str):
+            try:
+                model_type = ModelType(model_type)
+            except ValueError as e:
+                raise ValueError(f"Unsupported model type: {model_type}") from e
+
         if model_type not in cls._model_registry:
             available_models = list(cls._model_registry.keys())
             raise ValueError(
-                f"Model type {model_type.value} not registered. "
+                f"Unsupported model type: {model_type.value}. "
                 f"Available models: {[m.value for m in available_models]}",
             )
 
@@ -106,7 +119,7 @@ class ModelFactory:
 
         except Exception as e:
             logger.error(f"Failed to create {model_type.value} model: {e}")
-            raise ModelCreationError(f"Model creation failed: {e}", model_type) from e
+            raise ModelCreationError(f"Failed to create model: {e}", model_type) from e
 
     @classmethod
     def _prepare_model_config(

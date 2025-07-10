@@ -1017,18 +1017,29 @@ class AustralianBusinessRegistry:
             "virgin_australia": ["virgin blue", "virgin air"],
         }
 
-    def recognize_business(self, text: str) -> list[dict[str, any]]:
+    def recognize_business(self, text: str):
         """Recognize Australian businesses in text.
 
         Args:
             text: Text to search for business names
 
         Returns:
-            List of recognized businesses with details
+            Business recognition result object
 
         """
         if not self.initialized:
             self.initialize()
+
+        from dataclasses import dataclass
+
+        @dataclass
+        class BusinessRecognitionResult:
+            is_recognized: bool
+            business_name: str
+            confidence_score: float
+            normalized_name: str = ""
+            industry: str = ""
+            abn: str = ""
 
         recognized = []
         text_lower = text.lower()
@@ -1047,7 +1058,7 @@ class AustralianBusinessRegistry:
                             "business_key": business_key,
                             "official_name": business_info["official_name"],
                             "industry": business_info["industry"],
-                            "abn": business_info.get("abn"),
+                            "abn": business_info.get("abn", ""),
                             "business_type": business_info["business_type"],
                             "matched_keyword": keyword,
                             "confidence": confidence,
@@ -1059,7 +1070,21 @@ class AustralianBusinessRegistry:
         # Sort by confidence (highest first)
         recognized.sort(key=lambda x: x["confidence"], reverse=True)
 
-        return recognized
+        # Return the best match or "not recognized" result
+        if recognized:
+            best_match = recognized[0]
+            return BusinessRecognitionResult(
+                is_recognized=True,
+                business_name=best_match["official_name"],
+                confidence_score=best_match["confidence"],
+                normalized_name=best_match["official_name"],
+                industry=best_match["industry"],
+                abn=best_match["abn"],
+            )
+        else:
+            return BusinessRecognitionResult(
+                is_recognized=False, business_name=text, confidence_score=0.0
+            )
 
     def validate_business_context(
         self,
@@ -1248,3 +1273,87 @@ class AustralianBusinessRegistry:
                 )
 
         return stats
+
+    def lookup_business_by_abn(self, abn: str):
+        """Lookup business by ABN.
+
+        Args:
+            abn: ABN to search for
+
+        Returns:
+            ABN lookup result object
+        """
+        if not self.initialized:
+            self.initialize()
+
+        from dataclasses import dataclass
+
+        @dataclass
+        class ABNLookupResult:
+            is_found: bool
+            business_name: str
+            abn: str
+            industry: str = ""
+
+        # Clean the ABN for comparison
+        clean_abn = re.sub(r"[^\d]", "", abn) if abn else ""
+
+        for business_info in self.business_registry.values():
+            if business_info.get("abn"):
+                registry_abn = re.sub(r"[^\d]", "", business_info["abn"])
+                if clean_abn == registry_abn:
+                    return ABNLookupResult(
+                        is_found=True,
+                        business_name=business_info["official_name"],
+                        abn=business_info["abn"],
+                        industry=business_info["industry"],
+                    )
+
+        return ABNLookupResult(is_found=False, business_name="", abn=abn)
+
+    def get_business_category(self, business_name: str):
+        """Get business category for a given business name.
+
+        Args:
+            business_name: Name of the business
+
+        Returns:
+            Business category result object
+        """
+        if not self.initialized:
+            self.initialize()
+
+        from dataclasses import dataclass
+
+        @dataclass
+        class BusinessCategoryResult:
+            category: str
+            confidence: float
+            industry: str = ""
+
+        # Search for the business
+        business_name_lower = business_name.lower()
+
+        for business_info in self.business_registry.values():
+            for keyword in business_info["recognition_keywords"]:
+                if keyword.lower() in business_name_lower:
+                    # Map industry to simplified category
+                    category_mapping = {
+                        "retail_supermarket": "supermarket",
+                        "retail_electronics": "electronics",
+                        "retail_furniture": "furniture_electronics",
+                        "fuel_retail": "fuel_station",
+                        "food_fast": "restaurant",
+                    }
+
+                    category = category_mapping.get(
+                        business_info["industry"], business_info["industry"]
+                    )
+
+                    return BusinessCategoryResult(
+                        category=category,
+                        confidence=0.9,
+                        industry=business_info["industry"],
+                    )
+
+        return BusinessCategoryResult(category="unknown", confidence=0.0)

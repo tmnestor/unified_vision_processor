@@ -158,6 +158,18 @@ class ATOComplianceValidator:
 
     def validate_abn(self, abn: str) -> Any:
         """Validate ABN format and checksum - returns validation result object."""
+        if not abn:
+            from dataclasses import dataclass
+
+            @dataclass
+            class ABNValidationResult:
+                is_valid: bool
+                errors: list[str]
+                formatted_abn: str = ""
+                normalized_abn: str = ""
+
+            return ABNValidationResult(is_valid=False, errors=["ABN is required"])
+
         is_valid, formatted_abn, errors = self.abn_validator.validate(abn)
         from dataclasses import dataclass
 
@@ -176,13 +188,31 @@ class ATOComplianceValidator:
         )
 
     def validate_gst_calculation(
-        self, subtotal: float, gst_amount: float = None, total: float = None
+        self, fields_or_subtotal, gst_amount=None, total=None
     ) -> Any:
         """Validate GST calculation correctness - returns validation result object."""
-        # Handle case where test passes single argument
-        if gst_amount is None and total is None:
-            # Single argument case - assume it's a dictionary or test data
-            return self._create_gst_result(True, {}, [])
+        # Handle case where test passes fields dictionary
+        if isinstance(fields_or_subtotal, dict):
+            fields = fields_or_subtotal
+            try:
+                subtotal = float(
+                    fields.get("subtotal", "0").replace("$", "").replace(",", "")
+                )
+                gst_amount = float(
+                    fields.get("gst_amount", "0").replace("$", "").replace(",", "")
+                )
+                total = float(
+                    fields.get("total_amount", "0").replace("$", "").replace(",", "")
+                )
+            except (ValueError, AttributeError):
+                return self._create_gst_result(
+                    False, {}, ["Invalid numeric values in fields"]
+                )
+        else:
+            # Handle separate parameters
+            subtotal = fields_or_subtotal
+            if gst_amount is None and total is None:
+                return self._create_gst_result(True, {}, [])
 
         is_valid, calculated_values, errors = (
             self.gst_validator.validate_gst_calculation(subtotal, gst_amount, total)

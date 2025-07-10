@@ -62,23 +62,33 @@ class TestModelFairness:
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
                             # Setup mocks to log execution
-                            mock_classifier.return_value.classify_with_evidence.side_effect = (
-                                lambda _x: (
-                                    log_pipeline_step("classification", "internvl3"),
-                                    (DocumentType.BUSINESS_RECEIPT, 0.85, ["evidence"]),
-                                )[1]
-                            )
+                            def mock_classify_internvl(_x):
+                                log_pipeline_step("classification", "internvl3")
+                                return (
+                                    DocumentType.BUSINESS_RECEIPT,
+                                    0.85,
+                                    ["evidence"],
+                                )
+
+                            mock_classifier.return_value.classify_with_evidence.side_effect = mock_classify_internvl
 
                             mock_model = MagicMock()
-                            mock_model.process_image.side_effect = lambda _x, _y: (
-                                log_pipeline_step("inference", "internvl3"),
-                                Mock(
+
+                            def mock_process_internvl(_x, _y):
+                                log_pipeline_step("inference", "internvl3")
+                                return Mock(
                                     raw_text="Mock response",
                                     confidence=0.85,
                                     processing_time=1.5,
-                                ),
-                            )[1]
+                                )
+
+                            mock_model.process_image.side_effect = mock_process_internvl
                             mock_factory.return_value = mock_model
+
+                            # Ensure all required mocks are configured
+                            mock_classifier.return_value.ensure_initialized = (
+                                MagicMock()
+                            )
 
                             manager_internvl = UnifiedExtractionManager(
                                 fairness_test_config
@@ -109,25 +119,33 @@ class TestModelFairness:
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
                             # Setup identical mocks
-                            mock_classifier.return_value.classify_with_evidence.side_effect = (
-                                lambda _x: (
-                                    log_pipeline_step(
-                                        "classification", "llama32_vision"
-                                    ),
-                                    (DocumentType.BUSINESS_RECEIPT, 0.85, ["evidence"]),
-                                )[1]
-                            )
+                            def mock_classify_llama(_x):
+                                log_pipeline_step("classification", "llama32_vision")
+                                return (
+                                    DocumentType.BUSINESS_RECEIPT,
+                                    0.85,
+                                    ["evidence"],
+                                )
+
+                            mock_classifier.return_value.classify_with_evidence.side_effect = mock_classify_llama
 
                             mock_model = MagicMock()
-                            mock_model.process_image.side_effect = lambda _x, _y: (
-                                log_pipeline_step("inference", "llama32_vision"),
-                                Mock(
+
+                            def mock_process_llama(_x, _y):
+                                log_pipeline_step("inference", "llama32_vision")
+                                return Mock(
                                     raw_text="Mock response",
                                     confidence=0.85,
                                     processing_time=1.5,
-                                ),
-                            )[1]
+                                )
+
+                            mock_model.process_image.side_effect = mock_process_llama
                             mock_factory.return_value = mock_model
+
+                            # Ensure all required mocks are configured
+                            mock_classifier.return_value.ensure_initialized = (
+                                MagicMock()
+                            )
 
                             manager_llama = UnifiedExtractionManager(
                                 fairness_test_config
@@ -188,6 +206,9 @@ class TestModelFairness:
                             mock_confidence.return_value.assess_document_confidence = (
                                 mock_confidence_assessment("internvl3")
                             )
+                            mock_confidence.return_value.ensure_initialized = (
+                                MagicMock()
+                            )
 
                             manager = UnifiedExtractionManager(fairness_test_config)
                             manager.process_document(mock_image_path)
@@ -208,6 +229,9 @@ class TestModelFairness:
                         ):
                             mock_confidence.return_value.assess_document_confidence = (
                                 mock_confidence_assessment("llama32_vision")
+                            )
+                            mock_confidence.return_value.ensure_initialized = (
+                                MagicMock()
                             )
 
                             manager = UnifiedExtractionManager(fairness_test_config)
@@ -264,6 +288,7 @@ class TestModelFairness:
                             mock_awk.return_value.extract.return_value = {
                                 "awk_field": "awk_value"
                             }
+                            mock_awk.return_value.ensure_initialized = MagicMock()
 
                             manager = UnifiedExtractionManager(fairness_test_config)
                             # Patch the quality check method
@@ -301,6 +326,7 @@ class TestModelFairness:
                             mock_awk.return_value.extract.return_value = {
                                 "awk_field": "awk_value"
                             }
+                            mock_awk.return_value.ensure_initialized = MagicMock()
 
                             manager = UnifiedExtractionManager(fairness_test_config)
                             manager._extraction_quality_insufficient = (
@@ -614,42 +640,42 @@ class TestModelFairness:
                                 "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                             ) as mock_ato:
                                 # Track business logic calls
-                                mock_classifier.return_value.classify_with_evidence.side_effect = (
-                                    lambda _x, m=model_name: (
-                                        track_business_logic(m, "classification", _x),
-                                        (
-                                            DocumentType.BUSINESS_RECEIPT,
-                                            0.85,
-                                            ["evidence"],
-                                        ),
-                                    )[1]
-                                )
+                                def mock_classify_tracker(_x, m=model_name):
+                                    track_business_logic(m, "classification", _x)
+                                    return (
+                                        DocumentType.BUSINESS_RECEIPT,
+                                        0.85,
+                                        ["evidence"],
+                                    )
+
+                                mock_classifier.return_value.classify_with_evidence.side_effect = mock_classify_tracker
+
+                                def mock_awk_tracker(text, doc_type, m=model_name):
+                                    track_business_logic(
+                                        m, "awk_extraction", text, doc_type
+                                    )
+                                    return {"awk_field": "value"}
 
                                 mock_awk.return_value.extract.side_effect = (
-                                    lambda text, doc_type, m=model_name: (
-                                        track_business_logic(
-                                            m, "awk_extraction", text, doc_type
-                                        ),
-                                        {"awk_field": "value"},
-                                    )[1]
+                                    mock_awk_tracker
                                 )
+                                mock_awk.return_value.ensure_initialized = MagicMock()
+
+                                def mock_ato_tracker(fields, doc_type, m=model_name):
+                                    track_business_logic(
+                                        m, "ato_compliance", fields, doc_type
+                                    )
+                                    return Mock(
+                                        compliance_score=0.90,
+                                        passed=True,
+                                        violations=[],
+                                        warnings=[],
+                                    )
 
                                 mock_ato.return_value.assess_compliance.side_effect = (
-                                    lambda fields, doc_type, m=model_name: (
-                                        track_business_logic(
-                                            m,
-                                            "ato_compliance",
-                                            fields,
-                                            doc_type,
-                                        ),
-                                        Mock(
-                                            compliance_score=0.90,
-                                            passed=True,
-                                            violations=[],
-                                            warnings=[],
-                                        ),
-                                    )[1]
+                                    mock_ato_tracker
                                 )
+                                mock_ato.return_value.ensure_initialized = MagicMock()
 
                                 manager = UnifiedExtractionManager(fairness_test_config)
                                 manager.process_document(mock_image_path)

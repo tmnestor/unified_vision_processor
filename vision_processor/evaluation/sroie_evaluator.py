@@ -49,6 +49,14 @@ class SROIEEvaluator:
 
         logger.info("SROIEEvaluator initialized with enhanced Australian tax support")
 
+        # For backward compatibility with tests, provide simple field mapping access
+        self.simple_sroie_field_mapping = {
+            "company": "supplier_name",
+            "date": "date",
+            "address": "address",
+            "total": "total_amount",
+        }
+
     def evaluate_sroie_dataset(
         self,
         dataset_path: str | Path,
@@ -190,6 +198,10 @@ class SROIEEvaluator:
         )
 
         return results
+
+    def get_sroie_field_mapping(self, field_name: str) -> str:
+        """Get simple field mapping for SROIE field (for test compatibility)."""
+        return self.simple_sroie_field_mapping.get(field_name, field_name)
 
     def compare_models_on_sroie(
         self,

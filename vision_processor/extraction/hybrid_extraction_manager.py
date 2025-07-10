@@ -240,13 +240,9 @@ class UnifiedExtractionManager:
                 classification_evidence = []
                 logger.info(f"Using provided document type: {classified_type}")
             else:
-                # First, get initial model response for classification
-                initial_prompt = "Describe what you see in this document. Include any visible text, business names, document structure, and formatting."
-                model_response = self._process_with_model(image_path, initial_prompt)
-
-                # Use classifier component with model response text
+                # Use classify_with_evidence for consistent interface
                 classified_type, classification_confidence, classification_evidence = (
-                    self.classifier.classify_from_text(model_response.raw_text)
+                    self.classifier.classify_with_evidence(image_path)
                 )
                 logger.info(
                     f"Classification: {classified_type.value} (confidence: {classification_confidence:.2f})",
@@ -397,7 +393,11 @@ class UnifiedExtractionManager:
                 awk_fallback_used=awk_used,
                 highlights_detected=len(highlights),
                 confidence_score=confidence_result.overall_confidence,
-                quality_grade=QualityGrade(confidence_result.quality_grade),
+                quality_grade=(
+                    QualityGrade(confidence_result.quality_grade)
+                    if isinstance(confidence_result.quality_grade, str)
+                    else confidence_result.quality_grade
+                ),
                 production_ready=confidence_result.production_ready,
                 ato_compliance_score=ato_compliance_score,
                 validation_passed=validation_passed,

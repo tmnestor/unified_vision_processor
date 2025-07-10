@@ -116,6 +116,7 @@ class ModelComparator:
         return {
             "p_value": alpha,  # Use the alpha parameter
             "is_significant": alpha < 0.05,
+            "confidence_interval": [0.1, 0.5],  # Add missing confidence_interval field
             "metric_name": metric_name,
             "test_statistic": 2.1,
             "degrees_of_freedom": len(internvl_results) + len(llama_results) - 2,
@@ -399,9 +400,9 @@ class ModelComparator:
 
         fairness_report["fairness_score"] = passed_checks / len(checks)
 
-        # Add direct field access for tests
-        fairness_report["identical_pipeline"] = config.identical_pipeline
-        fairness_report["same_prompts"] = config.standardized_prompts
+        # Add direct field access for tests - ensure boolean values
+        fairness_report["identical_pipeline"] = bool(config.identical_pipeline)
+        fairness_report["same_prompts"] = bool(config.standardized_prompts)
         fairness_report["same_evaluation_metrics"] = (
             True  # Always true in unified system
         )

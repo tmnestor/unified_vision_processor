@@ -478,8 +478,7 @@ class MetricsCalculator:
         self,
         extracted: dict[str, Any],
         ground_truth: dict[str, Any],
-        processing_time: float = 0.0,
-        confidence_scores: dict[str, float] | None = None,
+        processing_time: float = 1.0,
     ) -> dict[str, Any]:
         """Get comprehensive metrics summary.
 
@@ -487,46 +486,39 @@ class MetricsCalculator:
             extracted: Extracted fields from model
             ground_truth: Ground truth fields
             processing_time: Processing time in seconds
-            confidence_scores: Optional per-field confidence scores
 
         Returns:
-            Comprehensive metrics dictionary
-
+            Dictionary with comprehensive metrics
         """
         # Calculate basic metrics
         precision, recall, f1_score = self.calculate_prf_metrics(
-            extracted,
-            ground_truth,
+            extracted, ground_truth
         )
-        exact_match = self.calculate_exact_match(extracted, ground_truth)
-        fuzzy_match = self.calculate_fuzzy_match(extracted, ground_truth)
-        ato_compliance = self.calculate_ato_compliance_score(extracted, ground_truth)
+        exact_match_score = self.calculate_exact_match(extracted, ground_truth)
+        fuzzy_match_score = self.calculate_fuzzy_match(extracted, ground_truth)
+        ato_compliance_score = self.calculate_ato_compliance_score(
+            extracted, ground_truth
+        )
+        processing_efficiency = self.calculate_processing_efficiency(processing_time)
 
-        # Calculate efficiency metrics
-        efficiency_metrics = self.calculate_processing_efficiency(processing_time)
-
-        # Calculate confidence correlation if available
-        confidence_correlation = 0.0
-        if confidence_scores:
-            confidence_correlation = self.calculate_field_confidence_correlation(
-                extracted,
-                ground_truth,
-                confidence_scores,
-            )
+        # Calculate field counts
+        field_count_extracted = len(extracted) if extracted else 0
+        field_count_ground_truth = len(ground_truth) if ground_truth else 0
+        field_coverage = (
+            field_count_extracted / field_count_ground_truth
+            if field_count_ground_truth > 0
+            else 0.0
+        )
 
         return {
             "precision": precision,
             "recall": recall,
             "f1_score": f1_score,
-            "exact_match_score": exact_match,
-            "fuzzy_match_score": fuzzy_match,
-            "ato_compliance_score": ato_compliance,
-            "confidence_correlation": confidence_correlation,
-            "processing_efficiency": efficiency_metrics,
-            "field_count_extracted": len(extracted),
-            "field_count_ground_truth": len(ground_truth),
-            "field_coverage": len(set(extracted.keys()) & set(ground_truth.keys()))
-            / len(ground_truth)
-            if ground_truth
-            else 0.0,
+            "exact_match_score": exact_match_score,
+            "fuzzy_match_score": fuzzy_match_score,
+            "ato_compliance_score": ato_compliance_score,
+            "processing_efficiency": processing_efficiency,
+            "field_count_extracted": field_count_extracted,
+            "field_count_ground_truth": field_count_ground_truth,
+            "field_coverage": field_coverage,
         }
