@@ -18,8 +18,10 @@ def test_prompt_fix():
     """Test that prompt manager parameter names are fixed."""
 
     try:
-        from vision_processor.classification.document_types import DocumentType
-        from vision_processor.extraction.pipeline_components import PromptManager
+        from vision_processor.extraction.pipeline_components import (
+            DocumentType,
+            PromptManager,
+        )
 
         print("✅ Successfully imported PromptManager")
 
