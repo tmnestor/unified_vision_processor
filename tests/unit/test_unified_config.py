@@ -13,7 +13,9 @@ from unittest.mock import patch
 import pytest
 
 from vision_processor.config.unified_config import (
+    ExtractionMethod,
     ModelType,
+    ProcessingPipeline,
     UnifiedConfig,
 )
 
@@ -64,8 +66,8 @@ class TestUnifiedConfig:
             config = UnifiedConfig.from_env()
 
             assert config.model_type == ModelType.LLAMA32_VISION
-            assert config.processing_pipeline == "7step"
-            assert config.extraction_method == "awk_only"
+            assert config.processing_pipeline == ProcessingPipeline.SEVEN_STEP
+            assert config.extraction_method == ExtractionMethod.AWK_ONLY
             assert config.quality_threshold == 0.8
             assert config.confidence_threshold == 0.9
             assert config.highlight_detection is False

@@ -5,7 +5,32 @@ and tax-related fields including ABN, BSB, GST calculations, and dates.
 """
 
 import re
+from dataclasses import dataclass
 from datetime import datetime
+
+
+@dataclass
+class ValidationResult:
+    """Generic validation result."""
+
+    is_valid: bool
+    errors: list[str]
+
+
+@dataclass
+class DateValidationResult(ValidationResult):
+    """Date validation result."""
+
+    parsed_date: datetime | None = None
+    normalized_date: str | None = None
+
+
+@dataclass
+class AmountValidationResult(ValidationResult):
+    """Amount validation result."""
+
+    parsed_amount: float | None = None
+    normalized_amount: str | None = None
 
 
 class ABNValidator:
@@ -227,10 +252,15 @@ class DateValidator:
         # January-June
         return f"{date.year - 1}-{date.year}"
 
-    def validate_format(self, date_str: str) -> bool:
+    def validate_format(self, date_str: str) -> DateValidationResult:
         """Simplified date format validation for tests."""
-        is_valid, _parsed, _formatted, _issues = self.validate(date_str)
-        return is_valid
+        is_valid, parsed_date, formatted, issues = self.validate(date_str)
+        return DateValidationResult(
+            is_valid=is_valid,
+            errors=issues,
+            parsed_date=parsed_date,
+            normalized_date=formatted,
+        )
 
 
 class GSTValidator:
@@ -245,7 +275,7 @@ class GSTValidator:
 
     def __init__(self):
         self.gst_rate = 0.10  # 10% GST rate
-        self.tolerance = 0.02  # 2 cent tolerance for rounding
+        self.tolerance = 0.005  # 0.5 cent tolerance for rounding
 
     def validate_gst_calculation(
         self,
@@ -415,7 +445,12 @@ class AmountValidator:
             issues.append("Cannot parse amount as number")
             return False, None, clean_amount, issues
 
-    def validate_and_parse(self, amount_str: str) -> tuple[bool, float | None]:
+    def validate_and_parse(self, amount_str: str) -> AmountValidationResult:
         """Validate and parse amount - simplified interface for tests."""
-        is_valid, parsed_amount, _formatted, _issues = self.validate(amount_str)
-        return is_valid, parsed_amount
+        is_valid, parsed_amount, formatted, issues = self.validate(amount_str)
+        return AmountValidationResult(
+            is_valid=is_valid,
+            errors=issues,
+            parsed_amount=parsed_amount,
+            normalized_amount=formatted,
+        )

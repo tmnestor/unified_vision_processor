@@ -375,9 +375,9 @@ class ModelFactory:
         return base_config
 
     @classmethod
-    def get_supported_models(cls) -> list[ModelType]:
+    def get_supported_models(cls) -> list[str]:
         """Get list of supported model types."""
-        return list(cls._model_registry.keys())
+        return [model_type.value for model_type in cls._model_registry.keys()]
 
     @classmethod
     def is_model_supported(cls, model_type: ModelType) -> bool:
