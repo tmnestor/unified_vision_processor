@@ -375,7 +375,7 @@ class UnifiedConfig:
         if max_workers := os.getenv("VISION_MAX_WORKERS"):
             config_dict["max_workers"] = int(max_workers)
         if memory_fraction := os.getenv("VISION_GPU_MEMORY_FRACTION"):
-            config_dict["memory_fraction"] = float(memory_fraction)
+            config_dict["gpu_memory_fraction"] = float(memory_fraction)
         config_dict.update(
             {
                 "cross_platform": cls._get_bool_env("VISION_CROSS_PLATFORM", True),
