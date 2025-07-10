@@ -360,23 +360,17 @@ class InternVLModel(BaseVisionModel):
 
             # Get processing parameters
             image_size = kwargs.get("image_size", 448)
-            max_tiles = kwargs.get("max_tiles", 12)
 
-            # Dynamic preprocessing
-            image_tiles = self._dynamic_preprocess(
-                image,
-                min_num=1,
-                max_num=max_tiles,
-                image_size=image_size,
-                use_thumbnail=True,
-            )
+            # For InternVL3, try simpler single-image approach first
+            if len(image.size) == 2 or min(image.size) < 224:
+                # Resize small images
+                image = image.resize((448, 448), Image.Resampling.LANCZOS)
 
             # Build transform
             transform = self._build_transform(image_size)
 
-            # Process tiles
-            pixel_values_list = [transform(tile) for tile in image_tiles]
-            pixel_values = torch.stack(pixel_values_list)
+            # Process as single image first (simpler approach)
+            pixel_values = transform(image).unsqueeze(0)  # Shape: [1, 3, 448, 448]
 
             # Move to appropriate device and dtype
             if self.device.type == "cuda":
@@ -384,13 +378,11 @@ class InternVLModel(BaseVisionModel):
             else:
                 pixel_values = pixel_values.to(self.device).to(torch.float32)
 
-            # InternVL expects shape [batch_size, num_tiles, channels, height, width]
-            # We already have [num_tiles, channels, height, width], so add batch dimension
-            pixel_values = pixel_values.unsqueeze(0)
+            logger.info(f"Single image pixel_values shape: {pixel_values.shape}")
 
-            logger.info(f"Final pixel_values shape: {pixel_values.shape}")
+            # If single image fails, we'll try dynamic preprocessing in the except block
 
-            logger.info(f"Processed image into {len(image_tiles)} tiles")
+            logger.info("Processed image as single tile")
 
             # Run inference
             generation_config = {
@@ -437,7 +429,7 @@ class InternVLModel(BaseVisionModel):
                 model_type="internvl3",
                 quantized=self.enable_quantization and self.num_gpus == 1,
                 metadata={
-                    "tiles_created": len(image_tiles),
+                    "tiles_created": 1,  # Single image processing
                     "image_size": image_size,
                     "multi_gpu": self.num_gpus > 1,
                 },
