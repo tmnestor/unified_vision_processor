@@ -33,6 +33,7 @@ dependencies:
     - opencv-python>=4.8.0  # Python bindings for OpenCV
     - pytesseract>=0.3.10  # OCR engine for text extraction
     - easyocr>=1.7.0  # Alternative OCR engine
+    - einops>=0.6.0  # Einstein notation for tensor operations (required for InternVL)
     
     # Testing Dependencies
     - pytest>=7.0.0  # Testing framework
