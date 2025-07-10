@@ -36,7 +36,7 @@ class TestUnifiedExtractionManager:
             mock_factory.return_value = mock_model
 
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
@@ -93,9 +93,7 @@ class TestUnifiedExtractionManager:
     def test_extraction_manager_initialization(self, test_config):
         """Test extraction manager initialization."""
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
@@ -275,9 +273,7 @@ class TestUnifiedExtractionManager:
         test_config.model_type = ModelType.INTERNVL3
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
@@ -321,9 +317,7 @@ class TestUnifiedExtractionManager:
         test_config.use_enhanced_parser = True
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
@@ -429,9 +423,7 @@ class TestUnifiedExtractionManager:
     def test_context_manager_support(self, test_config):
         """Test context manager support for resource cleanup."""
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
@@ -479,9 +471,7 @@ class TestUnifiedExtractionManager:
             with patch(
                 "vision_processor.config.model_factory.ModelFactory.create_model"
             ):
-                with patch(
-                    "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-                ):
+                with patch("vision_processor.classification.DocumentClassifier"):
                     with patch(
                         "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                     ):

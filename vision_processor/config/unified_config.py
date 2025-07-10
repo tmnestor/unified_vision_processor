@@ -173,6 +173,9 @@ class UnifiedConfig:
         # Apply environment-specific optimizations
         self._apply_environment_optimizations()
 
+        # Mark as initialized to enable validation
+        self._initialized = True
+
     def _resolve_model_path(self) -> None:
         """Resolve model path based on model type and configured paths."""
         if self.model_type == ModelType.INTERNVL3 and self.internvl_model_path:
@@ -537,6 +540,33 @@ class UnifiedConfig:
                 setattr(self, key, value)
             else:
                 logger.warning(f"Unknown configuration key: {key}")
+
+    # Property setters for validation
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Override setattr to provide validation."""
+        # Skip validation during initialization
+        if not hasattr(self, "_initialized"):
+            super().__setattr__(name, value)
+            return
+
+        # Validate specific fields
+        if name == "confidence_threshold":
+            if not (0.0 <= value <= 1.0):
+                raise ValueError("Confidence threshold must be between 0.0 and 1.0")
+        elif name == "quality_threshold":
+            if not (0.0 <= value <= 1.0):
+                raise ValueError("Quality threshold must be between 0.0 and 1.0")
+        elif name == "batch_size":
+            if value <= 0:
+                raise ValueError("Batch size must be positive")
+        elif name == "max_workers":
+            if value <= 0:
+                raise ValueError("Max workers must be positive")
+        elif name == "gpu_memory_fraction":
+            if not (0.0 <= value <= 1.0):
+                raise ValueError("GPU memory fraction must be between 0.0 and 1.0")
+
+        super().__setattr__(name, value)
 
     def __repr__(self) -> str:
         return (

@@ -46,7 +46,7 @@ class TestModelFairness:
             "vision_processor.config.model_factory.ModelFactory.create_model"
         ) as mock_factory:
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
@@ -95,7 +95,7 @@ class TestModelFairness:
             "vision_processor.config.model_factory.ModelFactory.create_model"
         ) as mock_factory:
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
@@ -173,9 +173,7 @@ class TestModelFairness:
         fairness_test_config.model_type = ModelType.INTERNVL3
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
@@ -196,9 +194,7 @@ class TestModelFairness:
         fairness_test_config.model_type = ModelType.LLAMA32_VISION
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
@@ -255,9 +251,7 @@ class TestModelFairness:
         fairness_test_config.model_type = ModelType.INTERNVL3
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
@@ -296,9 +290,7 @@ class TestModelFairness:
         fairness_test_config.model_type = ModelType.LLAMA32_VISION
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
@@ -373,9 +365,7 @@ class TestModelFairness:
         fairness_test_config.model_type = ModelType.INTERNVL3
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
@@ -408,9 +398,7 @@ class TestModelFairness:
         fairness_test_config.model_type = ModelType.LLAMA32_VISION
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
-            with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
-            ):
+            with patch("vision_processor.classification.DocumentClassifier"):
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
@@ -514,7 +502,7 @@ class TestModelFairness:
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
@@ -546,7 +534,7 @@ class TestModelFairness:
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
@@ -626,7 +614,7 @@ class TestModelFairness:
                 "vision_processor.config.model_factory.ModelFactory.create_model"
             ):
                 with patch(
-                    "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                    "vision_processor.classification.DocumentClassifier"
                 ) as mock_classifier:
                     with patch(
                         "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"

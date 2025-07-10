@@ -24,8 +24,20 @@ class ComplianceResult:
 
     compliance_score: float
     compliance_passed: bool
+    passed: bool  # Alias for compliance_passed
     issues: list[str]
     recommendations: list[str]
+    violations: list[str] = None  # Additional field for violations
+    warnings: list[str] = None  # Additional field for warnings
+
+    def __post_init__(self):
+        """Post-initialization to set defaults and aliases."""
+        if self.violations is None:
+            self.violations = []
+        if self.warnings is None:
+            self.warnings = []
+        # Set passed as alias for compliance_passed
+        self.passed = self.compliance_passed
 
 
 @dataclass

@@ -10,7 +10,13 @@ from typing import Any
 from ..classification import DocumentType
 from ..confidence import ComplianceResult
 from .australian_business_registry import AustralianBusinessRegistry
-from .field_validators import ABNValidator, BSBValidator, DateValidator, GSTValidator
+from .field_validators import (
+    ABNValidator,
+    AmountValidator,
+    BSBValidator,
+    DateValidator,
+    GSTValidator,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +43,7 @@ class ATOComplianceValidator:
         self.bsb_validator = BSBValidator()
         self.date_validator = DateValidator()
         self.gst_validator = GSTValidator()
+        self.amount_validator = AmountValidator()
         self.business_registry = AustralianBusinessRegistry()
 
         # Compliance thresholds
@@ -148,7 +155,26 @@ class ATOComplianceValidator:
         self.business_registry.initialize()
 
         logger.info("ATO Compliance Validator initialized")
-        self.initialized = True
+
+    def validate_abn(self, abn: str) -> tuple[bool, str, list[str]]:
+        """Validate ABN format and checksum."""
+        return self.abn_validator.validate(abn)
+
+    def validate_gst_calculation(
+        self, subtotal: float, gst_amount: float, total: float
+    ) -> tuple[bool, dict[str, float], list[str]]:
+        """Validate GST calculation correctness."""
+        return self.gst_validator.validate_gst_calculation(subtotal, gst_amount, total)
+
+    def validate_date_format(self, date_str: str) -> tuple[bool, Any, str, list[str]]:
+        """Validate Australian date format."""
+        return self.date_validator.validate(date_str)
+
+    def validate_amount_format(
+        self, amount_str: str
+    ) -> tuple[bool, float | None, str, list[str]]:
+        """Validate and parse Australian currency amount."""
+        return self.amount_validator.validate(amount_str)
 
     def assess_compliance(
         self,
