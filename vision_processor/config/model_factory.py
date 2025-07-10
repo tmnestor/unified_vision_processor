@@ -7,7 +7,7 @@ Integrates InternVL multi-GPU optimization with Llama processing capabilities.
 
 import logging
 from pathlib import Path
-from typing import Dict, Optional, Type, Union, TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, Optional, Type, Union
 
 import torch
 
