@@ -372,15 +372,23 @@ class InternVLModel(BaseVisionModel):
             # Process as single image first (simpler approach)
             pixel_values = transform(image).unsqueeze(0)  # Shape: [1, 3, 448, 448]
 
-            # Move to appropriate device and dtype
+            # Critical: Move to appropriate device and dtype BEFORE inference
+            # This ensures pixel_values matches the model's device
             if self.device.type == "cuda":
-                pixel_values = pixel_values.to(self.device).to(torch.bfloat16)
+                pixel_values = pixel_values.cuda().to(torch.bfloat16)
             else:
-                pixel_values = pixel_values.to(self.device).to(torch.float32)
+                pixel_values = pixel_values.to(torch.float32)
 
             logger.info(f"Single image pixel_values shape: {pixel_values.shape}")
+            logger.info(f"Pixel values device: {pixel_values.device}")
 
-            # If single image fails, we'll try dynamic preprocessing in the except block
+            # Log model device info for debugging
+            if hasattr(self.model, "device"):
+                logger.info(f"Model device: {self.model.device}")
+            elif hasattr(self.model, "vision_model"):
+                logger.info(
+                    f"Vision model device: {next(self.model.vision_model.parameters()).device}"
+                )
 
             logger.info("Processed image as single tile")
 
@@ -406,7 +414,9 @@ class InternVLModel(BaseVisionModel):
                 # Try alternative interface with explicit device handling
                 input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
                 if self.device.type == "cuda":
-                    input_ids = input_ids.to(self.device)
+                    input_ids = (
+                        input_ids.cuda()
+                    )  # Use .cuda() to match pixel_values device
 
                 try:
                     with torch.no_grad():
