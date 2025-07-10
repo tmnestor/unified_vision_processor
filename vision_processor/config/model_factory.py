@@ -10,10 +10,12 @@ from typing import TYPE_CHECKING, Optional
 
 import torch
 
-from ..models.base_model import BaseVisionModel, DeviceConfig, ModelType
+from ..models.base_model import BaseVisionModel, DeviceConfig
 
 if TYPE_CHECKING:
-    from .unified_config import UnifiedConfig
+    from .unified_config import ModelType, UnifiedConfig
+else:
+    from .unified_config import ModelType
 
 logger = logging.getLogger(__name__)
 
@@ -282,15 +284,18 @@ class ModelFactory:
         # Multi-GPU setup for InternVL
         if (
             hasattr(model, "capabilities")
-            and model.capabilities.supports_multi_gpu
+            and getattr(model.capabilities, "supports_multi_gpu", False)
             and torch.cuda.device_count() > 1
         ):
-            from ..models.model_utils import DeviceManager
+            try:
+                from ..models.model_utils import DeviceManager
 
-            device_manager = DeviceManager()
-            if hasattr(model, "model") and model.model is not None:
-                model.model = device_manager.setup_multi_gpu(model.model)
-                logger.info("Applied multi-GPU optimization")
+                device_manager = DeviceManager()
+                if hasattr(model, "model") and model.model is not None:
+                    model.model = device_manager.setup_multi_gpu(model.model)
+                    logger.info("Applied multi-GPU optimization")
+            except ImportError as e:
+                logger.warning(f"DeviceManager not available for multi-GPU setup: {e}")
 
     @classmethod
     def _apply_mps_optimizations(
@@ -320,17 +325,19 @@ class ModelFactory:
             torch.set_num_threads(torch.get_num_threads())
 
             # Apply dynamic quantization if supported
-            if (
-                hasattr(model, "capabilities")
-                and model.capabilities.supports_quantization
+            if hasattr(model, "capabilities") and getattr(
+                model.capabilities, "supports_quantization", False
             ):
-                from ..models.model_utils import QuantizationHelper
+                try:
+                    from ..models.model_utils import QuantizationHelper
 
-                if hasattr(model, "model") and model.model is not None:
-                    model.model = QuantizationHelper.apply_dynamic_quantization(
-                        model.model,
-                    )
-                    logger.info("Applied CPU quantization optimization")
+                    if hasattr(model, "model") and model.model is not None:
+                        model.model = QuantizationHelper.apply_dynamic_quantization(
+                            model.model,
+                        )
+                        logger.info("Applied CPU quantization optimization")
+                except ImportError as e:
+                    logger.warning(f"QuantizationHelper not available: {e}")
 
         except Exception as e:
             logger.warning(f"CPU optimization failed: {e}")
@@ -414,8 +421,14 @@ class ModelFactory:
         return [model_type.value for model_type in cls._model_registry.keys()]
 
     @classmethod
-    def is_model_supported(cls, model_type: ModelType) -> bool:
+    def is_model_supported(cls, model_type: ModelType | str) -> bool:
         """Check if a model type is supported."""
+        # Handle string input
+        if isinstance(model_type, str):
+            try:
+                model_type = ModelType(model_type)
+            except ValueError:
+                return False
         return model_type in cls._model_registry
 
 
@@ -427,21 +440,25 @@ def _auto_register_models():
         from ..models.internvl_model import InternVLModel
 
         ModelFactory.register_model(ModelType.INTERNVL3, InternVLModel)
-    except ImportError:
+        logger.debug("Registered InternVL model")
+    except ImportError as e:
+        logger.debug(f"InternVL model import failed: {e}")
         # Fall back to placeholder for Phase 1
         try:
             from ..models.placeholder_models import PlaceholderInternVLModel
 
             ModelFactory.register_model(ModelType.INTERNVL3, PlaceholderInternVLModel)
             logger.debug("Using placeholder InternVL model")
-        except ImportError:
-            logger.debug("InternVL model not available")
+        except ImportError as e2:
+            logger.warning(f"InternVL placeholder model not available: {e2}")
 
     try:
         from ..models.llama_model import LlamaVisionModel
 
         ModelFactory.register_model(ModelType.LLAMA32_VISION, LlamaVisionModel)
-    except ImportError:
+        logger.debug("Registered Llama Vision model")
+    except ImportError as e:
+        logger.debug(f"Llama Vision model import failed: {e}")
         # Fall back to placeholder for Phase 1
         try:
             from ..models.placeholder_models import PlaceholderLlamaVisionModel
@@ -451,8 +468,8 @@ def _auto_register_models():
                 PlaceholderLlamaVisionModel,
             )
             logger.debug("Using placeholder Llama Vision model")
-        except ImportError:
-            logger.debug("Llama Vision model not available")
+        except ImportError as e2:
+            logger.warning(f"Llama Vision placeholder model not available: {e2}")
 
 
 # Register models on import

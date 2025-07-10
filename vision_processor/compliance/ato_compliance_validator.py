@@ -8,7 +8,7 @@ import logging
 from typing import Any
 
 from ..classification import DocumentType
-from ..confidence import ComplianceResult
+from ..extraction.pipeline_components import ComplianceResult
 from .australian_business_registry import AustralianBusinessRegistry
 from .field_validators import (
     ABNValidator,
@@ -364,9 +364,11 @@ class ATOComplianceValidator:
 
         return ComplianceResult(
             compliance_score=compliance_score,
-            compliance_passed=compliance_passed,
-            issues=compliance_issues,
+            passed=compliance_passed,
+            violations=compliance_issues,
+            warnings=[],
             recommendations=recommendations,
+            field_results={},
         )
 
     def _validate_field_completeness(

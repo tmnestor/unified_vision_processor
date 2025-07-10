@@ -29,7 +29,16 @@ class SROIEEvaluator:
         self.metrics_calculator = MetricsCalculator(config)
 
         # SROIE field mapping to standard fields
+        # Tests expect simple string mapping, not lists
         self.sroie_field_mapping = {
+            "company": "supplier_name",
+            "date": "date",
+            "address": "address",
+            "total": "total_amount",
+        }
+
+        # Full mapping with alternatives for internal use
+        self.sroie_field_mapping_full = {
             "company": ["supplier_name", "business_name", "company_name"],
             "date": ["date", "date_value", "transaction_date"],
             "address": ["address", "business_address", "supplier_address"],

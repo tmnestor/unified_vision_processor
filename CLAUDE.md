@@ -255,3 +255,6 @@ The unified system provides migration tools for existing InternVL and Llama-3.2 
 
 ## Local Testing and Development
 - Use the unified_vision_processor conda environment for local development
+
+## Important Notes
+- always run `ruff check . --fix` to ensure code quality

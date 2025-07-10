@@ -389,7 +389,8 @@ class MetricsCalculator:
         distance = matrix[len1][len2]
         similarity = 1 - (distance / max_len) if max_len > 0 else 0
 
-        return similarity
+        # Ensure similarity is between 0 and 1
+        return max(0.0, min(1.0, similarity))
 
     def _validate_abn_format(self, abn: str) -> bool:
         """Validate Australian Business Number format."""

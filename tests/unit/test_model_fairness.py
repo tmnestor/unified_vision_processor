@@ -9,6 +9,7 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+from vision_processor.classification import DocumentType
 from vision_processor.config.unified_config import (
     ModelType,
     ProcessingPipeline,
@@ -18,7 +19,6 @@ from vision_processor.evaluation.model_comparator import ModelComparator
 from vision_processor.extraction.hybrid_extraction_manager import (
     UnifiedExtractionManager,
 )
-from vision_processor.extraction.pipeline_components import DocumentType
 
 
 class TestModelFairness:
@@ -31,6 +31,7 @@ class TestModelFairness:
         config.processing_pipeline = (
             ProcessingPipeline.SEVEN_STEP
         )  # Ensure Llama pipeline
+        # Use setattr for attributes that may not exist in the dataclass
         config.fair_comparison = True
         config.model_comparison = True
         config.identical_processing = True
@@ -61,39 +62,44 @@ class TestModelFairness:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
-                            # Setup mocks to log execution
-                            def mock_classify_internvl(_x):
-                                log_pipeline_step("classification", "internvl3")
-                                return (
-                                    DocumentType.BUSINESS_RECEIPT,
-                                    0.85,
-                                    ["evidence"],
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.PromptManager"
+                            ):
+                                # Setup mocks to log execution
+                                def mock_classify_internvl(_x):
+                                    log_pipeline_step("classification", "internvl3")
+                                    return (
+                                        DocumentType.BUSINESS_RECEIPT,
+                                        0.85,
+                                        ["evidence"],
+                                    )
+
+                                mock_classifier.return_value.classify_with_evidence.side_effect = mock_classify_internvl
+
+                                mock_model = MagicMock()
+
+                                def mock_process_internvl(_x, _y):
+                                    log_pipeline_step("inference", "internvl3")
+                                    return Mock(
+                                        raw_text="Mock response",
+                                        confidence=0.85,
+                                        processing_time=1.5,
+                                    )
+
+                                mock_model.process_image.side_effect = (
+                                    mock_process_internvl
+                                )
+                                mock_factory.return_value = mock_model
+
+                                # Ensure all required mocks are configured
+                                mock_classifier.return_value.ensure_initialized = (
+                                    MagicMock()
                                 )
 
-                            mock_classifier.return_value.classify_with_evidence.side_effect = mock_classify_internvl
-
-                            mock_model = MagicMock()
-
-                            def mock_process_internvl(_x, _y):
-                                log_pipeline_step("inference", "internvl3")
-                                return Mock(
-                                    raw_text="Mock response",
-                                    confidence=0.85,
-                                    processing_time=1.5,
+                                manager_internvl = UnifiedExtractionManager(
+                                    fairness_test_config
                                 )
-
-                            mock_model.process_image.side_effect = mock_process_internvl
-                            mock_factory.return_value = mock_model
-
-                            # Ensure all required mocks are configured
-                            mock_classifier.return_value.ensure_initialized = (
-                                MagicMock()
-                            )
-
-                            manager_internvl = UnifiedExtractionManager(
-                                fairness_test_config
-                            )
-                            manager_internvl.process_document(mock_image_path)
+                                manager_internvl.process_document(mock_image_path)
 
         internvl_steps = [
             step for step, model in pipeline_execution_logs if model == "internvl3"
@@ -118,39 +124,46 @@ class TestModelFairness:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
-                            # Setup identical mocks
-                            def mock_classify_llama(_x):
-                                log_pipeline_step("classification", "llama32_vision")
-                                return (
-                                    DocumentType.BUSINESS_RECEIPT,
-                                    0.85,
-                                    ["evidence"],
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.PromptManager"
+                            ):
+                                # Setup identical mocks
+                                def mock_classify_llama(_x):
+                                    log_pipeline_step(
+                                        "classification", "llama32_vision"
+                                    )
+                                    return (
+                                        DocumentType.BUSINESS_RECEIPT,
+                                        0.85,
+                                        ["evidence"],
+                                    )
+
+                                mock_classifier.return_value.classify_with_evidence.side_effect = mock_classify_llama
+
+                                mock_model = MagicMock()
+
+                                def mock_process_llama(_x, _y):
+                                    log_pipeline_step("inference", "llama32_vision")
+                                    return Mock(
+                                        raw_text="Mock response",
+                                        confidence=0.85,
+                                        processing_time=1.5,
+                                    )
+
+                                mock_model.process_image.side_effect = (
+                                    mock_process_llama
+                                )
+                                mock_factory.return_value = mock_model
+
+                                # Ensure all required mocks are configured
+                                mock_classifier.return_value.ensure_initialized = (
+                                    MagicMock()
                                 )
 
-                            mock_classifier.return_value.classify_with_evidence.side_effect = mock_classify_llama
-
-                            mock_model = MagicMock()
-
-                            def mock_process_llama(_x, _y):
-                                log_pipeline_step("inference", "llama32_vision")
-                                return Mock(
-                                    raw_text="Mock response",
-                                    confidence=0.85,
-                                    processing_time=1.5,
+                                manager_llama = UnifiedExtractionManager(
+                                    fairness_test_config
                                 )
-
-                            mock_model.process_image.side_effect = mock_process_llama
-                            mock_factory.return_value = mock_model
-
-                            # Ensure all required mocks are configured
-                            mock_classifier.return_value.ensure_initialized = (
-                                MagicMock()
-                            )
-
-                            manager_llama = UnifiedExtractionManager(
-                                fairness_test_config
-                            )
-                            manager_llama.process_document(mock_image_path)
+                                manager_llama.process_document(mock_image_path)
 
         llama_steps = [
             step for step, model in pipeline_execution_logs if model == "llama32_vision"
@@ -203,15 +216,18 @@ class TestModelFairness:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
-                            mock_confidence.return_value.assess_document_confidence = (
-                                mock_confidence_assessment("internvl3")
-                            )
-                            mock_confidence.return_value.ensure_initialized = (
-                                MagicMock()
-                            )
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.PromptManager"
+                            ):
+                                mock_confidence.return_value.assess_document_confidence = mock_confidence_assessment(
+                                    "internvl3"
+                                )
+                                mock_confidence.return_value.ensure_initialized = (
+                                    MagicMock()
+                                )
 
-                            manager = UnifiedExtractionManager(fairness_test_config)
-                            manager.process_document(mock_image_path)
+                                manager = UnifiedExtractionManager(fairness_test_config)
+                                manager.process_document(mock_image_path)
 
         # Test Llama confidence scoring
         fairness_test_config.model_type = ModelType.LLAMA32_VISION
@@ -227,15 +243,18 @@ class TestModelFairness:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
-                            mock_confidence.return_value.assess_document_confidence = (
-                                mock_confidence_assessment("llama32_vision")
-                            )
-                            mock_confidence.return_value.ensure_initialized = (
-                                MagicMock()
-                            )
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.PromptManager"
+                            ):
+                                mock_confidence.return_value.assess_document_confidence = mock_confidence_assessment(
+                                    "llama32_vision"
+                                )
+                                mock_confidence.return_value.ensure_initialized = (
+                                    MagicMock()
+                                )
 
-                            manager = UnifiedExtractionManager(fairness_test_config)
-                            manager.process_document(mock_image_path)
+                                manager = UnifiedExtractionManager(fairness_test_config)
+                                manager.process_document(mock_image_path)
 
         # Verify identical confidence components
         assert "internvl3" in confidence_components_used
@@ -297,9 +316,9 @@ class TestModelFairness:
                             )
 
                             # Mock handler to return insufficient fields
-                            with patch.object(
-                                manager, "_get_handler"
-                            ) as mock_get_handler:
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                            ) as mock_create_handler:
                                 mock_handler = MagicMock()
                                 mock_handler.extract_fields_primary.return_value = {
                                     "field1": "value1"
@@ -307,7 +326,8 @@ class TestModelFairness:
                                 mock_handler.validate_fields.return_value = {
                                     "field1": "value1"
                                 }
-                                mock_get_handler.return_value = mock_handler
+                                mock_handler.ensure_initialized.return_value = None
+                                mock_create_handler.return_value = mock_handler
 
                                 manager.process_document(mock_image_path)
 
@@ -334,9 +354,9 @@ class TestModelFairness:
                             )
 
                             # Mock handler to return identical insufficient fields
-                            with patch.object(
-                                manager, "_get_handler"
-                            ) as mock_get_handler:
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                            ) as mock_create_handler:
                                 mock_handler = MagicMock()
                                 mock_handler.extract_fields_primary.return_value = {
                                     "field1": "value1"
@@ -344,7 +364,8 @@ class TestModelFairness:
                                 mock_handler.validate_fields.return_value = {
                                     "field1": "value1"
                                 }
-                                mock_get_handler.return_value = mock_handler
+                                mock_handler.ensure_initialized.return_value = None
+                                mock_create_handler.return_value = mock_handler
 
                                 manager.process_document(mock_image_path)
 
@@ -404,15 +425,16 @@ class TestModelFairness:
                             manager = UnifiedExtractionManager(fairness_test_config)
 
                             # Mock handler to return test fields
-                            with patch.object(
-                                manager, "_get_handler"
-                            ) as mock_get_handler:
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                            ) as mock_create_handler:
                                 mock_handler = MagicMock()
                                 mock_handler.extract_fields_primary.return_value = (
                                     test_fields
                                 )
                                 mock_handler.validate_fields.return_value = test_fields
-                                mock_get_handler.return_value = mock_handler
+                                mock_handler.ensure_initialized.return_value = None
+                                mock_create_handler.return_value = mock_handler
 
                                 manager.process_document(mock_image_path)
 
@@ -435,15 +457,16 @@ class TestModelFairness:
                             manager = UnifiedExtractionManager(fairness_test_config)
 
                             # Mock handler to return identical test fields
-                            with patch.object(
-                                manager, "_get_handler"
-                            ) as mock_get_handler:
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                            ) as mock_create_handler:
                                 mock_handler = MagicMock()
                                 mock_handler.extract_fields_primary.return_value = (
                                     test_fields
                                 )
                                 mock_handler.validate_fields.return_value = test_fields
-                                mock_get_handler.return_value = mock_handler
+                                mock_handler.ensure_initialized.return_value = None
+                                mock_create_handler.return_value = mock_handler
 
                                 manager.process_document(mock_image_path)
 
@@ -608,7 +631,8 @@ class TestModelFairness:
         assert fairness_report["same_prompts"] is True
         assert fairness_report["same_evaluation_metrics"] is True
         assert fairness_report["bias_risk"] == "low"
-        assert fairness_report["fairness_status"] == "fair"
+        # Check fairness assessment status instead of fairness_status
+        assert fairness_report["fairness_assessment"]["status"] == "fair"
 
     def test_model_agnostic_business_logic(self, fairness_test_config, mock_image_path):
         """Test that business logic is model-agnostic."""

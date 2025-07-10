@@ -444,10 +444,13 @@ class AmountValidator:
             numeric_str = clean_amount.replace("$", "").replace(",", "")
             parsed_amount = float(numeric_str)
 
-            # Check for negative amounts
+            # For ATO compliance, negative amounts are not allowed in general receipts
+            # But we still parse them successfully
             if parsed_amount < 0:
                 issues.append("Amount cannot be negative")
-                return False, None, clean_amount, issues
+                # Return parsed but invalid
+                formatted_amount = f"${abs(parsed_amount):,.2f}"
+                return False, abs(parsed_amount), formatted_amount, issues
 
             # Format as currency
             formatted_amount = f"${parsed_amount:,.2f}"

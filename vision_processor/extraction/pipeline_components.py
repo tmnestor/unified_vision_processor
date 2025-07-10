@@ -66,9 +66,11 @@ class ComplianceResult:
     """Result from ATO compliance assessment."""
 
     compliance_score: float
-    compliance_passed: bool
-    issues: list[str]
+    passed: bool
+    violations: list[str]
+    warnings: list[str]
     recommendations: list[str]
+    field_results: dict[str, Any]
 
 
 @dataclass
