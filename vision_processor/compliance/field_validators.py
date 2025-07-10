@@ -345,3 +345,54 @@ class GSTValidator:
             f"GST registration optional (turnover ${annual_turnover:,.2f} < ${gst_threshold:,.2f})",
         )
         return False, notes
+
+
+class AmountValidator:
+    """Australian currency amount validator.
+
+    Features:
+    - Currency symbol handling ($)
+    - Thousands separator support (,)
+    - Decimal precision validation
+    - Negative amount handling
+    """
+
+    def __init__(self):
+        # Currency patterns
+        self.currency_pattern = re.compile(r"^-?\$?[\d,]+\.?\d{0,2}$")
+
+    def validate(self, amount_str: str) -> tuple[bool, float | None, str, list[str]]:
+        """Validate and parse Australian currency amount.
+
+        Args:
+            amount_str: Amount string to validate
+
+        Returns:
+            Tuple of (is_valid, parsed_amount, formatted_amount, validation_issues)
+        """
+        issues = []
+
+        if not amount_str or not amount_str.strip():
+            return False, None, "", ["Amount is required"]
+
+        # Clean the amount string
+        clean_amount = amount_str.strip()
+
+        # Check basic format
+        if not self.currency_pattern.match(clean_amount):
+            issues.append("Invalid amount format")
+            return False, None, clean_amount, issues
+
+        try:
+            # Remove currency symbol and commas
+            numeric_str = clean_amount.replace("$", "").replace(",", "")
+            parsed_amount = float(numeric_str)
+
+            # Format as currency
+            formatted_amount = f"${parsed_amount:,.2f}"
+
+            return True, parsed_amount, formatted_amount, issues
+
+        except ValueError:
+            issues.append("Cannot parse amount as number")
+            return False, None, clean_amount, issues

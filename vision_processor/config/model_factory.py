@@ -18,6 +18,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+class ModelCreationError(Exception):
+    """Exception raised when model creation fails."""
+
+    def __init__(self, message: str, model_type: ModelType | None = None):
+        self.model_type = model_type
+        super().__init__(message)
+
+
 class ModelFactory:
     """Factory for creating and configuring vision models.
 

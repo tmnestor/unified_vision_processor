@@ -30,6 +30,28 @@ class DocumentType(Enum):
     UNKNOWN = "unknown"
 
 
+class ProcessingStage(Enum):
+    """Processing pipeline stages."""
+
+    CLASSIFICATION = "classification"
+    INFERENCE = "inference"
+    PRIMARY_EXTRACTION = "primary_extraction"
+    AWK_FALLBACK = "awk_fallback"
+    VALIDATION = "validation"
+    ATO_COMPLIANCE = "ato_compliance"
+    CONFIDENCE_INTEGRATION = "confidence_integration"
+
+
+class QualityGrade(Enum):
+    """Quality assessment grades."""
+
+    EXCELLENT = "excellent"
+    GOOD = "good"
+    FAIR = "fair"
+    POOR = "poor"
+    VERY_POOR = "very_poor"
+
+
 @dataclass
 class ClassificationResult:
     """Result from document classification."""
