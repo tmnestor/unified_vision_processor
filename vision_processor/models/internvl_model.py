@@ -179,16 +179,25 @@ class InternVLModel(BaseVisionModel):
                     )
             else:
                 logger.info("Loading model on single GPU...")
-        else:  # Multi-GPU - Force single GPU to avoid device mismatch
-            logger.warning(
-                f"Multi-GPU detected ({self.num_gpus} GPUs), but forcing single GPU mode to avoid device mismatch"
-            )
-            model_loading_args["torch_dtype"] = torch.bfloat16
-            # Force single GPU mode instead of device mapping
-            model_loading_args["device_map"] = {"": 0}  # Put everything on GPU 0
-            logger.info(
-                "Loading model on single GPU (GPU 0) with device_map override..."
-            )
+        else:  # Multi-GPU - Choose between device mapping or single GPU
+            if hasattr(self, "kwargs") and self.kwargs.get("force_multi_gpu", False):
+                logger.info(
+                    f"Multi-GPU mode requested, distributing across {self.num_gpus} GPUs"
+                )
+                model_loading_args["torch_dtype"] = torch.bfloat16
+                device_map = self._split_model(self.model_path)
+                model_loading_args["device_map"] = device_map
+                logger.info(f"Device mapping: {device_map}")
+            else:
+                logger.warning(
+                    f"Multi-GPU detected ({self.num_gpus} GPUs), but using single GPU mode (safer)"
+                )
+                model_loading_args["torch_dtype"] = torch.bfloat16
+                # Force single GPU mode instead of device mapping
+                model_loading_args["device_map"] = {"": 0}  # Put everything on GPU 0
+                logger.info(
+                    "Loading model on single GPU (GPU 0) with device_map override..."
+                )
 
         # Add flash attention if requested
         if hasattr(self, "kwargs") and self.kwargs.get("use_flash_attention", True):
