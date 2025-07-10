@@ -16,8 +16,10 @@ from vision_processor.config.unified_config import (
     ExtractionMethod,
     ModelType,
     ProcessingPipeline,
+    ProductionAssessment,
     UnifiedConfig,
 )
+from vision_processor.models.base_model import DeviceConfig
 
 
 class TestUnifiedConfig:
@@ -29,12 +31,12 @@ class TestUnifiedConfig:
 
         # Model defaults
         assert config.model_type == ModelType.INTERNVL3
-        assert config.processing_pipeline == "7step"
-        assert config.extraction_method == "hybrid"
+        assert config.processing_pipeline == ProcessingPipeline.SEVEN_STEP
+        assert config.extraction_method == ExtractionMethod.HYBRID
 
         # Threshold defaults
         assert config.quality_threshold == 0.6
-        assert config.confidence_threshold == 0.7
+        assert config.confidence_threshold == 0.8
 
         # Feature defaults
         assert config.highlight_detection is True
@@ -114,18 +116,22 @@ class TestUnifiedConfig:
         config = UnifiedConfig()
 
         # Valid pipeline
-        config.processing_pipeline = "7step"
-        assert config.processing_pipeline == "7step"
+        config.processing_pipeline = ProcessingPipeline.SEVEN_STEP
+        assert config.processing_pipeline == ProcessingPipeline.SEVEN_STEP
 
-        # Invalid pipeline (should still work but log warning)
-        config.processing_pipeline = "invalid_pipeline"
-        assert config.processing_pipeline == "invalid_pipeline"
+        # Test string assignment (should be converted to enum)
+        config.processing_pipeline = ProcessingPipeline.SIMPLE
+        assert config.processing_pipeline == ProcessingPipeline.SIMPLE
 
     def test_extraction_method_validation(self):
         """Test extraction method validation."""
         config = UnifiedConfig()
 
-        valid_methods = ["hybrid", "key_value", "awk_only"]
+        valid_methods = [
+            ExtractionMethod.HYBRID,
+            ExtractionMethod.KEY_VALUE,
+            ExtractionMethod.AWK_ONLY,
+        ]
         for method in valid_methods:
             config.extraction_method = method
             assert config.extraction_method == method
@@ -135,16 +141,16 @@ class TestUnifiedConfig:
         config = UnifiedConfig()
 
         # Test auto device selection
-        config.device_config = "auto"
-        assert config.device_config == "auto"
+        config.device_config = DeviceConfig.AUTO
+        assert config.device_config == DeviceConfig.AUTO
 
         # Test specific device
-        config.device_config = "cuda:0"
-        assert config.device_config == "cuda:0"
+        config.device_config = DeviceConfig.SINGLE_GPU
+        assert config.device_config == DeviceConfig.SINGLE_GPU
 
         # Test CPU fallback
-        config.device_config = "cpu"
-        assert config.device_config == "cpu"
+        config.device_config = DeviceConfig.CPU
+        assert config.device_config == DeviceConfig.CPU
 
     def test_performance_settings(self):
         """Test performance-related settings."""
@@ -259,7 +265,7 @@ class TestUnifiedConfig:
         config = UnifiedConfig.from_dict(config_dict)
 
         assert config.model_type == ModelType.INTERNVL3
-        assert config.processing_pipeline == "7step"
+        assert config.processing_pipeline == ProcessingPipeline.SEVEN_STEP
         assert config.confidence_threshold == 0.9
         assert config.highlight_detection is True
         assert config.awk_fallback is False
@@ -328,11 +334,11 @@ class TestUnifiedConfig:
         # Llama-specific settings
         config.graceful_degradation = True
         config.confidence_components = 4
-        config.production_assessment = "5level"
+        config.production_assessment = ProductionAssessment.FIVE_LEVEL
 
         assert config.graceful_degradation is True
         assert config.confidence_components == 4
-        assert config.production_assessment == "5level"
+        assert config.production_assessment == ProductionAssessment.FIVE_LEVEL
 
     def test_internvl_specific_settings(self):
         """Test InternVL-specific configuration settings."""

@@ -14,11 +14,17 @@ from unittest.mock import MagicMock, Mock
 import pytest
 
 from vision_processor.classification import DocumentType
-from vision_processor.config.unified_config import ModelType, UnifiedConfig
+from vision_processor.config.unified_config import (
+    ExtractionMethod,
+    ModelType,
+    ProcessingPipeline,
+    UnifiedConfig,
+)
 from vision_processor.extraction.hybrid_extraction_manager import (
     ProcessingResult,
     QualityGrade,
 )
+from vision_processor.models.base_model import DeviceConfig
 
 
 @pytest.fixture
@@ -44,11 +50,11 @@ def test_config() -> UnifiedConfig:
     # Model configuration
     config.model_type = ModelType.INTERNVL3
     config.model_path = "mock_model_path"
-    config.device_config = "cpu"  # Use CPU for testing
+    config.device_config = DeviceConfig.CPU  # Use CPU for testing
 
     # Processing configuration
-    config.processing_pipeline = "7step"
-    config.extraction_method = "hybrid"
+    config.processing_pipeline = ProcessingPipeline.SEVEN_STEP
+    config.extraction_method = ExtractionMethod.HYBRID
     config.quality_threshold = 0.6
     config.confidence_threshold = 0.7
 

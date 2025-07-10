@@ -530,6 +530,14 @@ class UnifiedConfig:
             "production_assessment": self.production_assessment,
         }
 
+    def update(self, updates: dict[str, Any]) -> None:
+        """Update configuration with new values."""
+        for key, value in updates.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                logger.warning(f"Unknown configuration key: {key}")
+
     def __repr__(self) -> str:
         return (
             f"UnifiedConfig("

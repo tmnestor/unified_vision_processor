@@ -125,9 +125,30 @@ class ModelFactory:
 
         # Apply unified config if provided
         if config:
+            # Convert device_config to enum if it's a string
+            device_config = config.device_config
+            if isinstance(device_config, str):
+                try:
+                    device_config = DeviceConfig(device_config)
+                except ValueError:
+                    # Handle common string mappings
+                    device_mapping = {
+                        "cpu": DeviceConfig.CPU,
+                        "cuda": DeviceConfig.SINGLE_GPU,
+                        "cuda:0": DeviceConfig.SINGLE_GPU,
+                        "auto": DeviceConfig.AUTO,
+                        "multi_gpu": DeviceConfig.MULTI_GPU,
+                    }
+                    device_config = device_mapping.get(
+                        device_config.lower(), DeviceConfig.AUTO
+                    )
+                    logger.warning(
+                        f"Converted device config string '{config.device_config}' to {device_config}"
+                    )
+
             model_config.update(
                 {
-                    "device_config": config.device_config,
+                    "device_config": device_config,
                     "enable_quantization": config.enable_8bit_quantization,
                     "memory_limit_mb": config.gpu_memory_limit,
                 },
