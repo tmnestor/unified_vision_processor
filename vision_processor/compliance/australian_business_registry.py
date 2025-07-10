@@ -21,7 +21,8 @@ class AustralianBusinessRegistry:
     - Regional business recognition
     """
 
-    def __init__(self):
+    def __init__(self, config=None):
+        self.config = config
         self.initialized = False
         self.business_registry: dict[str, dict[str, any]] = {}
         self.industry_keywords: dict[str, list[str]] = {}

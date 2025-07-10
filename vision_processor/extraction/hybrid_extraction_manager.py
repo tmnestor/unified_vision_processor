@@ -292,7 +292,7 @@ class UnifiedExtractionManager:
             stages_completed.append(ProcessingStage.PRIMARY_EXTRACTION)
 
             # Get document handler and perform primary extraction
-            handler = create_document_handler(classified_type, self.config)
+            handler = self._get_handler(classified_type)
             handler.ensure_initialized()
             extracted_fields = handler.extract_fields_primary(model_response.raw_text)
 
@@ -557,6 +557,17 @@ class UnifiedExtractionManager:
 
         return stats
 
+    def _get_handler(self, document_type: DocumentType):
+        """Get document handler for the specified document type.
+
+        Args:
+            document_type: The type of document to get a handler for
+
+        Returns:
+            Document handler instance for the specified type
+        """
+        return create_document_handler(document_type, self.config)
+
     def reset_stats(self) -> None:
         """Reset processing statistics."""
         self.processing_stats = {
@@ -578,9 +589,14 @@ class UnifiedExtractionManager:
                 self.model.__exit__(exc_type, exc_val, exc_tb)
 
     def __repr__(self) -> str:
+        # Handle both enum and string values defensively
+        model_value = getattr(self.config.model_type, "value", self.config.model_type)
+        pipeline_value = getattr(
+            self.config.processing_pipeline, "value", self.config.processing_pipeline
+        )
         return (
             f"UnifiedExtractionManager("
-            f"model={self.config.model_type.value}, "
-            f"pipeline={self.config.processing_pipeline.value}, "
+            f"model={model_value}, "
+            f"pipeline={pipeline_value}, "
             f"processed={self.processing_stats['total_documents']})"
         )

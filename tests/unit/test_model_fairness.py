@@ -9,7 +9,11 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from vision_processor.config.unified_config import ModelType, UnifiedConfig
+from vision_processor.config.unified_config import (
+    ModelType,
+    ProcessingPipeline,
+    UnifiedConfig,
+)
 from vision_processor.evaluation.model_comparator import ModelComparator
 from vision_processor.extraction.hybrid_extraction_manager import (
     UnifiedExtractionManager,
@@ -24,7 +28,9 @@ class TestModelFairness:
     def fairness_test_config(self):
         """Create a configuration specifically for fairness testing."""
         config = UnifiedConfig()
-        config.processing_pipeline = "7step"  # Ensure Llama pipeline
+        config.processing_pipeline = (
+            ProcessingPipeline.SEVEN_STEP
+        )  # Ensure Llama pipeline
         config.fair_comparison = True
         config.model_comparison = True
         config.identical_processing = True

@@ -273,6 +273,32 @@ def mock_ato_compliance() -> MockATOCompliance:
     return MockATOCompliance(None)
 
 
+@pytest.fixture
+def mock_model_factory():
+    """Mock the model factory to prevent actual model loading in tests."""
+    from vision_processor.config.model_factory import ModelFactory
+    from vision_processor.config.unified_config import ModelType
+
+    # Create mock model classes
+    mock_internvl = MagicMock()
+    mock_internvl.return_value = MagicMock()
+
+    mock_llama = MagicMock()
+    mock_llama.return_value = MagicMock()
+
+    # Clear and replace the registry with mocks
+    original_registry = ModelFactory._model_registry.copy()
+    ModelFactory._model_registry = {
+        ModelType.INTERNVL3: mock_internvl,
+        ModelType.LLAMA32_VISION: mock_llama,
+    }
+
+    yield ModelFactory
+
+    # Restore original registry
+    ModelFactory._model_registry = original_registry
+
+
 # Test data constants
 AUSTRALIAN_TEST_BUSINESSES = [
     "Woolworths",

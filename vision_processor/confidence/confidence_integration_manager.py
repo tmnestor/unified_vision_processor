@@ -29,6 +29,7 @@ class ComplianceResult:
     passed: bool = None  # Alias for compliance_passed - set in __post_init__
     violations: list[str] = None  # Additional field for violations
     warnings: list[str] = None  # Additional field for warnings
+    field_results: dict = None  # Additional field for field-level results
 
     def __post_init__(self):
         """Post-initialization to set defaults and aliases."""
@@ -36,6 +37,8 @@ class ComplianceResult:
             self.violations = []
         if self.warnings is None:
             self.warnings = []
+        if self.field_results is None:
+            self.field_results = {}
         # Set passed as alias for compliance_passed
         if self.passed is None:
             self.passed = self.compliance_passed

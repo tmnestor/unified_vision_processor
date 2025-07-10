@@ -48,6 +48,11 @@ class LlamaVisionModel(BaseVisionModel):
             cross_platform=True,
         )
 
+    @property
+    def cross_platform_compatible(self) -> bool:
+        """Check if model is cross-platform compatible."""
+        return self.capabilities.cross_platform
+
     def _setup_device(self) -> torch.device:
         """Setup device configuration for Llama-3.2-Vision."""
         device_manager = DeviceManager(self.memory_limit_mb)

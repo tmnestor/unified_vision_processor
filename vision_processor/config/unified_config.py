@@ -565,6 +565,18 @@ class UnifiedConfig:
         elif name == "gpu_memory_fraction":
             if not (0.0 <= value <= 1.0):
                 raise ValueError("GPU memory fraction must be between 0.0 and 1.0")
+        elif name == "model_type":
+            if isinstance(value, str):
+                try:
+                    value = ModelType(value)
+                except ValueError as err:
+                    raise ValueError(
+                        f"Invalid model type: {value}. Valid types: {[m.value for m in ModelType]}"
+                    ) from err
+            elif not isinstance(value, ModelType):
+                raise ValueError(
+                    f"Model type must be ModelType enum or valid string, got {type(value)}"
+                )
 
         super().__setattr__(name, value)
 

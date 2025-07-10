@@ -166,9 +166,13 @@ class ATOComplianceValidator:
             is_valid: bool
             errors: list[str]
             formatted_abn: str = ""
+            normalized_abn: str = ""
 
         return ABNValidationResult(
-            is_valid=is_valid, errors=errors, formatted_abn=formatted_abn
+            is_valid=is_valid,
+            errors=errors,
+            formatted_abn=formatted_abn,
+            normalized_abn=formatted_abn,
         )
 
     def validate_gst_calculation(
@@ -214,12 +218,14 @@ class ATOComplianceValidator:
             errors: list[str]
             parsed_date: Any = None
             formatted_date: str = ""
+            normalized_date: str = ""
 
         return DateValidationResult(
             is_valid=is_valid,
             errors=errors,
             parsed_date=parsed_date,
             formatted_date=formatted_date,
+            normalized_date=formatted_date,
         )
 
     def validate_amount_format(self, amount_str: str) -> Any:
@@ -235,12 +241,14 @@ class ATOComplianceValidator:
             errors: list[str]
             parsed_amount: float | None = None
             formatted_amount: str = ""
+            normalized_amount: str = ""
 
         return AmountValidationResult(
             is_valid=is_valid,
             errors=errors,
             parsed_amount=parsed_amount,
             formatted_amount=formatted_amount,
+            normalized_amount=formatted_amount,
         )
 
     def assess_compliance(
