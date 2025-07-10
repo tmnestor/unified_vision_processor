@@ -54,6 +54,14 @@ class ABNValidator:
 
         return True, formatted, []
 
+    def _normalize_abn(self, abn: str) -> str:
+        """Normalize ABN format for testing."""
+        if not abn:
+            return ""
+        # Remove all non-digits
+        clean_abn = re.sub(r"[^\d]", "", abn.strip())
+        return clean_abn
+
     def _validate_checksum(self, abn: str) -> bool:
         """Validate ABN using the official checksum algorithm."""
         try:
@@ -219,6 +227,11 @@ class DateValidator:
         # January-June
         return f"{date.year - 1}-{date.year}"
 
+    def validate_format(self, date_str: str) -> bool:
+        """Simplified date format validation for tests."""
+        is_valid, _parsed, _formatted, _issues = self.validate(date_str)
+        return is_valid
+
 
 class GSTValidator:
     """Goods and Services Tax (GST) validator for Australian tax calculations.
@@ -346,6 +359,11 @@ class GSTValidator:
         )
         return False, notes
 
+    def validate_calculation(self, subtotal: float, gst: float, _total: float) -> bool:
+        """Simplified GST calculation validation for tests."""
+        expected_gst = subtotal * self.gst_rate
+        return abs(gst - expected_gst) <= self.tolerance
+
 
 class AmountValidator:
     """Australian currency amount validator.
@@ -396,3 +414,8 @@ class AmountValidator:
         except ValueError:
             issues.append("Cannot parse amount as number")
             return False, None, clean_amount, issues
+
+    def validate_and_parse(self, amount_str: str) -> tuple[bool, float | None]:
+        """Validate and parse amount - simplified interface for tests."""
+        is_valid, parsed_amount, _formatted, _issues = self.validate(amount_str)
+        return is_valid, parsed_amount

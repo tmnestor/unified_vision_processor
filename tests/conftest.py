@@ -39,7 +39,7 @@ def mock_image_path(temp_directory: Path) -> Path:
 @pytest.fixture
 def test_config() -> UnifiedConfig:
     """Create a test configuration with safe defaults."""
-    config = UnifiedConfig()
+    config = UnifiedConfig(testing_mode=True)
 
     # Model configuration
     config.model_type = ModelType.INTERNVL3

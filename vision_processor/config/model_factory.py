@@ -106,7 +106,7 @@ class ModelFactory:
 
         except Exception as e:
             logger.error(f"Failed to create {model_type.value} model: {e}")
-            raise RuntimeError(f"Model creation failed: {e}") from e
+            raise ModelCreationError(f"Model creation failed: {e}", model_type) from e
 
     @classmethod
     def _prepare_model_config(
@@ -373,6 +373,16 @@ class ModelFactory:
             base_config["processing_pipeline"] = "7step"
 
         return base_config
+
+    @classmethod
+    def get_supported_models(cls) -> list[ModelType]:
+        """Get list of supported model types."""
+        return list(cls._model_registry.keys())
+
+    @classmethod
+    def is_model_supported(cls, model_type: ModelType) -> bool:
+        """Check if a model type is supported."""
+        return model_type in cls._model_registry
 
 
 # Auto-register models when available
