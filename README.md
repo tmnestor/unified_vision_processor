@@ -131,12 +131,61 @@ cd unified_vision_processor
 conda env create -f environment.yml
 conda activate unified_vision_processor
 
-# Install package in development mode
+# Install package in development mode (OPTIONAL - only needed for console scripts)
 pip install -e .
 
-# Verify installation
+# Verify installation (OPTIONAL - skip if you can't install)
 python -c "import vision_processor; print('✅ Installation successful')"
 ```
+
+### 🔒 Restricted Environment Setup
+
+If you don't have permission to run `pip install -e .` on your work computer:
+
+**Option 1: Using .env file (recommended)**
+```bash
+# 1. Create conda environment
+conda env create -f environment.yml
+conda activate unified_vision_processor
+
+# 2. Create .env file with all configuration (including PYTHONPATH export)
+cat >> .env << 'EOF'
+# Python Path for package access (export needed for shell)
+export PYTHONPATH=${PYTHONPATH}:$(pwd)
+
+# Vision model configuration
+VISION_MODEL_TYPE=internvl3
+VISION_PROCESSING_PIPELINE=7step
+# ... other config options
+EOF
+
+# 3. Source the .env file to set PYTHONPATH
+source .env
+
+# 4. Verify the package is accessible
+python -c "import vision_processor; print('✅ Package accessible via .env PYTHONPATH')"
+
+# 5. Run CLI commands (no installation needed)
+python -m vision_processor.cli.unified_cli process datasets/image25.png --model internvl3
+```
+
+**Option 2: Temporary PYTHONPATH (quick test)**
+```bash
+# Set PYTHONPATH temporarily (reset each session)
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+
+# Run CLI directly
+python -m vision_processor.cli.unified_cli process datasets/image25.png --model internvl3
+```
+
+**What you CAN'T do without installation:**
+- Use console scripts like `unified-vision` command
+- Import the package from other directories
+
+**What you CAN do without installation:**
+- Run all CLI commands using `python -m vision_processor.cli.unified_cli`
+- Use the Python API from within the project directory
+- All functionality works exactly the same
 
 ### Model Configuration
 
@@ -174,50 +223,115 @@ HF_DATASETS_OFFLINE=1
 
 ### Command Line Interface
 
+The CLI provides two ways to access commands:
+
+1. **Python Module** (direct): `python -m vision_processor.cli.unified_cli <command>`
+2. **Console Script** (after pip install): `unified-vision <command>`
+
 #### Single Document Processing
 ```bash
 # Process single document with InternVL3
-python -m vision_processor.cli single_document image.jpg --model internvl3
+python -m vision_processor.cli.unified_cli process datasets/image25.png --model internvl3
 
 # Process with Llama-3.2-Vision and save results
-python -m vision_processor.cli single_document invoice.png \
+python -m vision_processor.cli.unified_cli process datasets/invoice.png \
     --model llama32_vision \
     --output results.json \
-    --confidence-threshold 0.8
+    --verbose
+
+# Process with document type hint
+python -m vision_processor.cli.unified_cli process datasets/image25.png \
+    --model internvl3 \
+    --type fuel_receipt \
+    --output result.json
+
+# Using console script (after pip install -e .)
+unified-vision process datasets/image25.png --model internvl3
 ```
 
 #### Batch Processing
 ```bash
 # Process entire directory
-python -m vision_processor.cli batch_processing datasets/ \
+python -m vision_processor.cli.unified_cli batch datasets/ \
     --model internvl3 \
-    --output-dir results/ \
-    --workers 4 \
+    --output results/ \
     --max-documents 100
 
 # Generate comprehensive report
-python -m vision_processor.cli batch_processing datasets/ \
+python -m vision_processor.cli.unified_cli batch datasets/ \
     --model llama32_vision \
-    --output-dir results/ \
+    --output results/ \
     --generate-report
+
+# Using console script
+unified-vision batch datasets/ --model internvl3 --output results/
 ```
 
 #### Model Comparison
 ```bash
 # Compare InternVL3 vs Llama-3.2-Vision
-python -m vision_processor.cli model_comparison datasets/ \
+python -m vision_processor.cli.unified_cli compare datasets/ ground_truth/ \
     --models internvl3,llama32_vision \
-    --output-dir comparison_results/ \
-    --evaluation-metrics sroie
+    --output comparison_results/ \
+    --confidence-threshold 0.7
+
+# Using console script
+unified-vision compare datasets/ ground_truth/ --models internvl3,llama32_vision
 ```
 
 #### SROIE Evaluation
 ```bash
 # Evaluate on SROIE dataset
-python -m vision_processor.cli sroie_evaluation \
-    --dataset-path sroie_dataset/ \
+python -m vision_processor.cli.unified_cli evaluate sroie_dataset/ sroie_ground_truth/ \
     --model internvl3 \
-    --output-dir evaluation_results/
+    --output evaluation_results/
+
+# Using console script
+unified-vision evaluate sroie_dataset/ sroie_ground_truth/ --model internvl3
+```
+
+#### Get Help
+```bash
+# Show all available commands
+python -m vision_processor.cli.unified_cli --help
+
+# Get help for specific command
+python -m vision_processor.cli.unified_cli process --help
+python -m vision_processor.cli.unified_cli batch --help
+python -m vision_processor.cli.unified_cli compare --help
+python -m vision_processor.cli.unified_cli evaluate --help
+```
+
+### CLI Troubleshooting
+
+#### Common Issues
+
+**❌ ModuleNotFoundError: No module named 'llama_vision'**
+```bash
+# Wrong (old package structure):
+python -m llama_vision.cli.llama_single extract datasets/image25.png
+
+# ✅ Correct (current package structure):
+python -m vision_processor.cli.unified_cli process datasets/image25.png
+```
+
+**❌ Console scripts not available**
+```bash
+# Option 1: Install package (if you have permissions):
+pip install -e .
+unified-vision process datasets/image25.png --model internvl3
+
+# Option 2: Use Python module directly (no installation needed):
+python -m vision_processor.cli.unified_cli process datasets/image25.png --model internvl3
+```
+
+**❌ Import errors**
+```bash
+# Make sure you're in the right environment:
+conda activate unified_vision_processor
+
+# Verify installation:
+python -c "import vision_processor; print('✅ Package available')"
 ```
 
 ### Python API

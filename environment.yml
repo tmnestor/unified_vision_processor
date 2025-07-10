@@ -82,9 +82,11 @@ dependencies:
 # ---------------------------------------------------
 # python -m ipykernel install --user --name unified_vision_processor --display-name "Python (unified_vision_processor)"
 #
-# Step 6: Install package in development mode
-# -------------------------------------------
+# Step 6: Install package in development mode (OPTIONAL)
+# ------------------------------------------------------
 # pip install -e .
+# Note: This is only needed for console scripts (unified-vision command)
+# You can skip this step and use: python -m vision_processor.cli.unified_cli
 #
 # Step 7: Verify the installation
 # -------------------------------
