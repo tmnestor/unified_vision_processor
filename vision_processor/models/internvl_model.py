@@ -179,12 +179,16 @@ class InternVLModel(BaseVisionModel):
                     )
             else:
                 logger.info("Loading model on single GPU...")
-        else:  # Multi-GPU
+        else:  # Multi-GPU - Force single GPU to avoid device mismatch
+            logger.warning(
+                f"Multi-GPU detected ({self.num_gpus} GPUs), but forcing single GPU mode to avoid device mismatch"
+            )
             model_loading_args["torch_dtype"] = torch.bfloat16
-            device_map = self._split_model(self.model_path)
-            model_loading_args["device_map"] = device_map
-            logger.info(f"Loading model across {self.num_gpus} GPUs...")
-            logger.debug(f"Device mapping: {device_map}")
+            # Force single GPU mode instead of device mapping
+            model_loading_args["device_map"] = {"": 0}  # Put everything on GPU 0
+            logger.info(
+                "Loading model on single GPU (GPU 0) with device_map override..."
+            )
 
         # Add flash attention if requested
         if hasattr(self, "kwargs") and self.kwargs.get("use_flash_attention", True):
@@ -207,12 +211,9 @@ class InternVLModel(BaseVisionModel):
             ).eval()
 
             # Move to device if needed (single GPU only)
-            if (
-                self.device.type == "cuda"
-                and self.num_gpus == 1
-                and "device_map" not in model_loading_args
-            ):
+            if self.device.type == "cuda" and "device_map" not in model_loading_args:
                 self.model = self.model.cuda()
+                logger.info("Model moved to CUDA device")
 
             self.is_loaded = True
             logger.info(f"Model loaded successfully on {self.device}")
