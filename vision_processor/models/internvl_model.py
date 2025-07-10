@@ -384,16 +384,15 @@ class InternVLModel(BaseVisionModel):
 
             logger.info("Processed image as single tile")
 
-            # Run inference
+            # Run inference - fix generation config for deterministic output
             generation_config = {
-                "max_new_tokens": kwargs.get("max_new_tokens", 4096),
-                "temperature": kwargs.get("temperature", 0.1),
-                "top_p": kwargs.get("top_p", 0.9),
-                "do_sample": kwargs.get("do_sample", False),
+                "max_new_tokens": kwargs.get("max_new_tokens", 1024),
+                "do_sample": False,
+                "pad_token_id": self.tokenizer.eos_token_id,
             }
 
             try:
-                # InternVL chat interface
+                # InternVL chat interface - ensure all inputs are on the same device
                 response = self.model.chat(
                     tokenizer=self.tokenizer,
                     pixel_values=pixel_values,
@@ -402,18 +401,27 @@ class InternVLModel(BaseVisionModel):
                 )
             except Exception as e:
                 logger.error(f"Error during InternVL inference: {e}")
-                # Try alternative interface
                 logger.info("Attempting alternative inference method...")
-                inputs = {
-                    "pixel_values": pixel_values,
-                    "input_ids": self.tokenizer.encode(prompt, return_tensors="pt").to(
-                        self.device
-                    ),
-                }
-                with torch.no_grad():
-                    outputs = self.model.generate(**inputs, **generation_config)
-                response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-                logger.info("Alternative inference successful")
+
+                # Try alternative interface with explicit device handling
+                input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
+                if self.device.type == "cuda":
+                    input_ids = input_ids.to(self.device)
+
+                try:
+                    with torch.no_grad():
+                        outputs = self.model.generate(
+                            input_ids=input_ids,
+                            pixel_values=pixel_values,
+                            **generation_config,
+                        )
+                    response = self.tokenizer.decode(
+                        outputs[0], skip_special_tokens=True
+                    )
+                    logger.info("Alternative inference successful")
+                except Exception as e2:
+                    logger.error(f"Alternative inference also failed: {e2}")
+                    raise RuntimeError(f"InternVL inference failed: {e}") from e
 
             # Handle response format
             raw_text = response[0] if isinstance(response, tuple) else response
