@@ -31,7 +31,7 @@ def test_prompt_fix():
 
         # Test calling get_prompt with the keyword argument
         prompt = prompt_manager.get_prompt(
-            document_type=DocumentType.RECEIPT, has_highlights=False
+            document_type=DocumentType.BUSINESS_RECEIPT, has_highlights=False
         )
 
         print("✅ get_prompt() called successfully")
@@ -39,7 +39,7 @@ def test_prompt_fix():
 
         # Test with highlights
         prompt_with_highlights = prompt_manager.get_prompt(
-            document_type=DocumentType.RECEIPT, has_highlights=True
+            document_type=DocumentType.BUSINESS_RECEIPT, has_highlights=True
         )
 
         print("✅ get_prompt() with highlights called successfully")
