@@ -958,7 +958,7 @@ class ATOComplianceHandler(BasePipelineComponent):
             extracted_fields=extracted_fields,
             document_type=document_type,
             raw_text=raw_text,
-            classification_confidence=classification_confidence,
+            _classification_confidence=classification_confidence,
         )
 
 
