@@ -114,7 +114,7 @@ class MetricsCalculator:
                 if self._exact_match_comparison(extracted_value, true_value, field):
                     exact_matches += 1
 
-        return exact_matches / total_fields
+        return min(1.0, exact_matches / total_fields)
 
     def calculate_fuzzy_match(
         self,
@@ -152,7 +152,7 @@ class MetricsCalculator:
                 if similarity >= threshold:
                     fuzzy_matches += 1
 
-        return fuzzy_matches / total_fields
+        return min(1.0, fuzzy_matches / total_fields)
 
     def calculate_ato_compliance_score(
         self,

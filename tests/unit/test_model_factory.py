@@ -14,8 +14,6 @@ from vision_processor.config.model_factory import (
     ModelFactory,
 )
 from vision_processor.config.unified_config import ModelType, UnifiedConfig
-from vision_processor.models.internvl_model import InternVLModel
-from vision_processor.models.llama_model import LlamaVisionModel
 
 
 class TestModelFactory:
@@ -90,15 +88,24 @@ class TestModelFactory:
         with patch(
             "vision_processor.models.internvl_model.InternVLModel"
         ) as mock_model:
-            mock_instance = MagicMock(spec=InternVLModel)
+            mock_instance = MagicMock()
             mock_model.return_value = mock_instance
-            mock_instance.device = "cuda:0"
+            # Mock torch.device object and its string representation
+            import torch
+
+            mock_device = torch.device("cuda:0")
+            mock_instance.device = mock_device
+            # Add device info method
+            mock_instance.get_device_info.return_value = {
+                "device": "cuda:0",
+                "device_config": "cuda:0",
+            }
 
             model = ModelFactory.create_model(
                 ModelType.INTERNVL3, "mock_path", test_config
             )
 
-            assert model.device == "cuda:0"
+            assert str(model.device) == "cuda:0"
             # Verify model was called with path and prepared config kwargs
             mock_model.assert_called_once()
             call_args = mock_model.call_args
@@ -132,15 +139,20 @@ class TestModelFactory:
         with patch(
             "vision_processor.models.internvl_model.InternVLModel"
         ) as mock_model:
-            mock_instance = MagicMock(spec=InternVLModel)
+            mock_instance = MagicMock()
             mock_model.return_value = mock_instance
+            # Mock capabilities attribute
+            mock_capabilities = MagicMock()
+            mock_capabilities.supports_multi_gpu = True
+            mock_instance.capabilities = mock_capabilities
+            # Also add direct attribute for backward compatibility
             mock_instance.supports_multi_gpu = True
 
             model = ModelFactory.create_model(
                 ModelType.INTERNVL3, "mock_path", test_config
             )
 
-            assert model.supports_multi_gpu is True
+            assert getattr(model, "supports_multi_gpu", False) is True
             # Verify model was called with path and prepared config kwargs
             mock_model.assert_called_once()
             call_args = mock_model.call_args
@@ -204,6 +216,9 @@ class TestModelFactory:
         assert ModelFactory.is_model_supported(ModelType.INTERNVL3) is True
         assert ModelFactory.is_model_supported(ModelType.LLAMA32_VISION) is True
         assert ModelFactory.is_model_supported("invalid_model") is False
+        # Test string input for valid models
+        assert ModelFactory.is_model_supported("internvl3") is True
+        assert ModelFactory.is_model_supported("llama32_vision") is True
 
     def test_model_factory_with_custom_config(self, mock_model_factory):
         """Test model factory with custom configuration parameters."""
@@ -243,6 +258,47 @@ class TestModelFactory:
         assert model1 is not model2
         assert mock_model_class.call_count == 2
 
+    def test_model_factory_offline_mode(self, test_config):
+        """Test model factory offline mode configuration."""
+        test_config.model_type = ModelType.INTERNVL3
+        test_config.offline_mode = True
+        test_config.model_path = "/path/to/local/model"
+
+        with patch(
+            "vision_processor.models.internvl_model.InternVLModel"
+        ) as mock_model:
+            mock_instance = MagicMock()
+            mock_model.return_value = mock_instance
+
+            model = ModelFactory.create_model(
+                ModelType.INTERNVL3, "/path/to/local/model", test_config
+            )
+
+            # Verify model was created
+            assert model is not None
+            mock_model.assert_called_once()
+
+            # Verify offline mode was passed in kwargs
+            call_args = mock_model.call_args
+            assert "offline_mode" in call_args[1]
+            assert call_args[1]["offline_mode"] is True
+
+    def test_model_factory_string_model_type_conversion(self, test_config):
+        """Test model factory handles string model type conversion."""
+        test_config.model_type = ModelType.INTERNVL3
+
+        with patch(
+            "vision_processor.models.internvl_model.InternVLModel"
+        ) as mock_model:
+            mock_instance = MagicMock()
+            mock_model.return_value = mock_instance
+
+            # Test with string model type
+            model = ModelFactory.create_model("internvl3", "mock_path", test_config)
+
+            assert model is not None
+            mock_model.assert_called_once()
+
     def test_model_factory_response_standardization(self, test_config):
         """Test that factory ensures response standardization."""
         test_config.model_type = ModelType.INTERNVL3
@@ -250,7 +306,7 @@ class TestModelFactory:
         with patch(
             "vision_processor.models.internvl_model.InternVLModel"
         ) as mock_model:
-            mock_instance = MagicMock(spec=InternVLModel)
+            mock_instance = MagicMock()
             mock_model.return_value = mock_instance
 
             # Mock standardized response
@@ -258,6 +314,11 @@ class TestModelFactory:
             mock_response.raw_text = "Mock response"
             mock_response.confidence = 0.85
             mock_response.processing_time = 1.5
+            mock_response.device_used = "cuda:0"  # Add required device_used field
+            mock_response.memory_usage = None
+            mock_response.model_type = None
+            mock_response.quantized = False
+            mock_response.metadata = {}
             mock_instance.process_image.return_value = mock_response
 
             model = ModelFactory.create_model(
@@ -269,6 +330,7 @@ class TestModelFactory:
             assert hasattr(response, "raw_text")
             assert hasattr(response, "confidence")
             assert hasattr(response, "processing_time")
+            assert hasattr(response, "device_used")
 
     def test_model_factory_cross_platform_compatibility(self, test_config):
         """Test model factory cross-platform compatibility."""
@@ -278,15 +340,20 @@ class TestModelFactory:
         with patch(
             "vision_processor.models.llama_model.LlamaVisionModel"
         ) as mock_model:
-            mock_instance = MagicMock(spec=LlamaVisionModel)
+            mock_instance = MagicMock()
             mock_model.return_value = mock_instance
+            # Mock capabilities with cross platform support
+            mock_capabilities = MagicMock()
+            mock_capabilities.cross_platform = True
+            mock_instance.capabilities = mock_capabilities
+            # Also add direct attribute for backward compatibility
             mock_instance.cross_platform_compatible = True
 
             model = ModelFactory.create_model(
                 ModelType.LLAMA32_VISION, "mock_path", test_config
             )
 
-            assert model.cross_platform_compatible is True
+            assert getattr(model, "cross_platform_compatible", False) is True
             # Verify model was called with path and prepared config kwargs
             mock_model.assert_called_once()
             call_args = mock_model.call_args

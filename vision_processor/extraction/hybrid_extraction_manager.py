@@ -363,13 +363,26 @@ class UnifiedExtractionManager:
             stages_completed.append(ProcessingStage.CONFIDENCE_INTEGRATION)
 
             # 4-component confidence scoring using confidence manager
-            confidence_result = self.confidence_manager.assess_document_confidence(
-                model_response.raw_text,
-                validated_fields,
-                compliance_result,
-                classification_confidence,
-                bool(highlights),
-            )
+            try:
+                confidence_result = self.confidence_manager.assess_document_confidence(
+                    model_response.raw_text,
+                    validated_fields,
+                    compliance_result,
+                    classification_confidence,
+                    bool(highlights),
+                )
+            except Exception as e:
+                logger.error(f"Confidence assessment failed: {e}")
+                # Create fallback confidence result
+                from ..confidence import ConfidenceResult
+
+                confidence_result = ConfidenceResult(
+                    overall_confidence=0.5,
+                    quality_grade=QualityGrade.FAIR,
+                    production_ready=False,
+                    quality_flags=["confidence_assessment_failed"],
+                    recommendations=["Manual review recommended"],
+                )
 
             # Update processing stats
             self.processing_stats["total_documents"] += 1

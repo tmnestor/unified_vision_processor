@@ -62,7 +62,7 @@ class AustralianBusinessRegistry:
             "coles": {
                 "official_name": "Coles Group Limited",
                 "industry": "retail_supermarket",
-                "abn": "11 004 089 936",
+                "abn": "51 004 085 616",
                 "business_type": "public_company",
                 "states": ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"],
                 "recognition_keywords": ["coles", "coles supermarket"],
@@ -109,7 +109,7 @@ class AustralianBusinessRegistry:
             },
             "harvey_norman": {
                 "official_name": "Harvey Norman Holdings Limited",
-                "industry": "retail_electronics",
+                "industry": "retail_furniture",
                 "abn": "35 000 870 729",
                 "business_type": "public_company",
                 "states": ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT", "NT"],
@@ -118,7 +118,7 @@ class AustralianBusinessRegistry:
             "jb_hi_fi": {
                 "official_name": "JB Hi-Fi Limited",
                 "industry": "retail_electronics",
-                "abn": "80 093 220 136",
+                "abn": "63 000 240 417",
                 "business_type": "public_company",
                 "states": ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "ACT"],
                 "recognition_keywords": ["jb hi-fi", "jb hifi", "jb hi fi"],
@@ -1184,15 +1184,15 @@ class AustralianBusinessRegistry:
         if len(keyword) > 15:
             confidence += 0.9
         elif len(keyword) > 10:
-            confidence += 0.8
+            confidence += 0.85
         elif len(keyword) > 6:
-            confidence += 0.7
+            confidence += 0.8
         else:
-            confidence += 0.6
+            confidence += 0.75
 
         # Bonus for exact word boundary matches
         if re.search(rf"\b{re.escape(keyword)}\b", text, re.IGNORECASE):
-            confidence += 0.1
+            confidence += 0.15
 
         # Bonus for multiple occurrences
         occurrences = text.count(keyword.lower())
@@ -1361,7 +1361,7 @@ class AustralianBusinessRegistry:
                     category_mapping = {
                         "retail_supermarket": "supermarket",
                         "retail_electronics": "electronics",
-                        "retail_furniture": "electronics",  # Harvey Norman sells electronics, not just furniture
+                        "retail_furniture": "furniture_electronics",  # Harvey Norman sells both furniture and electronics
                         "fuel_retail": "fuel_station",
                         "food_fast": "restaurant",
                     }

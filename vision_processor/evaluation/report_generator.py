@@ -323,63 +323,62 @@ class ReportGenerator:
             table_html += f"<th>{header}</th>"
         table_html += "</tr>\n</thead>\n<tbody>\n"
 
-        # Find best scores for highlighting
-        best_f1 = max(result.average_f1_score for result in comparison_results.values())
+        # Find best scores for highlighting (with safe attribute access)
+        best_f1 = max(
+            getattr(result, "average_f1_score", 0.0)
+            for result in comparison_results.values()
+        )
         best_precision = max(
-            result.average_precision for result in comparison_results.values()
+            getattr(result, "average_precision", 0.0)
+            for result in comparison_results.values()
         )
         best_recall = max(
-            result.average_recall for result in comparison_results.values()
+            getattr(result, "average_recall", 0.0)
+            for result in comparison_results.values()
         )
         best_confidence = max(
-            result.average_confidence for result in comparison_results.values()
+            getattr(result, "average_confidence", 0.0)
+            for result in comparison_results.values()
         )
         best_production_rate = max(
-            result.production_ready_rate for result in comparison_results.values()
+            getattr(result, "production_ready_rate", 0.0)
+            for result in comparison_results.values()
         )
 
         for model_name, result in comparison_results.items():
             table_html += "<tr>"
             table_html += f"<td><strong>{model_name}</strong></td>"
 
-            # F1 Score
-            css_class = (
-                ' class="best-score"' if result.average_f1_score == best_f1 else ""
-            )
-            table_html += f"<td{css_class}>{result.average_f1_score:.3f}</td>"
+            # F1 Score (with safe attribute access)
+            f1_score = getattr(result, "average_f1_score", 0.0)
+            css_class = ' class="best-score"' if f1_score == best_f1 else ""
+            table_html += f"<td{css_class}>{f1_score:.3f}</td>"
 
             # Precision
-            css_class = (
-                ' class="best-score"'
-                if result.average_precision == best_precision
-                else ""
-            )
-            table_html += f"<td{css_class}>{result.average_precision:.3f}</td>"
+            precision = getattr(result, "average_precision", 0.0)
+            css_class = ' class="best-score"' if precision == best_precision else ""
+            table_html += f"<td{css_class}>{precision:.3f}</td>"
 
             # Recall
-            css_class = (
-                ' class="best-score"' if result.average_recall == best_recall else ""
-            )
-            table_html += f"<td{css_class}>{result.average_recall:.3f}</td>"
+            recall = getattr(result, "average_recall", 0.0)
+            css_class = ' class="best-score"' if recall == best_recall else ""
+            table_html += f"<td{css_class}>{recall:.3f}</td>"
 
             # Confidence
-            css_class = (
-                ' class="best-score"'
-                if result.average_confidence == best_confidence
-                else ""
-            )
-            table_html += f"<td{css_class}>{result.average_confidence:.3f}</td>"
+            confidence = getattr(result, "average_confidence", 0.0)
+            css_class = ' class="best-score"' if confidence == best_confidence else ""
+            table_html += f"<td{css_class}>{confidence:.3f}</td>"
 
             # Production Ready
+            prod_rate = getattr(result, "production_ready_rate", 0.0)
             css_class = (
-                ' class="best-score"'
-                if result.production_ready_rate == best_production_rate
-                else ""
+                ' class="best-score"' if prod_rate == best_production_rate else ""
             )
-            table_html += f"<td{css_class}>{result.production_ready_rate:.1%}</td>"
+            table_html += f"<td{css_class}>{prod_rate:.1%}</td>"
 
             # Processing Time
-            table_html += f"<td>{result.average_processing_time:.2f}</td>"
+            proc_time = getattr(result, "average_processing_time", 0.0)
+            table_html += f"<td>{proc_time:.2f}</td>"
 
             table_html += "</tr>"
 
@@ -396,27 +395,27 @@ class ReportGenerator:
                 <h3>📱 {model_name}</h3>
                 <div class="metric">
                     <span class="metric-label">Documents Processed:</span>
-                    <span class="metric-value">{result.successful_extractions}/{result.total_documents}</span>
+                    <span class="metric-value">{getattr(result, "successful_extractions", 0)}/{getattr(result, "total_documents", 0)}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">Success Rate:</span>
-                    <span class="metric-value">{result.successful_extractions / result.total_documents:.1%}</span>
+                    <span class="metric-value">{getattr(result, "successful_extractions", 0) / max(getattr(result, "total_documents", 1), 1):.1%}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">F1 Score:</span>
-                    <span class="metric-value">{result.average_f1_score:.3f}</span>
+                    <span class="metric-value">{getattr(result, "average_f1_score", 0.0):.3f}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">Production Ready:</span>
-                    <span class="metric-value">{result.production_ready_rate:.1%}</span>
+                    <span class="metric-value">{getattr(result, "production_ready_rate", 0.0):.1%}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">AWK Fallback Rate:</span>
-                    <span class="metric-value">{result.awk_fallback_rate:.1%}</span>
+                    <span class="metric-value">{getattr(result, "awk_fallback_rate", 0.0):.1%}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">Avg Processing Time:</span>
-                    <span class="metric-value">{result.average_processing_time:.2f}s</span>
+                    <span class="metric-value">{getattr(result, "average_processing_time", 0.0):.2f}s</span>
                 </div>
             </div>
             """
@@ -432,13 +431,14 @@ class ReportGenerator:
 
         for model_name, result in comparison_results.items():
             # Calculate production readiness grade
-            if result.production_ready_rate >= 0.9:
+            prod_rate = getattr(result, "production_ready_rate", 0.0)
+            if prod_rate >= 0.9:
                 grade = "🟢 Excellent"
                 grade_color = "#28a745"
-            elif result.production_ready_rate >= 0.7:
+            elif prod_rate >= 0.7:
                 grade = "🟡 Good"
                 grade_color = "#ffc107"
-            elif result.production_ready_rate >= 0.5:
+            elif prod_rate >= 0.5:
                 grade = "🟠 Fair"
                 grade_color = "#fd7e14"
             else:
@@ -792,10 +792,10 @@ class ReportGenerator:
         if not comparison_results:
             return recommendations
 
-        # Find best model
+        # Find best model (with safe attribute access)
         best_model = max(
             comparison_results.keys(),
-            key=lambda k: comparison_results[k].average_f1_score,
+            key=lambda k: getattr(comparison_results[k], "average_f1_score", 0.0),
         )
 
         best_result = comparison_results[best_model]

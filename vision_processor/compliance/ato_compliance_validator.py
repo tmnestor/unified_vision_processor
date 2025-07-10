@@ -278,7 +278,11 @@ class ATOComplianceValidator:
             errors=errors,
             parsed_amount=parsed_amount,
             formatted_amount=formatted_amount,
-            normalized_amount=formatted_amount,
+            normalized_amount=formatted_amount
+            if formatted_amount
+            else str(parsed_amount)
+            if parsed_amount is not None
+            else "",
         )
 
     def assess_compliance(
@@ -514,15 +518,12 @@ class ATOComplianceValidator:
         recommendations = []
 
         # Recognize businesses in text
-        recognized_businesses = self.business_registry.recognize_business(raw_text)
+        recognized_business = self.business_registry.recognize_business(raw_text)
 
         business_score = 0.0
 
-        if recognized_businesses:
-            # Use the highest confidence business
-            primary_business = recognized_businesses[0]
-
-            # Validate business context consistency
+        if recognized_business.is_recognized:
+            # Use the recognized business
             business_name = extracted_fields.get("supplier_name", "")
             is_valid, context_issues, context_recs = (
                 self.business_registry.validate_business_context(
@@ -533,15 +534,17 @@ class ATOComplianceValidator:
             )
 
             if is_valid:
-                business_score = primary_business["confidence"]
+                business_score = recognized_business.confidence_score
             else:
-                business_score = primary_business["confidence"] * 0.5
+                business_score = recognized_business.confidence_score * 0.5
                 issues.extend(context_issues)
                 recommendations.extend(context_recs)
 
             # Add business information to extracted fields
-            extracted_fields["recognized_business"] = primary_business["official_name"]
-            extracted_fields["business_industry"] = primary_business["industry"]
+            extracted_fields["recognized_business"] = (
+                recognized_business.normalized_name
+            )
+            extracted_fields["business_industry"] = recognized_business.industry
 
         # No recognized business - check if we have supplier name
         elif extracted_fields.get("supplier_name"):

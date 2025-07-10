@@ -104,7 +104,7 @@ class ModelFactory:
             model_config = cls._prepare_model_config(model_type, config, **kwargs)
 
             # Handle offline mode
-            if config and config.offline_mode:
+            if config and getattr(config, "offline_mode", False):
                 model_config["offline_mode"] = True
                 logger.info(f"Offline mode enabled - using local model at {model_path}")
 

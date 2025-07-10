@@ -53,6 +53,10 @@ class SROIEEvaluator:
             "total": ["total_amount", "total", "amount", "total_value", "final_total"],
             "tax": ["gst_amount", "tax", "tax_value", "gst"],
             "abn": ["abn", "abn_number", "australian_business_number"],
+            "gst_amount": "gst_amount",
+            "invoice_number": "invoice_number",
+            "bsb": "bsb",
+            "bank_name": "bank_name",
             "subtotal": ["subtotal", "sub_total", "amount_before_tax"],
         }
 
@@ -290,14 +294,17 @@ class SROIEEvaluator:
         for rank, (model_name, f1_score, result) in enumerate(model_scores, 1):
             ranking_entry = {
                 "rank": rank,
+                "model": model_name,
                 "model_name": model_name,
                 "overall_f1": f1_score,
-                "success_rate": result["overall_metrics"]["success_rate"],
-                "avg_processing_time": result["processing_statistics"][
-                    "avg_processing_time"
-                ],
-                "total_documents": result["dataset_info"]["total_documents"],
-                "sroie_field_scores": result["sroie_metrics"],
+                "success_rate": result["overall_metrics"].get("success_rate", 0.0),
+                "avg_processing_time": result.get("processing_statistics", {}).get(
+                    "avg_processing_time", 0.0
+                ),
+                "total_documents": result.get("dataset_info", {}).get(
+                    "total_documents", 0
+                ),
+                "sroie_field_scores": result.get("sroie_metrics", {}),
             }
 
             leaderboard["rankings"].append(ranking_entry)
@@ -349,15 +356,20 @@ class SROIEEvaluator:
     def _standardize_sroie_ground_truth(
         self,
         ground_truth_data: dict[str, Any],
-        field_mapping: dict[str, list[str]],
+        field_mapping: dict[str, Any],  # Can be str or list[str]
     ) -> dict[str, Any]:
         """Convert SROIE ground truth format to standardized format."""
         standardized = {}
 
         for sroie_field, standard_fields in field_mapping.items():
             if sroie_field in ground_truth_data:
-                # Use the first standard field name as the key
-                standard_key = standard_fields[0]
+                # Handle both string and list mappings
+                if isinstance(standard_fields, list):
+                    # Use the first standard field name as the key
+                    standard_key = standard_fields[0]
+                else:
+                    # Direct string mapping
+                    standard_key = standard_fields
                 standardized[standard_key] = ground_truth_data[sroie_field]
 
         return standardized

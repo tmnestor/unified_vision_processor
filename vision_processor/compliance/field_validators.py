@@ -397,10 +397,18 @@ class GSTValidator:
         )
         return False, notes
 
-    def validate_calculation(self, subtotal: float, gst: float, _total: float) -> bool:
+    def validate_calculation(self, subtotal: float, gst: float, total: float) -> bool:
         """Simplified GST calculation validation for tests."""
+        # Calculate expected GST (10% of subtotal)
         expected_gst = subtotal * self.gst_rate
-        return abs(gst - expected_gst) <= self.tolerance
+        expected_total = subtotal + expected_gst
+
+        # Check GST amount with tolerance
+        gst_valid = abs(gst - expected_gst) <= self.tolerance
+        # Check total amount with tolerance
+        total_valid = abs(total - expected_total) <= self.tolerance
+
+        return gst_valid and total_valid
 
 
 class AmountValidator:
@@ -440,12 +448,11 @@ class AmountValidator:
             return False, None, clean_amount, issues
 
         try:
-            # Remove currency symbol and commas
+            # Remove currency symbol and commas for parsing
             numeric_str = clean_amount.replace("$", "").replace(",", "")
             parsed_amount = float(numeric_str)
 
             # For ATO compliance, negative amounts are not allowed in general receipts
-            # But we still parse them successfully
             if parsed_amount < 0:
                 issues.append("Amount cannot be negative")
                 # Return parsed but invalid
@@ -457,7 +464,7 @@ class AmountValidator:
 
             return True, parsed_amount, formatted_amount, issues
 
-        except ValueError:
+        except (ValueError, TypeError):
             issues.append("Cannot parse amount as number")
             return False, None, clean_amount, issues
 

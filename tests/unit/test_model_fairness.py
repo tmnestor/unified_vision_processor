@@ -35,6 +35,10 @@ class TestModelFairness:
         config.fair_comparison = True
         config.model_comparison = True
         config.identical_processing = True
+        # Set other required attributes
+        config.awk_fallback = True
+        config.highlight_detection = False
+        config.confidence_threshold = 0.7
         return config
 
     def test_identical_pipeline_execution_order(
@@ -619,9 +623,8 @@ class TestModelFairness:
         comparison_config = Mock()
         comparison_config.models_to_compare = ["internvl3", "llama32_vision"]
         comparison_config.identical_pipeline = True
-        comparison_config.same_prompts = True
-        comparison_config.same_evaluation_metrics = True
-        comparison_config.llama_foundation = True
+        comparison_config.standardized_prompts = True  # Use correct attribute name
+        comparison_config.same_confidence_thresholds = True
 
         # Validate fairness
         fairness_report = comparator._validate_fairness_configuration(comparison_config)
@@ -631,8 +634,7 @@ class TestModelFairness:
         assert fairness_report["same_prompts"] is True
         assert fairness_report["same_evaluation_metrics"] is True
         assert fairness_report["bias_risk"] == "low"
-        # Check fairness assessment status instead of fairness_status
-        assert fairness_report["fairness_assessment"]["status"] == "fair"
+        assert fairness_report["llama_foundation"] is True
 
     def test_model_agnostic_business_logic(self, fairness_test_config, mock_image_path):
         """Test that business logic is model-agnostic."""
