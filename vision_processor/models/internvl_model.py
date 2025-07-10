@@ -380,12 +380,15 @@ class InternVLModel(BaseVisionModel):
 
             # Move to appropriate device and dtype
             if self.device.type == "cuda":
-                pixel_values = pixel_values.to(self.device).bfloat16()
+                pixel_values = pixel_values.to(self.device).to(torch.bfloat16)
             else:
-                pixel_values = pixel_values.to(self.device).float()
+                pixel_values = pixel_values.to(self.device).to(torch.float32)
 
-            # Add batch dimension
+            # InternVL expects shape [batch_size, num_tiles, channels, height, width]
+            # We already have [num_tiles, channels, height, width], so add batch dimension
             pixel_values = pixel_values.unsqueeze(0)
+
+            logger.info(f"Final pixel_values shape: {pixel_values.shape}")
 
             logger.info(f"Processed image into {len(image_tiles)} tiles")
 
@@ -397,12 +400,28 @@ class InternVLModel(BaseVisionModel):
                 "do_sample": kwargs.get("do_sample", False),
             }
 
-            response = self.model.chat(
-                tokenizer=self.tokenizer,
-                pixel_values=pixel_values,
-                question=prompt,
-                generation_config=generation_config,
-            )
+            try:
+                # InternVL chat interface
+                response = self.model.chat(
+                    tokenizer=self.tokenizer,
+                    pixel_values=pixel_values,
+                    question=prompt,
+                    generation_config=generation_config,
+                )
+            except Exception as e:
+                logger.error(f"Error during InternVL inference: {e}")
+                # Try alternative interface
+                logger.info("Attempting alternative inference method...")
+                inputs = {
+                    "pixel_values": pixel_values,
+                    "input_ids": self.tokenizer.encode(prompt, return_tensors="pt").to(
+                        self.device
+                    ),
+                }
+                with torch.no_grad():
+                    outputs = self.model.generate(**inputs, **generation_config)
+                response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
+                logger.info("Alternative inference successful")
 
             # Handle response format
             raw_text = response[0] if isinstance(response, tuple) else response
