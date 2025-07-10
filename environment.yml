@@ -13,7 +13,6 @@ dependencies:
   - tqdm
   - pyyaml
   - scikit-learn
-  - opencv  # OpenCV for computer vision operations
   - pip
   - ipykernel  # Required for Jupyter notebook support
   - ipywidgets  # Required for tqdm progress bars in Jupyter
@@ -113,6 +112,17 @@ dependencies:
 # 
 # To completely recreate environment (if update fails):
 # ----------------------------------------------------
+# conda env remove -n unified_vision_processor
+# conda env create -f environment.yml
+#
+# If you get "uninstall-no-record-file" error for opencv-python:
+# ------------------------------------------------------------
+# This happens when conda-installed opencv conflicts with pip opencv-python
+# Solution 1: Remove conda opencv package first:
+# conda remove opencv
+# conda env update -f environment.yml --prune
+#
+# Solution 2: Complete environment recreation (recommended):
 # conda env remove -n unified_vision_processor
 # conda env create -f environment.yml
 #
