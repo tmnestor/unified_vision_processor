@@ -970,7 +970,7 @@ class PromptManager(BasePipelineComponent):
         logger.info("PromptManager initialized (placeholder)")
 
     def get_prompt(
-        self, _document_type: DocumentType, _has_highlights: bool = False
+        self, document_type: DocumentType, has_highlights: bool = False
     ) -> str:
         """
         Get appropriate prompt for document type.
@@ -983,7 +983,10 @@ class PromptManager(BasePipelineComponent):
             Prompt string
         """
         # Placeholder implementation
-        return f"Extract all key information from this {_document_type.value} document."
+        highlight_suffix = (
+            " Pay special attention to any highlighted areas." if has_highlights else ""
+        )
+        return f"Extract all key information from this {document_type.value} document.{highlight_suffix}"
 
 
 class DocumentHandler(BasePipelineComponent):
