@@ -1,0 +1,10 @@
+transformers==4.45.2
+typer>=0.9.0
+rich>=13.0.0
+torch>=2.0.0
+torchvision
+accelerate
+bitsandbytes
+sentencepiece
+protobuf
+python-dotenv
