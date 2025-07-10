@@ -21,9 +21,9 @@ from PIL import Image
 from ..config.model_factory import ModelFactory
 from ..config.unified_config import ExtractionMethod, UnifiedConfig
 from ..models.base_model import BaseVisionModel, ModelResponse
+from .awk_extractor import AWKExtractor
 from .pipeline_components import (
     ATOComplianceHandler,
-    AWKExtractor,
     ConfidenceManager,
     DocumentClassifier,
     DocumentType,

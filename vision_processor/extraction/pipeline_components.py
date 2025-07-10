@@ -384,7 +384,13 @@ class DocumentClassifier(BasePipelineComponent):
             ],
         }
 
-        # Australian business names for detection
+        # Initialize Australian business registry for comprehensive recognition
+        from ..compliance import AustralianBusinessRegistry
+
+        self.business_registry = AustralianBusinessRegistry()
+        self.business_registry.initialize()
+
+        # Get business names for quick lookup (legacy compatibility)
         self.australian_businesses = {
             "major_retailers": [
                 "woolworths",
@@ -397,11 +403,19 @@ class DocumentClassifier(BasePipelineComponent):
                 "harvey norman",
                 "jb hi-fi",
                 "big w",
+                "myer",
+                "david jones",
+                "ikea",
+                "spotlight",
+                "rebel sport",
             ],
             "fuel_stations": ["bp", "shell", "caltex", "ampol", "mobil", "7-eleven"],
             "banks": ["anz", "commonwealth bank", "westpac", "nab", "ing", "macquarie"],
             "airlines": ["qantas", "jetstar", "virgin australia", "tigerair"],
             "hotels": ["hilton", "marriott", "hyatt", "ibis", "mercure", "novotel"],
+            "food_chains": ["mcdonald's", "kfc", "subway", "domino's", "hungry jack's"],
+            "telecommunications": ["telstra", "optus", "vodafone"],
+            "utilities": ["agl", "origin", "energyaustralia"],
         }
 
         logger.info("DocumentClassifier initialized with Australian business knowledge")
@@ -471,10 +485,17 @@ class DocumentClassifier(BasePipelineComponent):
             evidence.append(f"Format patterns: {len(type_evidence['format_matches'])}")
 
         if type_evidence["business_matches"]:
-            business_names = [
-                bm["business"] for bm in type_evidence["business_matches"]
-            ]
-            evidence.append(f"Australian businesses: {', '.join(business_names[:2])}")
+            # Include confidence scores if available
+            business_display = []
+            for bm in type_evidence["business_matches"][:2]:  # Top 2 businesses
+                if "confidence" in bm:
+                    business_display.append(
+                        f"{bm['business']} ({bm['confidence']:.2f})"
+                    )
+                else:
+                    business_display.append(bm["business"])
+
+            evidence.append(f"Australian businesses: {', '.join(business_display)}")
 
         return best_type, best_score, evidence
 
@@ -536,14 +557,31 @@ class DocumentClassifier(BasePipelineComponent):
             total_score += format_score * 0.3  # 30% weight
             max_possible_score += 0.3
 
-        # Score business name matches
+        # Score business name matches using comprehensive registry
         business_score = 0.0
+
+        # Use comprehensive business registry for recognition
+        recognized_businesses = self.business_registry.recognize_business(text)
+        for business in recognized_businesses[:5]:  # Top 5 matches
+            business_score += business["confidence"] * 0.2
+            evidence["business_matches"].append(
+                {
+                    "business": business["official_name"],
+                    "category": business["industry"],
+                    "confidence": business["confidence"],
+                }
+            )
+
+        # Fallback to legacy method for any missed businesses
         for category, businesses in self.australian_businesses.items():
             for business in businesses:
-                if business in text:
+                if business in text and not any(
+                    b["business"].lower() == business.lower()
+                    for b in evidence["business_matches"]
+                ):
                     business_score += 0.3
                     evidence["business_matches"].append(
-                        {"business": business, "category": category}
+                        {"business": business, "category": category, "confidence": 0.8}
                     )
 
         # Normalize business score
@@ -561,29 +599,8 @@ class DocumentClassifier(BasePipelineComponent):
         return final_score, evidence
 
 
-class AWKExtractor(BasePipelineComponent):
-    """Placeholder for AWK extractor (Phase 4)."""
-
-    def initialize(self) -> None:
-        """Initialize AWK extractor."""
-        logger.info("AWKExtractor initialized (placeholder)")
-
-    def extract(self, _text: str, _document_type: DocumentType) -> Dict[str, Any]:
-        """
-        Extract fields using AWK patterns.
-
-        Args:
-            text: Raw text to process
-            document_type: Type of document
-
-        Returns:
-            Extracted fields dictionary
-        """
-        # Placeholder implementation
-        return {
-            "awk_extracted": True,
-            "fields_count": 0,
-        }
+# AWKExtractor moved to separate module for comprehensive implementation
+# Import here for backward compatibility
 
 
 class ConfidenceManager(BasePipelineComponent):
@@ -904,24 +921,44 @@ class ConfidenceManager(BasePipelineComponent):
 
 
 class ATOComplianceHandler(BasePipelineComponent):
-    """Placeholder for ATO compliance handler (Phase 4)."""
+    """ATO compliance handler with comprehensive validation."""
 
     def initialize(self) -> None:
         """Initialize ATO compliance handler."""
-        logger.info("ATOComplianceHandler initialized (placeholder)")
+        from ..compliance import ATOComplianceValidator
+
+        self.ato_validator = ATOComplianceValidator(self.config)
+        self.ato_validator.initialize()
+
+        logger.info("ATOComplianceHandler initialized with comprehensive validation")
 
     def assess_compliance(
-        self, _extracted_fields: Dict[str, Any], _document_type: DocumentType
+        self,
+        extracted_fields: Dict[str, Any],
+        document_type: DocumentType,
+        raw_text: str = "",
+        classification_confidence: float = 0.7,
     ) -> ComplianceResult:
         """
         Assess ATO compliance for extracted fields.
 
+        Args:
+            extracted_fields: Fields extracted from document
+            document_type: Type of document being processed
+            raw_text: Original document text for business recognition
+            classification_confidence: Confidence in document classification
+
         Returns:
-            ComplianceResult with compliance assessment
+            ComplianceResult with comprehensive compliance assessment
         """
-        # Placeholder implementation
-        return ComplianceResult(
-            compliance_score=0.7, compliance_passed=True, issues=[], recommendations=[]
+        if not self.initialized:
+            self.initialize()
+
+        return self.ato_validator.assess_compliance(
+            extracted_fields=extracted_fields,
+            document_type=document_type,
+            raw_text=raw_text,
+            classification_confidence=classification_confidence,
         )
 
 

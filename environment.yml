@@ -13,6 +13,7 @@ dependencies:
   - tqdm
   - pyyaml
   - scikit-learn
+  - opencv  # OpenCV for computer vision operations
   - pip
   - ipykernel  # Required for Jupyter notebook support
   - ipywidgets  # Required for tqdm progress bars in Jupyter
@@ -28,20 +29,49 @@ dependencies:
     - sentencepiece  # Required for tokenizer
     - protobuf  # Required for model loading
     - python-dotenv  # Required for .env file loading
+    
+    # Computer Vision Dependencies
+    - opencv-python>=4.8.0  # Python bindings for OpenCV
+    - pytesseract>=0.3.10  # OCR engine for text extraction
+    - easyocr>=1.7.0  # Alternative OCR engine
+    
+    # Testing Dependencies
+    - pytest>=7.0.0  # Testing framework
+    - pytest-cov>=4.0.0  # Coverage reports
+    - pytest-mock>=3.10.0  # Mocking in tests
+    
+    # Development Dependencies
+    - setuptools>=65.0.0  # Package management
+    - mypy>=1.0.0  # Type checking
+    - ruff>=0.1.0  # Fast Python linter and formatter
+    
+    # Optional Dependencies for Enhanced Features
+    - jinja2>=3.1.0  # Template rendering for reports
+    - requests>=2.28.0  # HTTP library for potential API integrations
 
 # =====================================================
 # ENVIRONMENT SETUP INSTRUCTIONS
 # =====================================================
 #
-# Step 1: Create the conda environment
-# ------------------------------------
+# Step 1: Install system dependencies (required for OCR)
+# ------------------------------------------------------
+# macOS: brew install tesseract
+# Ubuntu/Debian: sudo apt-get install tesseract-ocr
+# Windows: Download from https://github.com/UB-Mannheim/tesseract/wiki
+#
+# Step 2: Create the conda environment (NEW INSTALLATION)
+# -------------------------------------------------------
 # conda env create -f environment.yml
 #
-# Step 2: Activate the environment
+# OR: Update existing environment (IF ALREADY EXISTS)
+# --------------------------------------------------
+# conda env update -f environment.yml --prune
+#
+# Step 3: Activate the environment
 # --------------------------------
 # conda activate unified_vision_processor
 #
-# Step 3: Install PyTorch with CUDA support
+# Step 4: Install PyTorch with CUDA support
 # -----------------------------------------
 # For V100 production (CUDA 11.x):
 # conda install pytorch==2.0.1 torchvision==0.15.2 pytorch-cuda=11.8 -c pytorch -c nvidia
@@ -49,20 +79,24 @@ dependencies:
 # For H200 development (CUDA 12.x):
 # conda install pytorch torchvision pytorch-cuda=12.1 -c pytorch -c nvidia
 #
-# Step 4: Register the environment as a Jupyter kernel
+# Step 5: Register the environment as a Jupyter kernel
 # ---------------------------------------------------
 # python -m ipykernel install --user --name unified_vision_processor --display-name "Python (unified_vision_processor)"
 #
-# Step 5: Install package in development mode
+# Step 6: Install package in development mode
 # -------------------------------------------
 # pip install -e .
 #
-# Step 6: Verify the installation
+# Step 7: Verify the installation
 # -------------------------------
 # python -c "import torch; print(f'PyTorch: {torch.__version__}')"
 # python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
 # python -c "import transformers; print(f'Transformers: {transformers.__version__}')"
 # python -c "import bitsandbytes; print('BitsAndBytes: OK')"
+# python -c "import cv2; print(f'OpenCV: {cv2.__version__}')"
+# python -c "import pytesseract; print('Tesseract: OK')"
+# python -c "import easyocr; print('EasyOCR: OK')"
+# python -c "import vision_processor; print('Vision Processor: OK')"
 #
 # =====================================================
 # TROUBLESHOOTING
@@ -71,6 +105,16 @@ dependencies:
 # If conda activate fails in JupyterHub:
 # --------------------------------------
 # source /opt/conda/etc/profile.d/conda.sh && conda activate unified_vision_processor
+#
+# To update existing environment with new dependencies:
+# ----------------------------------------------------
+# conda activate unified_vision_processor
+# conda env update -f environment.yml --prune
+# 
+# To completely recreate environment (if update fails):
+# ----------------------------------------------------
+# conda env remove -n unified_vision_processor
+# conda env create -f environment.yml
 #
 # To list available kernels:
 # -------------------------
@@ -81,6 +125,9 @@ dependencies:
 # =====================================================
 # - transformers is pinned to 4.45.2 for Llama-3.2-Vision compatibility
 # - bitsandbytes is required for 8-bit quantization on V100 16GB
+# - OpenCV and OCR engines (pytesseract, easyocr) for computer vision features
+# - mypy and ruff for development and code quality
 # - ipykernel is included for Jupyter notebook support
 # - KMP_DUPLICATE_LIB_OK=TRUE fixes OpenMP library conflicts
+# - Tesseract OCR binary must be installed separately on the system
 # - Designed for Mac M1 → 2x H200 → single V100 deployment pipeline
