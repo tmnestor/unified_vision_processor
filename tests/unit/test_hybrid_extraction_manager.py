@@ -42,7 +42,7 @@ class TestUnifiedExtractionManager:
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
                     with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
+                        "vision_processor.confidence.ConfidenceManager"
                     ) as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -97,9 +97,7 @@ class TestUnifiedExtractionManager:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
-                    with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
-                    ):
+                    with patch("vision_processor.confidence.ConfidenceManager"):
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
@@ -277,9 +275,7 @@ class TestUnifiedExtractionManager:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
-                    with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
-                    ):
+                    with patch("vision_processor.confidence.ConfidenceManager"):
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
@@ -321,9 +317,7 @@ class TestUnifiedExtractionManager:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
-                    with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
-                    ):
+                    with patch("vision_processor.confidence.ConfidenceManager"):
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
@@ -427,9 +421,7 @@ class TestUnifiedExtractionManager:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ):
-                    with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
-                    ):
+                    with patch("vision_processor.confidence.ConfidenceManager"):
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ):
@@ -475,9 +467,7 @@ class TestUnifiedExtractionManager:
                     with patch(
                         "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                     ):
-                        with patch(
-                            "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
-                        ):
+                        with patch("vision_processor.confidence.ConfidenceManager"):
                             with patch(
                                 "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                             ):
