@@ -167,7 +167,7 @@ class InternVLModel(BaseVisionModel):
             if self.enable_quantization:
                 # Check if bitsandbytes is available
                 try:
-                    import bitsandbytes
+                    import bitsandbytes  # noqa: F401
 
                     model_loading_args["load_in_8bit"] = True
                     logger.info(

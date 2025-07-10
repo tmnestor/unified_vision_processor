@@ -180,9 +180,15 @@ class UnifiedConfig:
         else:
             # If offline mode (default) and no path configured, raise error
             if self.offline_mode:
+                # Create proper environment variable name for the error message
+                env_var_name = (
+                    "VISION_INTERNVL_MODEL_PATH"
+                    if self.model_type == ModelType.INTERNVL3
+                    else "VISION_LLAMA_MODEL_PATH"
+                )
                 raise ValueError(
                     f"Offline mode is enabled (default) but no model path configured for {self.model_type.value}. "
-                    f"Set VISION_{self.model_type.value.upper()}_MODEL_PATH in .env or "
+                    f"Set {env_var_name} in .env or "
                     f"set VISION_OFFLINE_MODE=false for development with internet access."
                 )
             # Otherwise, model will be downloaded (development only)
@@ -429,7 +435,7 @@ class UnifiedConfig:
         file_path = Path(file_path)
         config_dict = self.to_dict()
 
-        with open(file_path, "w") as f:
+        with file_path.open("w") as f:
             yaml.dump(config_dict, f, default_flow_style=False, indent=2)
 
         logger.info(f"Configuration saved to {file_path}")
@@ -441,7 +447,7 @@ class UnifiedConfig:
 
         file_path = Path(file_path)
 
-        with open(file_path, "r") as f:
+        with file_path.open("r") as f:
             config_dict = yaml.safe_load(f)
 
         # Convert string enums back to enum objects

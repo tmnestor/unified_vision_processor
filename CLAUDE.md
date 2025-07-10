@@ -252,3 +252,6 @@ The unified system provides migration tools for existing InternVL and Llama-3.2 
 ## The Orininal Files Needed for Implementation are here
 - [InternVL PoC](/Users/tod/Desktop/internvl_PoC/internvl_git)
 - [Llama-3.2 Vision](/Users/tod/Desktop/Llama_3.2/llama_vision)
+
+## Local Testing and Development
+- Use the unified_vision_processor conda environment for local development

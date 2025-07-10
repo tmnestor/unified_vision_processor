@@ -12,7 +12,10 @@
       "Bash(conda activate:*)",
       "Bash(export KMP_DUPLICATE_LIB_OK=TRUE)",
       "Bash(ruff format:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(ls:*)",
+      "Bash(rg:*)",
+      "Bash(ruff check:*)"
     ],
     "deny": []
   }

@@ -20,14 +20,14 @@ from .model_utils import (
 
 # Import actual models if available
 try:
-    from .internvl_model import InternVLModel
+    from .internvl_model import InternVLModel  # noqa: F401
 
     _has_internvl = True
 except ImportError:
     _has_internvl = False
 
 try:
-    from .llama_model import LlamaVisionModel
+    from .llama_model import LlamaVisionModel  # noqa: F401
 
     _has_llama = True
 except ImportError:

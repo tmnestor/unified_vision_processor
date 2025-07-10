@@ -55,7 +55,7 @@ class PlaceholderInternVLModel(BaseVisionModel):
         self.processor = None
 
     def process_image(
-        self, image_path: Union[str, Path, Image.Image], prompt: str, **kwargs
+        self, _image_path: Union[str, Path, Image.Image], prompt: str, **_kwargs
     ) -> ModelResponse:
         """Process image with placeholder logic."""
         if not self.is_loaded:
@@ -89,7 +89,7 @@ class PlaceholderInternVLModel(BaseVisionModel):
         self,
         image_paths: List[Union[str, Path, Image.Image]],
         prompts: List[str],
-        **kwargs,
+        **_kwargs,
     ) -> List[ModelResponse]:
         """Process batch of images."""
         return [
@@ -142,7 +142,7 @@ class PlaceholderLlamaVisionModel(BaseVisionModel):
         self.processor = None
 
     def process_image(
-        self, image_path: Union[str, Path, Image.Image], prompt: str, **kwargs
+        self, _image_path: Union[str, Path, Image.Image], prompt: str, **_kwargs
     ) -> ModelResponse:
         """Process image with placeholder logic."""
         if not self.is_loaded:
@@ -176,7 +176,7 @@ class PlaceholderLlamaVisionModel(BaseVisionModel):
         self,
         image_paths: List[Union[str, Path, Image.Image]],
         prompts: List[str],
-        **kwargs,
+        **_kwargs,
     ) -> List[ModelResponse]:
         """Process batch of images."""
         return [

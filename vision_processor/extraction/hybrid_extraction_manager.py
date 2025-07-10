@@ -175,7 +175,7 @@ class UnifiedExtractionManager:
             )
         except Exception as e:
             logger.error(f"Failed to initialize model: {e}")
-            raise RuntimeError(f"Model initialization failed: {e}")
+            raise RuntimeError(f"Model initialization failed: {e}") from e
 
     def _initialize_components(self) -> None:
         """Initialize all pipeline components."""
@@ -204,7 +204,7 @@ class UnifiedExtractionManager:
         self,
         image_path: Union[str, Path, Image.Image],
         document_type: Optional[str] = None,
-        **kwargs,
+        **_kwargs,
     ) -> ProcessingResult:
         """
         Process document using unified 7-step Llama pipeline.
@@ -242,9 +242,13 @@ class UnifiedExtractionManager:
                 classification_evidence = []
                 logger.info(f"Using provided document type: {classified_type}")
             else:
-                # Use classifier component
+                # First, get initial model response for classification
+                initial_prompt = "Describe what you see in this document. Include any visible text, business names, document structure, and formatting."
+                model_response = self._process_with_model(image_path, initial_prompt)
+
+                # Use classifier component with model response text
                 classified_type, classification_confidence, classification_evidence = (
-                    self.classifier.classify_with_evidence(image_path)
+                    self.classifier.classify_from_text(model_response.raw_text)
                 )
                 logger.info(
                     f"Classification: {classified_type.value} (confidence: {classification_confidence:.2f})"
