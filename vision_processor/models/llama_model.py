@@ -175,7 +175,7 @@ class LlamaVisionModel(BaseVisionModel):
             self.model.generation_config.max_length = 512  # Limit max generation
             self.model.generation_config.do_sample = False  # Deterministic for consistency
             self.model.config.use_cache = True  # Enable KV cache
-            
+
             # Store metadata for inference
             self.model._llama_config = {
                 "device_map": device_map,
@@ -269,7 +269,15 @@ class LlamaVisionModel(BaseVisionModel):
         return image
 
     def _prepare_inputs(self, image: Image.Image, prompt: str) -> dict[str, Any]:
-        """Prepare inputs for model inference."""
+        """Prepare inputs for model inference.
+
+        Args:
+            image: Preprocessed PIL Image
+            prompt: Text prompt (should include <|image|> token)
+
+        Returns:
+            Processed inputs dictionary
+        """
         # Ensure prompt includes image token
         if not prompt.startswith("<|image|>"):
             prompt_with_image = f"<|image|>{prompt}"
@@ -277,19 +285,15 @@ class LlamaVisionModel(BaseVisionModel):
             prompt_with_image = prompt
 
         # Process inputs
-        inputs = self.processor(
-            text=prompt_with_image,
-            images=image,
-            return_tensors="pt",
-        )
+        inputs = self.processor(text=prompt_with_image, images=image, return_tensors="pt")
 
         logger.debug(
-            f"Input shapes - IDs: {inputs['input_ids'].shape}, Pixels: {inputs['pixel_values'].shape}",
+            f"Input shapes - IDs: {inputs['input_ids'].shape}, Pixels: {inputs['pixel_values'].shape}"
         )
 
-        # Move to correct device
+        # Move to correct device - use the exact device detection from working code
         if self.device.type != "cpu":
-            device_target = self.device.type
+            device_target = str(self.device).split(":")[0] if ":" in str(self.device) else str(self.device)
             inputs = {k: v.to(device_target) if hasattr(v, "to") else v for k, v in inputs.items()}
 
         return inputs
@@ -369,41 +373,43 @@ class LlamaVisionModel(BaseVisionModel):
             # Prepare inputs
             inputs = self._prepare_inputs(image, prompt)
 
-            # Generate with optimized parameters
+            # Generate with CUDA-safe parameters (NO repetition_penalty)
+            # Use optimized settings for receipt extraction - from working implementation
             generation_kwargs = {
                 **inputs,
                 "max_new_tokens": kwargs.get("max_new_tokens", 1024),
-                "do_sample": kwargs.get("do_sample", True),
-                "temperature": kwargs.get("temperature", 0.3),
-                "top_p": kwargs.get("top_p", 0.95),
-                "top_k": kwargs.get("top_k", 50),
+                "do_sample": kwargs.get("do_sample", False),  # Default to deterministic
                 "pad_token_id": self.processor.tokenizer.eos_token_id,
                 "eos_token_id": self.processor.tokenizer.eos_token_id,
                 "use_cache": True,
             }
 
             # Only add sampling parameters if sampling is enabled
-            if not kwargs.get("do_sample", True):
-                generation_kwargs.pop("temperature", None)
-                generation_kwargs.pop("top_p", None)
-                generation_kwargs.pop("top_k", None)
+            if kwargs.get("do_sample", False):
+                generation_kwargs.update(
+                    {
+                        "temperature": kwargs.get("temperature", 0.3),
+                        "top_p": kwargs.get("top_p", 0.95),
+                        "top_k": kwargs.get("top_k", 50),
+                    }
+                )
 
             with torch.no_grad():
                 outputs = self.model.generate(**generation_kwargs)
 
             # Decode response - extract only the new tokens
             response = self.processor.decode(
-                outputs[0][inputs["input_ids"].shape[-1] :],
-                skip_special_tokens=True,
+                outputs[0][inputs["input_ids"].shape[-1] :], skip_special_tokens=True
             )
 
-            # Clean response
+            # Clean response from repetitive text and common artifacts
             response = self._clean_response(response)
 
             processing_time = time.time() - start_time
+            logger.info(f"Inference completed in {processing_time:.2f}s")
 
             return ModelResponse(
-                raw_text=response,
+                raw_text=response.strip(),
                 confidence=0.85,  # Llama doesn't provide confidence scores
                 processing_time=processing_time,
                 device_used=str(self.device),
@@ -419,7 +425,16 @@ class LlamaVisionModel(BaseVisionModel):
 
         except Exception as e:
             logger.error(f"Error during Llama inference: {e}")
-            raise RuntimeError(f"Llama inference failed: {e}") from e
+            return ModelResponse(
+                raw_text=f"Error: {str(e)}",
+                confidence=0.0,
+                processing_time=time.time() - start_time,
+                device_used=str(self.device),
+                memory_usage=0.0,
+                model_type="llama32_vision",
+                quantized=False,
+                metadata={"error": str(e)},
+            )
 
     def process_batch(
         self,
@@ -464,6 +479,7 @@ class LlamaVisionModel(BaseVisionModel):
             Classification result dictionary
 
         """
+        # Use the improved classification prompt from working implementation
         classification_prompt = """<|image|>Analyze document structure and format. Classify based on layout patterns:
 
 - fuel_receipt: Contains fuel quantities (L, litres), price per unit
@@ -475,26 +491,92 @@ class LlamaVisionModel(BaseVisionModel):
 Output document type only."""
 
         try:
-            response = self.process_image(image_path, classification_prompt)
+            # Use direct prediction method like working implementation
+            response = self.process_image(image_path, classification_prompt, do_sample=False)
+            response_lower = response.raw_text.lower()
+
+            # Parse classification response with improved fuel detection
+            # First check OCR content for fuel indicators (override classification if needed)
             response_text = response.raw_text.lower()
 
-            # Parse classification response
-            confidence = 0.75  # Default confidence
+            # Look for fuel indicators in the actual OCR text
+            fuel_indicators = [
+                "13ulp",
+                "ulp",
+                "unleaded",
+                "diesel",
+                "litre",
+                " l ",
+                ".l ",
+                "price/l",
+                "per litre",
+                "fuel",
+            ]
+            has_fuel_content = any(indicator in response_text for indicator in fuel_indicators)
 
-            if "fuel_receipt" in response_text or "fuel receipt" in response_text:
+            # Look for quantity patterns that indicate fuel
+            import re
+
+            fuel_quantity_pattern = r"\d+\.\d{2,3}\s*l\b|\d+\s*litre"
+            has_fuel_quantity = bool(re.search(fuel_quantity_pattern, response_text))
+
+            # Look for bank statement indicators in the actual OCR text
+            bank_indicators = [
+                "account",
+                "balance",
+                "transaction",
+                "deposit",
+                "withdrawal",
+                "bsb",
+                "opening balance",
+                "closing balance",
+                "statement period",
+                "account number",
+                "sort code",
+                "debit",
+                "credit",
+                "available balance",
+                "current balance",
+            ]
+            has_bank_content = any(indicator in response_text for indicator in bank_indicators)
+
+            # Look for account number patterns (Australian BSB + Account format)
+            bank_account_pattern = r"\d{3}-\d{3}\s+\d{4,10}|\bBSB\b|\baccount\s+number\b"
+            has_bank_account = bool(re.search(bank_account_pattern, response_text, re.IGNORECASE))
+
+            if "fuel_receipt" in response_lower or "fuel receipt" in response_lower:
                 doc_type = "fuel_receipt"
                 confidence = 0.90
-            elif "tax_invoice" in response_text or "tax invoice" in response_text:
+            elif has_fuel_content or has_fuel_quantity:
+                # Override other classifications if we see clear fuel indicators
+                doc_type = "fuel_receipt"
+                confidence = 0.95
+                logger.info("Overriding classification to fuel_receipt based on content indicators")
+            elif "fuel" in response_lower or "petrol" in response_lower:
+                doc_type = "fuel_receipt"
+                confidence = 0.85
+            elif "tax_invoice" in response_lower or "tax invoice" in response_lower:
                 doc_type = "tax_invoice"
                 confidence = 0.85
-            elif "bank_statement" in response_text or "bank statement" in response_text:
+            elif "tax" in response_lower and "invoice" in response_lower:
+                doc_type = "tax_invoice"
+                confidence = 0.80
+            elif "bank_statement" in response_lower or "bank statement" in response_lower:
                 doc_type = "bank_statement"
-                confidence = 0.85
-            elif "receipt" in response_text:
+                confidence = 0.90
+            elif has_bank_content or has_bank_account:
+                # Override other classifications if we see clear bank indicators
+                doc_type = "bank_statement"
+                confidence = 0.95
+                logger.info("Overriding classification to bank_statement based on content indicators")
+            elif "bank" in response_lower:
+                doc_type = "bank_statement"
+                confidence = 0.75
+            elif "receipt" in response_lower:
                 doc_type = "receipt"
                 confidence = 0.75
-            elif "invoice" in response_text:
-                doc_type = "tax_invoice"
+            elif "invoice" in response_lower:
+                doc_type = "tax_invoice"  # Default invoices to tax_invoice
                 confidence = 0.70
             else:
                 doc_type = "unknown"
@@ -505,7 +587,13 @@ Output document type only."""
                 "confidence": confidence,
                 "classification_response": response.raw_text,
                 "is_business_document": doc_type
-                in ["receipt", "tax_invoice", "fuel_receipt", "bank_statement"]
+                in [
+                    "receipt",
+                    "tax_invoice",
+                    "fuel_receipt",
+                    "bank_statement",
+                    "invoice",
+                ]
                 and confidence > 0.7,
             }
 
@@ -514,9 +602,59 @@ Output document type only."""
             return {
                 "document_type": "unknown",
                 "confidence": 0.0,
-                "classification_response": f"Error: {e!s}",
+                "classification_response": f"Error: {str(e)}",
                 "is_business_document": False,
             }
+
+    def predict(self, image_path: str | Path, prompt: str) -> str:
+        """Generate prediction with CUDA-safe parameters.
+
+        Args:
+            image_path: Path to image file or HTTP URL
+            prompt: Text prompt for extraction
+
+        Returns:
+            Generated response text
+        """
+        try:
+            start_time = time.time()
+
+            # Preprocess image
+            image = self._preprocess_image(image_path)
+
+            # Prepare inputs
+            inputs = self._prepare_inputs(image, prompt)
+
+            # Generate with CUDA-safe parameters (NO repetition_penalty)
+            # Use optimized settings for receipt extraction
+            generation_kwargs = {
+                **inputs,
+                "max_new_tokens": 1024,
+                "do_sample": False,
+                "pad_token_id": self.processor.tokenizer.eos_token_id,
+                "eos_token_id": self.processor.tokenizer.eos_token_id,
+                "use_cache": True,
+            }
+
+            with torch.no_grad():
+                outputs = self.model.generate(**generation_kwargs)
+
+            # Decode response - extract only the new tokens
+            response = self.processor.decode(
+                outputs[0][inputs["input_ids"].shape[-1] :], skip_special_tokens=True
+            )
+
+            # Clean response from repetitive text and common artifacts
+            response = self._clean_response(response)
+
+            inference_time = time.time() - start_time
+            logger.info(f"Inference completed in {inference_time:.2f}s")
+
+            return response.strip()
+
+        except Exception as e:
+            logger.error(f"Inference failed: {e}")
+            return f"Error: {str(e)}"
 
     def _apply_quantization(self) -> None:
         """Apply quantization to model (handled during loading)."""
