@@ -111,6 +111,11 @@ class AWKExtractor:
         logger.info(f"AWKExtractor initialized with {len(self.patterns)} patterns")
         self.initialized = True
 
+    def ensure_initialized(self) -> None:
+        """Ensure AWK extractor is initialized."""
+        if not self.initialized:
+            self.initialize()
+
     def extract(self, text: str, document_type: DocumentType) -> dict[str, Any]:
         """Extract fields using AWK patterns.
 

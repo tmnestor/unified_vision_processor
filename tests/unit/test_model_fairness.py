@@ -45,15 +45,160 @@ class TestModelFairness:
         self, fairness_test_config, mock_image_path
     ):
         """Test that both models execute identical 7-step pipeline order."""
-        # Test with InternVL
-        fairness_test_config.model_type = ModelType.INTERNVL3
-        manager_internvl = UnifiedExtractionManager(fairness_test_config)
-        result_internvl = manager_internvl.process_document(mock_image_path)
 
-        # Test with Llama
-        fairness_test_config.model_type = ModelType.LLAMA32_VISION
-        manager_llama = UnifiedExtractionManager(fairness_test_config)
-        result_llama = manager_llama.process_document(mock_image_path)
+        with patch(
+            "vision_processor.config.model_factory.ModelFactory.create_model"
+        ) as mock_factory:
+            with patch(
+                "vision_processor.classification.DocumentClassifier"
+            ) as mock_classifier_class:
+                with patch(
+                    "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
+                ) as mock_awk_class:
+                    with patch(
+                        "vision_processor.confidence.ConfidenceManager"
+                    ) as mock_confidence_class:
+                        with patch(
+                            "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
+                        ) as mock_ato_class:
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.HighlightDetector"
+                            ) as mock_highlights_class:
+                                with patch(
+                                    "vision_processor.extraction.hybrid_extraction_manager.PromptManager"
+                                ) as mock_prompt_class:
+                                    # Setup consistent mocks for both models
+                                    def setup_mocks():
+                                        mock_model = MagicMock()
+                                        mock_model.process_image.return_value = Mock(
+                                            raw_text="Mock model response",
+                                            confidence=0.85,
+                                            processing_time=1.5,
+                                        )
+                                        mock_factory.return_value = mock_model
+
+                                        # Mock all components consistently
+                                        mock_classifier = MagicMock()
+                                        mock_classifier.classify_with_evidence.return_value = (
+                                            DocumentType.BUSINESS_RECEIPT,
+                                            0.85,
+                                            ["evidence"],
+                                        )
+                                        mock_classifier_class.return_value = (
+                                            mock_classifier
+                                        )
+
+                                        mock_awk = MagicMock()
+                                        mock_awk.extract.return_value = {
+                                            "awk_field": "awk_value"
+                                        }
+                                        mock_awk.ensure_initialized.return_value = None
+                                        mock_awk_class.return_value = mock_awk
+
+                                        mock_confidence = MagicMock()
+                                        mock_confidence.assess_document_confidence.return_value = Mock(
+                                            overall_confidence=0.82,
+                                            quality_grade="good",
+                                            production_ready=True,
+                                            quality_flags=[],
+                                            recommendations=[],
+                                        )
+                                        mock_confidence.ensure_initialized.return_value = None
+                                        mock_confidence_class.return_value = (
+                                            mock_confidence
+                                        )
+
+                                        mock_ato = MagicMock()
+                                        compliance_result = Mock()
+                                        compliance_result.compliance_score = 0.90
+                                        compliance_result.passed = True
+                                        compliance_result.violations = []
+                                        compliance_result.warnings = []
+                                        mock_ato.assess_compliance.return_value = (
+                                            compliance_result
+                                        )
+                                        mock_ato.ensure_initialized.return_value = None
+                                        mock_ato_class.return_value = mock_ato
+
+                                        mock_highlights = MagicMock()
+                                        mock_highlights.detect_highlights.return_value = []
+                                        mock_highlights.ensure_initialized.return_value = None
+                                        mock_highlights_class.return_value = (
+                                            mock_highlights
+                                        )
+
+                                        mock_prompt = MagicMock()
+                                        mock_prompt.get_prompt.return_value = (
+                                            "Test prompt"
+                                        )
+                                        mock_prompt.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_prompt_class.return_value = mock_prompt
+
+                                        return mock_model
+
+                                    # Test with InternVL
+                                    fairness_test_config.model_type = (
+                                        ModelType.INTERNVL3
+                                    )
+                                    setup_mocks()
+
+                                    with patch(
+                                        "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                                    ) as mock_create_handler:
+                                        mock_handler = MagicMock()
+                                        mock_handler.extract_fields_primary.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.validate_fields.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_create_handler.return_value = mock_handler
+
+                                        manager_internvl = UnifiedExtractionManager(
+                                            fairness_test_config
+                                        )
+                                        result_internvl = (
+                                            manager_internvl.process_document(
+                                                mock_image_path
+                                            )
+                                        )
+
+                                    # Test with Llama
+                                    fairness_test_config.model_type = (
+                                        ModelType.LLAMA32_VISION
+                                    )
+                                    setup_mocks()
+
+                                    with patch(
+                                        "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                                    ) as mock_create_handler:
+                                        mock_handler = MagicMock()
+                                        mock_handler.extract_fields_primary.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.validate_fields.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_create_handler.return_value = mock_handler
+
+                                        manager_llama = UnifiedExtractionManager(
+                                            fairness_test_config
+                                        )
+                                        result_llama = manager_llama.process_document(
+                                            mock_image_path
+                                        )
 
         # Extract pipeline stages from results
         internvl_stages = [stage.value for stage in result_internvl.stages_completed]
@@ -86,15 +231,160 @@ class TestModelFairness:
         self, fairness_test_config, mock_image_path
     ):
         """Test that both models use identical 4-component confidence scoring."""
-        # Test InternVL confidence scoring
-        fairness_test_config.model_type = ModelType.INTERNVL3
-        manager_internvl = UnifiedExtractionManager(fairness_test_config)
-        result_internvl = manager_internvl.process_document(mock_image_path)
 
-        # Test Llama confidence scoring
-        fairness_test_config.model_type = ModelType.LLAMA32_VISION
-        manager_llama = UnifiedExtractionManager(fairness_test_config)
-        result_llama = manager_llama.process_document(mock_image_path)
+        with patch(
+            "vision_processor.config.model_factory.ModelFactory.create_model"
+        ) as mock_factory:
+            with patch(
+                "vision_processor.classification.DocumentClassifier"
+            ) as mock_classifier_class:
+                with patch(
+                    "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
+                ) as mock_awk_class:
+                    with patch(
+                        "vision_processor.confidence.ConfidenceManager"
+                    ) as mock_confidence_class:
+                        with patch(
+                            "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
+                        ) as mock_ato_class:
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.HighlightDetector"
+                            ) as mock_highlights_class:
+                                with patch(
+                                    "vision_processor.extraction.hybrid_extraction_manager.PromptManager"
+                                ) as mock_prompt_class:
+                                    # Setup consistent mocks for both models
+                                    def setup_mocks():
+                                        mock_model = MagicMock()
+                                        mock_model.process_image.return_value = Mock(
+                                            raw_text="Mock model response",
+                                            confidence=0.85,
+                                            processing_time=1.5,
+                                        )
+                                        mock_factory.return_value = mock_model
+
+                                        # Mock all components consistently
+                                        mock_classifier = MagicMock()
+                                        mock_classifier.classify_with_evidence.return_value = (
+                                            DocumentType.BUSINESS_RECEIPT,
+                                            0.85,
+                                            ["evidence"],
+                                        )
+                                        mock_classifier_class.return_value = (
+                                            mock_classifier
+                                        )
+
+                                        mock_awk = MagicMock()
+                                        mock_awk.extract.return_value = {
+                                            "awk_field": "awk_value"
+                                        }
+                                        mock_awk.ensure_initialized.return_value = None
+                                        mock_awk_class.return_value = mock_awk
+
+                                        mock_confidence = MagicMock()
+                                        mock_confidence.assess_document_confidence.return_value = Mock(
+                                            overall_confidence=0.82,
+                                            quality_grade="good",
+                                            production_ready=True,
+                                            quality_flags=[],
+                                            recommendations=[],
+                                        )
+                                        mock_confidence.ensure_initialized.return_value = None
+                                        mock_confidence_class.return_value = (
+                                            mock_confidence
+                                        )
+
+                                        mock_ato = MagicMock()
+                                        compliance_result = Mock()
+                                        compliance_result.compliance_score = 0.90
+                                        compliance_result.passed = True
+                                        compliance_result.violations = []
+                                        compliance_result.warnings = []
+                                        mock_ato.assess_compliance.return_value = (
+                                            compliance_result
+                                        )
+                                        mock_ato.ensure_initialized.return_value = None
+                                        mock_ato_class.return_value = mock_ato
+
+                                        mock_highlights = MagicMock()
+                                        mock_highlights.detect_highlights.return_value = []
+                                        mock_highlights.ensure_initialized.return_value = None
+                                        mock_highlights_class.return_value = (
+                                            mock_highlights
+                                        )
+
+                                        mock_prompt = MagicMock()
+                                        mock_prompt.get_prompt.return_value = (
+                                            "Test prompt"
+                                        )
+                                        mock_prompt.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_prompt_class.return_value = mock_prompt
+
+                                        return mock_model
+
+                                    # Test InternVL confidence scoring
+                                    fairness_test_config.model_type = (
+                                        ModelType.INTERNVL3
+                                    )
+                                    setup_mocks()
+
+                                    with patch(
+                                        "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                                    ) as mock_create_handler:
+                                        mock_handler = MagicMock()
+                                        mock_handler.extract_fields_primary.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.validate_fields.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_create_handler.return_value = mock_handler
+
+                                        manager_internvl = UnifiedExtractionManager(
+                                            fairness_test_config
+                                        )
+                                        result_internvl = (
+                                            manager_internvl.process_document(
+                                                mock_image_path
+                                            )
+                                        )
+
+                                    # Test Llama confidence scoring
+                                    fairness_test_config.model_type = (
+                                        ModelType.LLAMA32_VISION
+                                    )
+                                    setup_mocks()
+
+                                    with patch(
+                                        "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                                    ) as mock_create_handler:
+                                        mock_handler = MagicMock()
+                                        mock_handler.extract_fields_primary.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.validate_fields.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_create_handler.return_value = mock_handler
+
+                                        manager_llama = UnifiedExtractionManager(
+                                            fairness_test_config
+                                        )
+                                        result_llama = manager_llama.process_document(
+                                            mock_image_path
+                                        )
 
         # Both results should have confidence scores (indicating confidence calculation was used)
         assert hasattr(result_internvl, "confidence_score"), (
@@ -146,15 +436,159 @@ class TestModelFairness:
         # Ensure AWK fallback is enabled for this test
         fairness_test_config.awk_fallback = True
 
-        # Test InternVL AWK fallback
-        fairness_test_config.model_type = ModelType.INTERNVL3
-        manager_internvl = UnifiedExtractionManager(fairness_test_config)
-        result_internvl = manager_internvl.process_document(mock_image_path)
+        with patch(
+            "vision_processor.config.model_factory.ModelFactory.create_model"
+        ) as mock_factory:
+            with patch(
+                "vision_processor.classification.DocumentClassifier"
+            ) as mock_classifier_class:
+                with patch(
+                    "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
+                ) as mock_awk_class:
+                    with patch(
+                        "vision_processor.confidence.ConfidenceManager"
+                    ) as mock_confidence_class:
+                        with patch(
+                            "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
+                        ) as mock_ato_class:
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.HighlightDetector"
+                            ) as mock_highlights_class:
+                                with patch(
+                                    "vision_processor.extraction.hybrid_extraction_manager.PromptManager"
+                                ) as mock_prompt_class:
+                                    # Setup consistent mocks for both models
+                                    def setup_mocks():
+                                        mock_model = MagicMock()
+                                        mock_model.process_image.return_value = Mock(
+                                            raw_text="Mock model response",
+                                            confidence=0.85,
+                                            processing_time=1.5,
+                                        )
+                                        mock_factory.return_value = mock_model
 
-        # Test Llama AWK fallback
-        fairness_test_config.model_type = ModelType.LLAMA32_VISION
-        manager_llama = UnifiedExtractionManager(fairness_test_config)
-        result_llama = manager_llama.process_document(mock_image_path)
+                                        # Mock all components consistently
+                                        mock_classifier = MagicMock()
+                                        mock_classifier.classify_with_evidence.return_value = (
+                                            DocumentType.BUSINESS_RECEIPT,
+                                            0.85,
+                                            ["evidence"],
+                                        )
+                                        mock_classifier_class.return_value = (
+                                            mock_classifier
+                                        )
+
+                                        mock_awk = MagicMock()
+                                        mock_awk.extract.return_value = {
+                                            "awk_field": "awk_value"
+                                        }
+                                        mock_awk.ensure_initialized.return_value = None
+                                        mock_awk_class.return_value = mock_awk
+
+                                        mock_confidence = MagicMock()
+                                        mock_confidence.assess_document_confidence.return_value = Mock(
+                                            overall_confidence=0.82,
+                                            quality_grade="good",
+                                            production_ready=True,
+                                            quality_flags=[],
+                                            recommendations=[],
+                                        )
+                                        mock_confidence.ensure_initialized.return_value = None
+                                        mock_confidence_class.return_value = (
+                                            mock_confidence
+                                        )
+
+                                        mock_ato = MagicMock()
+                                        compliance_result = Mock()
+                                        compliance_result.compliance_score = 0.90
+                                        compliance_result.passed = True
+                                        compliance_result.violations = []
+                                        compliance_result.warnings = []
+                                        mock_ato.assess_compliance.return_value = (
+                                            compliance_result
+                                        )
+                                        mock_ato.ensure_initialized.return_value = None
+                                        mock_ato_class.return_value = mock_ato
+
+                                        mock_highlights = MagicMock()
+                                        mock_highlights.detect_highlights.return_value = []
+                                        mock_highlights.ensure_initialized.return_value = None
+                                        mock_highlights_class.return_value = (
+                                            mock_highlights
+                                        )
+
+                                        mock_prompt = MagicMock()
+                                        mock_prompt.get_prompt.return_value = (
+                                            "Test prompt"
+                                        )
+                                        mock_prompt.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_prompt_class.return_value = mock_prompt
+
+                                        return mock_model
+
+                                    # Test InternVL AWK fallback
+                                    fairness_test_config.model_type = (
+                                        ModelType.INTERNVL3
+                                    )
+                                    setup_mocks()
+
+                                    with patch(
+                                        "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                                    ) as mock_create_handler:
+                                        mock_handler = MagicMock()
+                                        mock_handler.extract_fields_primary.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.validate_fields.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_create_handler.return_value = mock_handler
+
+                                        manager_internvl = UnifiedExtractionManager(
+                                            fairness_test_config
+                                        )
+                                        result_internvl = (
+                                            manager_internvl.process_document(
+                                                mock_image_path
+                                            )
+                                        )
+
+                                    # Test Llama AWK fallback
+                                    fairness_test_config.model_type = (
+                                        ModelType.LLAMA32_VISION
+                                    )
+                                    setup_mocks()
+
+                                    with patch(
+                                        "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                                    ) as mock_create_handler:
+                                        mock_handler = MagicMock()
+                                        mock_handler.extract_fields_primary.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.validate_fields.return_value = {
+                                            "supplier_name": "Test Store",
+                                            "total_amount": "25.50",
+                                        }
+                                        mock_handler.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_create_handler.return_value = mock_handler
+
+                                        manager_llama = UnifiedExtractionManager(
+                                            fairness_test_config
+                                        )
+                                        result_llama = manager_llama.process_document(
+                                            mock_image_path
+                                        )
 
         # Both results should have awk_fallback_used field
         assert hasattr(result_internvl, "awk_fallback_used"), (
@@ -436,11 +870,129 @@ class TestModelFairness:
         # Test business logic for both models
         results = {}
 
-        for model_type in [ModelType.INTERNVL3, ModelType.LLAMA32_VISION]:
-            fairness_test_config.model_type = model_type
-            manager = UnifiedExtractionManager(fairness_test_config)
-            result = manager.process_document(mock_image_path)
-            results[model_type.value] = result
+        with patch(
+            "vision_processor.config.model_factory.ModelFactory.create_model"
+        ) as mock_factory:
+            with patch(
+                "vision_processor.classification.DocumentClassifier"
+            ) as mock_classifier_class:
+                with patch(
+                    "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
+                ) as mock_awk_class:
+                    with patch(
+                        "vision_processor.confidence.ConfidenceManager"
+                    ) as mock_confidence_class:
+                        with patch(
+                            "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
+                        ) as mock_ato_class:
+                            with patch(
+                                "vision_processor.extraction.hybrid_extraction_manager.HighlightDetector"
+                            ) as mock_highlights_class:
+                                with patch(
+                                    "vision_processor.extraction.hybrid_extraction_manager.PromptManager"
+                                ) as mock_prompt_class:
+                                    # Setup consistent mocks for both models
+                                    def setup_mocks():
+                                        mock_model = MagicMock()
+                                        mock_model.process_image.return_value = Mock(
+                                            raw_text="Mock model response",
+                                            confidence=0.85,
+                                            processing_time=1.5,
+                                        )
+                                        mock_factory.return_value = mock_model
+
+                                        # Mock all components consistently
+                                        mock_classifier = MagicMock()
+                                        mock_classifier.classify_with_evidence.return_value = (
+                                            DocumentType.BUSINESS_RECEIPT,
+                                            0.85,
+                                            ["evidence"],
+                                        )
+                                        mock_classifier_class.return_value = (
+                                            mock_classifier
+                                        )
+
+                                        mock_awk = MagicMock()
+                                        mock_awk.extract.return_value = {
+                                            "awk_field": "awk_value"
+                                        }
+                                        mock_awk.ensure_initialized.return_value = None
+                                        mock_awk_class.return_value = mock_awk
+
+                                        mock_confidence = MagicMock()
+                                        mock_confidence.assess_document_confidence.return_value = Mock(
+                                            overall_confidence=0.82,
+                                            quality_grade="good",
+                                            production_ready=True,
+                                            quality_flags=[],
+                                            recommendations=[],
+                                        )
+                                        mock_confidence.ensure_initialized.return_value = None
+                                        mock_confidence_class.return_value = (
+                                            mock_confidence
+                                        )
+
+                                        mock_ato = MagicMock()
+                                        compliance_result = Mock()
+                                        compliance_result.compliance_score = 0.90
+                                        compliance_result.passed = True
+                                        compliance_result.violations = []
+                                        compliance_result.warnings = []
+                                        mock_ato.assess_compliance.return_value = (
+                                            compliance_result
+                                        )
+                                        mock_ato.ensure_initialized.return_value = None
+                                        mock_ato_class.return_value = mock_ato
+
+                                        mock_highlights = MagicMock()
+                                        mock_highlights.detect_highlights.return_value = []
+                                        mock_highlights.ensure_initialized.return_value = None
+                                        mock_highlights_class.return_value = (
+                                            mock_highlights
+                                        )
+
+                                        mock_prompt = MagicMock()
+                                        mock_prompt.get_prompt.return_value = (
+                                            "Test prompt"
+                                        )
+                                        mock_prompt.ensure_initialized.return_value = (
+                                            None
+                                        )
+                                        mock_prompt_class.return_value = mock_prompt
+
+                                        return mock_model
+
+                                    for model_type in [
+                                        ModelType.INTERNVL3,
+                                        ModelType.LLAMA32_VISION,
+                                    ]:
+                                        fairness_test_config.model_type = model_type
+                                        setup_mocks()
+
+                                        with patch(
+                                            "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
+                                        ) as mock_create_handler:
+                                            mock_handler = MagicMock()
+                                            mock_handler.extract_fields_primary.return_value = {
+                                                "supplier_name": "Test Store",
+                                                "total_amount": "25.50",
+                                            }
+                                            mock_handler.validate_fields.return_value = {
+                                                "supplier_name": "Test Store",
+                                                "total_amount": "25.50",
+                                            }
+                                            mock_handler.ensure_initialized.return_value = None
+                                            mock_create_handler.return_value = (
+                                                mock_handler
+                                            )
+
+                                            manager = UnifiedExtractionManager(
+                                                fairness_test_config
+                                            )
+                                            result = manager.process_document(
+                                                mock_image_path
+                                            )
+                                            results[model_type.value] = result
 
         internvl_result = results["internvl3"]
         llama_result = results["llama32_vision"]

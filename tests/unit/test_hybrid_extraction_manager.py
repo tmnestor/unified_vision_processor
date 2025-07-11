@@ -99,13 +99,41 @@ class TestUnifiedExtractionManager:
                                         "awk_supplier": "AWK Store"
                                     }
 
-                                    mock_confidence.assess_document_confidence.return_value = Mock(
-                                        overall_confidence=0.82,
-                                        quality_grade="good",  # String instead of enum for Mock compatibility
-                                        production_ready=True,
-                                        quality_flags=[],
-                                        recommendations=[],
-                                    )
+                                    def mock_confidence_assessment(
+                                        _raw_text,
+                                        _extracted_fields,
+                                        _compliance_result,
+                                        classification_confidence,
+                                        _highlights_detected,
+                                    ):
+                                        """Mock confidence assessment that handles classification confidence properly."""
+                                        # Apply graceful degradation logic like the real confidence manager
+                                        base_confidence = 0.82
+                                        quality_flags = []
+
+                                        # Check for low classification confidence (< 0.6 threshold)
+                                        if classification_confidence < 0.6:
+                                            quality_flags.append(
+                                                "low_classification_confidence"
+                                            )
+                                            # Cap confidence at 0.5 for low classification confidence
+                                            base_confidence = min(base_confidence, 0.5)
+
+                                        return Mock(
+                                            overall_confidence=base_confidence,
+                                            quality_grade="fair"
+                                            if base_confidence <= 0.5
+                                            else "good",
+                                            production_ready=base_confidence > 0.7,
+                                            quality_flags=quality_flags,
+                                            recommendations=[
+                                                "Manual review recommended"
+                                            ]
+                                            if base_confidence <= 0.5
+                                            else [],
+                                        )
+
+                                    mock_confidence.assess_document_confidence.side_effect = mock_confidence_assessment
 
                                     # Create a real-ish compliance result object
                                     compliance_result = Mock()

@@ -505,7 +505,7 @@ class TestReportGenerator:
         )
 
         assert isinstance(html_report, str)
-        assert "<html>" in html_report
+        assert "<html" in html_report
         assert "Model Comparison Report" in html_report
         assert "internvl3" in html_report
         assert "llama32_vision" in html_report
@@ -567,5 +567,5 @@ class TestReportGenerator:
 
             # Verify file content
             content = output_path.read_text()
-            assert "<html>" in content
+            assert "<html" in content
             assert "internvl3" in content
