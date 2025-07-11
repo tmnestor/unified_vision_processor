@@ -280,6 +280,8 @@ class UnifiedExtractionManager:
                 classification_response=classification_text,
             )
 
+            logger.info(f"DEBUG: Prompt being sent to model (first 200 chars): {prompt[:200]}")
+
             # Process with model
             model_response = self._process_with_model(image_path, prompt)
 
@@ -329,7 +331,9 @@ class UnifiedExtractionManager:
             awk_enabled = self.config.awk_fallback
             quality_insufficient = self._extraction_quality_insufficient(extracted_fields)
 
-            logger.info(f"AWK check: enabled={awk_enabled}, quality_insufficient={quality_insufficient}, fields_count={len(extracted_fields)}")
+            logger.info(
+                f"AWK check: enabled={awk_enabled}, quality_insufficient={quality_insufficient}, fields_count={len(extracted_fields)}"
+            )
 
             if awk_enabled and quality_insufficient:
                 # Use AWK extractor component
@@ -345,7 +349,9 @@ class UnifiedExtractionManager:
                 quality_flags.append("awk_fallback_used")
                 logger.info("AWK fallback extraction applied")
             else:
-                logger.info(f"AWK fallback skipped: enabled={awk_enabled}, quality_insufficient={quality_insufficient}")
+                logger.info(
+                    f"AWK fallback skipped: enabled={awk_enabled}, quality_insufficient={quality_insufficient}"
+                )
 
             # =================================================
             # STEP 5: FIELD VALIDATION
@@ -496,8 +502,9 @@ class UnifiedExtractionManager:
         """Assess if extraction quality is insufficient for AWK fallback."""
         # Filter out metadata fields to count only actual extracted data
         data_fields = {
-            k: v for k, v in fields.items()
-            if k not in ['extracted_by', 'fields_count', 'extraction_method', 'handler_type']
+            k: v
+            for k, v in fields.items()
+            if k not in ["extracted_by", "fields_count", "extraction_method", "handler_type"]
             and v is not None
             and str(v).strip()
         }
