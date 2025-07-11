@@ -1107,34 +1107,29 @@ def create_document_handler(
         Document handler instance specialized for the document type
 
     """
-    # Import specialized handlers
-    from ..handlers.accommodation_handler import AccommodationHandler
-    from ..handlers.bank_statement_handler import BankStatementHandler
-    from ..handlers.business_receipt_handler import BusinessReceiptHandler
-    from ..handlers.equipment_supplies_handler import EquipmentSuppliesHandler
-    from ..handlers.fuel_receipt_handler import FuelReceiptHandler
-    from ..handlers.meal_receipt_handler import MealReceiptHandler
-    from ..handlers.other_document_handler import OtherDocumentHandler
-    from ..handlers.parking_toll_handler import ParkingTollHandler
-    from ..handlers.professional_services_handler import ProfessionalServicesHandler
-    from ..handlers.tax_invoice_handler import TaxInvoiceHandler
-    from ..handlers.travel_document_handler import TravelDocumentHandler
+    # Import specialized handlers with error handling
+    try:
+        from ..handlers.bank_statement_handler import BankStatementHandler
+        from ..handlers.business_receipt_handler import BusinessReceiptHandler
+        from ..handlers.fuel_receipt_handler import FuelReceiptHandler
+        logger.info(f"Creating specialized handler for {document_type.value}")
+        
+        # Map document types to their specialized handlers  
+        handler_map = {
+            DocumentType.BUSINESS_RECEIPT: BusinessReceiptHandler,
+            DocumentType.FUEL_RECEIPT: FuelReceiptHandler,
+            DocumentType.BANK_STATEMENT: BankStatementHandler,
+        }
 
-    # Map document types to their specialized handlers
-    handler_map = {
-        DocumentType.BUSINESS_RECEIPT: BusinessReceiptHandler,
-        DocumentType.FUEL_RECEIPT: FuelReceiptHandler,
-        DocumentType.TAX_INVOICE: TaxInvoiceHandler,
-        DocumentType.BANK_STATEMENT: BankStatementHandler,
-        DocumentType.MEAL_RECEIPT: MealReceiptHandler,
-        DocumentType.ACCOMMODATION: AccommodationHandler,
-        DocumentType.TRAVEL_DOCUMENT: TravelDocumentHandler,
-        DocumentType.PARKING_TOLL: ParkingTollHandler,
-        DocumentType.PROFESSIONAL_SERVICES: ProfessionalServicesHandler,
-        DocumentType.EQUIPMENT_SUPPLIES: EquipmentSuppliesHandler,
-        DocumentType.OTHER: OtherDocumentHandler,
-    }
-
-    # Get the appropriate handler class, fallback to base handler
-    handler_class = handler_map.get(document_type, DocumentHandler)
-    return handler_class(config)
+        # Get the appropriate handler class, fallback to base handler
+        handler_class = handler_map.get(document_type, DocumentHandler)
+        if handler_class != DocumentHandler:
+            logger.info(f"Using specialized handler: {handler_class.__name__}")
+        else:
+            logger.warning(f"Using fallback DocumentHandler for {document_type.value}")
+        return handler_class(config)
+        
+    except Exception as e:
+        logger.error(f"Failed to import specialized handlers: {e}")
+        logger.info("Falling back to base DocumentHandler")
+        return DocumentHandler(config)
