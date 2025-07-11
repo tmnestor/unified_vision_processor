@@ -369,6 +369,15 @@ class UnifiedExtractionManager:
             )
             ato_compliance_score = compliance_result.compliance_score
 
+            # Populate warnings and errors from compliance assessment
+            if (
+                hasattr(compliance_result, "violations")
+                and compliance_result.violations
+            ):
+                errors.extend(compliance_result.violations)
+            if hasattr(compliance_result, "warnings") and compliance_result.warnings:
+                warnings.extend(compliance_result.warnings)
+
             # =================================================
             # STEP 7: CONFIDENCE INTEGRATION AND PRODUCTION READINESS
             # =================================================
