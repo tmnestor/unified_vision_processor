@@ -156,30 +156,192 @@ Extract visible text elements for data processing."""
         model_type: str = "internvl3",
         classification_response: str | None = None
     ) -> str:
-        """Get the most appropriate prompt for a document type and model.
+        """Get prompt with sophisticated Registry-Director pattern for content-aware selection.
+        
+        Implements the working Llama-3.2 approach with:
+        - Content-aware prompt selection based on OCR analysis
+        - Multi-tier fallback mechanisms 
+        - Australian tax domain expertise
+        - Dynamic prompt routing based on business indicators
         
         Args:
             document_type: Classified document type
             model_type: Model type for optimization
-            classification_response: Optional classification response for content-aware selection
+            classification_response: Classification response for content analysis
             
         Returns:
-            Optimized prompt string for the document type and model
+            Optimized prompt string with sophisticated selection logic
         """
         if not self.initialized:
             self.initialize()
 
-        # Smart content-aware selection for fuel receipts
-        if (document_type == DocumentType.TAX_INVOICE and
-            classification_response and
-            self._is_fuel_receipt(classification_response)):
-            prompt_name = "fuel_receipt_extraction_prompt"
-        else:
-            # Use document type mapping
-            mapping = self.metadata.get('document_type_mapping', {})
-            prompt_name = mapping.get(document_type.value, 'generic_document_extraction_prompt')
+        # Step 1: Content-aware prompt selection (Registry-Director pattern)
+        optimal_prompt_name = self._select_optimal_prompt_registry_director(
+            document_type, classification_response
+        )
 
-        return self.get_prompt(prompt_name, model_type)
+        # Step 2: Get the optimized prompt
+        prompt = self.get_prompt(optimal_prompt_name, model_type)
+
+        if prompt:
+            logger.debug(f"Registry-Director selected: {optimal_prompt_name} for {document_type.value}")
+            return prompt
+
+        # Step 3: Multi-tier fallback if optimal selection fails
+        return self._get_multi_tier_fallback(document_type, model_type, classification_response)
+
+    def _select_optimal_prompt_registry_director(
+        self, document_type: DocumentType, classification_response: str | None
+    ) -> str:
+        """Sophisticated content-aware prompt selection using Registry-Director pattern.
+        
+        Based on the working Llama-3.2 implementation that provides superior OCR results.
+        """
+        base_mapping = {
+            DocumentType.BUSINESS_RECEIPT: "business_receipt_extraction_prompt",
+            DocumentType.FUEL_RECEIPT: "fuel_receipt_extraction_prompt",
+            DocumentType.TAX_INVOICE: "tax_invoice_extraction_prompt",
+            DocumentType.BANK_STATEMENT: "bank_statement_extraction_prompt",
+            DocumentType.OTHER: "business_receipt_extraction_prompt"  # Safe default
+        }
+
+        base_prompt = base_mapping.get(document_type, "business_receipt_extraction_prompt")
+
+        # If no classification response, use base mapping
+        if not classification_response:
+            return base_prompt
+
+        # Content analysis for dynamic routing (working Llama-3.2 approach)
+        response_lower = classification_response.lower()
+
+        # === FUEL RECEIPT DETECTION ===
+        fuel_indicators = [
+            "costco", "bp", "shell", "caltex", "ampol", "mobil", "7-eleven", "united petroleum",
+            "ulp", "unleaded", "diesel", "e10", "u91", "u95", "u98", "premium",
+            "litre", " l ", ".l ", "price/l", "per litre", "fuel", "petrol", "gasoline"
+        ]
+
+        if any(indicator in response_lower for indicator in fuel_indicators):
+            logger.info("Registry-Director: Detected fuel receipt indicators - using specialized fuel prompt")
+            return "fuel_receipt_extraction_prompt"
+
+        # === MAJOR RETAILER DETECTION ===
+        major_retailers = [
+            "woolworths", "coles", "aldi", "target", "kmart", "bunnings",
+            "officeworks", "harvey norman", "jb hi-fi", "big w", "myer", "ikea"
+        ]
+
+        if any(retailer in response_lower for retailer in major_retailers):
+            logger.info("Registry-Director: Detected major retailer - using enhanced business receipt prompt")
+            return "business_receipt_extraction_prompt"
+
+        # === ACCOMMODATION DETECTION ===
+        accommodation_indicators = [
+            "hotel", "motel", "resort", "accommodation", "booking", "reservation",
+            "hilton", "marriott", "hyatt", "ibis", "mercure", "novotel", "crowne plaza",
+            "check-in", "check-out", "guest", "room", "nights", "rate per night"
+        ]
+
+        if any(indicator in response_lower for indicator in accommodation_indicators):
+            logger.info("Registry-Director: Detected accommodation - using accommodation prompt")
+            return "accommodation_extraction_prompt"
+
+        # === PROFESSIONAL SERVICES DETECTION ===
+        professional_indicators = [
+            "tax invoice", "invoice", "consulting", "legal", "accounting", "professional services",
+            "deloitte", "pwc", "kpmg", "ey", "bdo", "law firm", "solicitor", "barrister",
+            "chartered accountant", "tax agent", "legal advice", "consultation"
+        ]
+
+        if any(indicator in response_lower for indicator in professional_indicators):
+            logger.info("Registry-Director: Detected professional services - using professional services prompt")
+            return "professional_services_extraction_prompt"
+
+        # === MEAL/RESTAURANT DETECTION ===
+        meal_indicators = [
+            "restaurant", "cafe", "coffee", "dining", "meal", "lunch", "dinner", "breakfast",
+            "mcdonald's", "kfc", "subway", "domino's", "pizza hut", "hungry jack's",
+            "menu", "table", "covers", "service charge", "gratuity"
+        ]
+
+        if any(indicator in response_lower for indicator in meal_indicators):
+            logger.info("Registry-Director: Detected meal/restaurant - using meal extraction prompt")
+            return "meal_receipt_extraction_prompt"
+
+        # === PARKING/TOLL DETECTION ===
+        parking_indicators = [
+            "parking", "toll", "secure parking", "wilson parking", "care park",
+            "parking fee", "hourly rate", "entry time", "exit time", "vehicle", "registration"
+        ]
+
+        if any(indicator in response_lower for indicator in parking_indicators):
+            logger.info("Registry-Director: Detected parking/toll - using parking extraction prompt")
+            return "parking_toll_extraction_prompt"
+
+        # === EQUIPMENT/SUPPLIES DETECTION ===
+        equipment_indicators = [
+            "computer", "laptop", "equipment", "supplies", "software", "hardware",
+            "printer", "scanner", "monitor", "keyboard", "mouse", "cable", "electronics"
+        ]
+
+        if any(indicator in response_lower for indicator in equipment_indicators):
+            logger.info("Registry-Director: Detected equipment/supplies - using equipment prompt")
+            return "equipment_supplies_extraction_prompt"
+
+        # Default: Use base mapping
+        logger.debug(f"Registry-Director: Using base mapping {base_prompt} for {document_type.value}")
+        return base_prompt
+
+    def _get_multi_tier_fallback(
+        self, document_type: DocumentType, model_type: str, classification_response: str | None
+    ) -> str:
+        """Multi-tier fallback mechanism like working Llama-3.2 implementation."""
+        # Tier 1: Try document-specific prompts
+        document_specific_prompts = [
+            "business_receipt_extraction_prompt",
+            "fuel_receipt_extraction_prompt",
+            "tax_invoice_extraction_prompt"
+        ]
+
+        for prompt_name in document_specific_prompts:
+            if prompt_name in self.prompts:
+                prompt = self.get_prompt(prompt_name, model_type)
+                if prompt:
+                    logger.debug(f"Multi-tier fallback: Using {prompt_name}")
+                    return prompt
+
+        # Tier 2: Generic extraction prompts
+        generic_prompts = [
+            "key_value_receipt_prompt",
+            "factual_information_prompt"
+        ]
+
+        for prompt_name in generic_prompts:
+            if prompt_name in self.prompts:
+                prompt = self.get_prompt(prompt_name, model_type)
+                if prompt:
+                    logger.debug(f"Multi-tier fallback: Using generic {prompt_name}")
+                    return prompt
+
+        # Tier 3: Ultimate fallback
+        logger.warning("Multi-tier fallback: Using ultimate fallback prompt")
+        return self._get_ultimate_fallback_prompt(model_type)
+
+    def _get_ultimate_fallback_prompt(self, model_type: str) -> str:
+        """Ultimate fallback prompt when all else fails."""
+        if model_type == "llama32_vision":
+            return """<|image|>
+This is an Australian business document for tax compliance processing.
+
+Extract information from this business receipt and return in KEY-VALUE format:
+
+DATE: [purchase date in DD/MM/YYYY format]
+STORE: [store name in capitals]
+TOTAL: [total amount including GST]
+
+This is standard business document processing for legitimate accounting purposes."""
+        else:
+            return "Extract information from this business document including store name, date, and amounts."
 
     def _is_fuel_receipt(self, classification_response: str) -> bool:
         """Detect if a tax invoice is actually a fuel receipt."""

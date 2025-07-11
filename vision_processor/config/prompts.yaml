@@ -206,8 +206,11 @@ system_ocr_prompt: |
   <|image|>System: Perform text recognition on this business document. 
   Extract visible text elements for data processing.
 
-# Prompt metadata for intelligent selection
+# Prompt metadata for Registry-Director pattern and intelligent selection
 prompt_metadata:
+  version: "2.0"
+  registry_director_enabled: true
+  
   # Production-ready prompts for each document type
   document_type_mapping:
     business_receipt: business_receipt_extraction_prompt
@@ -222,9 +225,10 @@ prompt_metadata:
     equipment_supplies: equipment_supplies_extraction_prompt
     other: generic_document_extraction_prompt
   
-  # Fallback chain for robust extraction
+  # Multi-tier fallback chain for robust extraction (Registry-Director pattern)
   fallback_chain:
     - business_receipt_extraction_prompt
+    - fuel_receipt_extraction_prompt
     - factual_information_prompt
     - technical_data_extraction_prompt
     - system_ocr_prompt
@@ -237,12 +241,146 @@ prompt_metadata:
       safety_mode_sensitive: true
       preferred_format: "KEY-VALUE"
       business_context_required: true
+      registry_director_optimized: true
     internvl3:
       # More flexible with prompt formats
       requires_image_token: false
       safety_mode_sensitive: false
       preferred_format: "structured"
       business_context_helpful: true
+      content_aware_selection: true
+  
+  # Registry-Director pattern content analysis indicators
+  content_analysis:
+    fuel_indicators:
+      - "costco"
+      - "bp"
+      - "shell"
+      - "caltex"
+      - "ampol"
+      - "mobil"
+      - "7-eleven"
+      - "united petroleum"
+      - "ulp"
+      - "unleaded"
+      - "diesel"
+      - "e10"
+      - "u91"
+      - "u95"
+      - "u98"
+      - "premium"
+      - "litre"
+      - " l "
+      - ".l "
+      - "price/l"
+      - "per litre"
+      - "fuel"
+      - "petrol"
+      - "gasoline"
+    
+    major_retailers:
+      - "woolworths"
+      - "coles"
+      - "aldi"
+      - "target"
+      - "kmart"
+      - "bunnings"
+      - "officeworks"
+      - "harvey norman"
+      - "jb hi-fi"
+      - "big w"
+      - "myer"
+      - "ikea"
+    
+    accommodation_indicators:
+      - "hotel"
+      - "motel"
+      - "resort"
+      - "accommodation"
+      - "booking"
+      - "reservation"
+      - "hilton"
+      - "marriott"
+      - "hyatt"
+      - "ibis"
+      - "mercure"
+      - "novotel"
+      - "crowne plaza"
+      - "check-in"
+      - "check-out"
+      - "guest"
+      - "room"
+      - "nights"
+      - "rate per night"
+    
+    professional_indicators:
+      - "tax invoice"
+      - "invoice"
+      - "consulting"
+      - "legal"
+      - "accounting"
+      - "professional services"
+      - "deloitte"
+      - "pwc"
+      - "kpmg"
+      - "ey"
+      - "bdo"
+      - "law firm"
+      - "solicitor"
+      - "barrister"
+      - "chartered accountant"
+      - "tax agent"
+      - "legal advice"
+      - "consultation"
+    
+    meal_indicators:
+      - "restaurant"
+      - "cafe"
+      - "coffee"
+      - "dining"
+      - "meal"
+      - "lunch"
+      - "dinner"
+      - "breakfast"
+      - "mcdonald's"
+      - "kfc"
+      - "subway"
+      - "domino's"
+      - "pizza hut"
+      - "hungry jack's"
+      - "menu"
+      - "table"
+      - "covers"
+      - "service charge"
+      - "gratuity"
+    
+    parking_indicators:
+      - "parking"
+      - "toll"
+      - "secure parking"
+      - "wilson parking"
+      - "care park"
+      - "parking fee"
+      - "hourly rate"
+      - "entry time"
+      - "exit time"
+      - "vehicle"
+      - "registration"
+    
+    equipment_indicators:
+      - "computer"
+      - "laptop"
+      - "equipment"
+      - "supplies"
+      - "software"
+      - "hardware"
+      - "printer"
+      - "scanner"
+      - "monitor"
+      - "keyboard"
+      - "mouse"
+      - "cable"
+      - "electronics"
   
   # Testing and debugging prompts
   testing_prompts:
@@ -256,3 +394,4 @@ prompt_metadata:
     max_tokens: 1024
     enable_fallback: true
     confidence_threshold: 0.7
+    registry_director_enabled: true

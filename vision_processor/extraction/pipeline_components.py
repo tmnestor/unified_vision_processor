@@ -1113,8 +1113,8 @@ def create_document_handler(
         from ..handlers.business_receipt_handler import BusinessReceiptHandler
         from ..handlers.fuel_receipt_handler import FuelReceiptHandler
         logger.info(f"Creating specialized handler for {document_type} (type: {type(document_type)}, value: {document_type.value})")
-        
-        # Map document types to their specialized handlers  
+
+        # Map document types to their specialized handlers
         handler_map = {
             DocumentType.BUSINESS_RECEIPT: BusinessReceiptHandler,
             DocumentType.FUEL_RECEIPT: FuelReceiptHandler,
@@ -1124,22 +1124,22 @@ def create_document_handler(
         logger.info(f"Available handlers: {list(handler_map.keys())}")
         logger.info(f"Looking for handler for: {document_type}")
         logger.info(f"Document type in handler map: {document_type in handler_map}")
-        
+
         # Get the appropriate handler class, fallback to base handler
         handler_class = handler_map.get(document_type, DocumentHandler)
         logger.info(f"Selected handler class: {handler_class}")
-        
+
         # Debug: Check if enum comparison is working
         for key in handler_map.keys():
             logger.info(f"Checking {key} == {document_type}: {key == document_type} (id: {id(key)} vs {id(document_type)})")
             logger.info(f"Key type: {type(key)}, Document type: {type(document_type)}")
-        
+
         if handler_class != DocumentHandler:
             logger.info(f"Using specialized handler: {handler_class.__name__}")
         else:
             logger.warning(f"Using fallback DocumentHandler for {document_type.value}")
         return handler_class(config)
-        
+
     except Exception as e:
         logger.error(f"Failed to import specialized handlers: {e}")
         import traceback
