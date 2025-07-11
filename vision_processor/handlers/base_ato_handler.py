@@ -82,8 +82,9 @@ class BaseATOHandler(ABC):
 
     def _load_australian_patterns(self) -> None:
         """Load Australian business and format patterns."""
-        # Australian date patterns (DD/MM/YYYY)
+        # Australian date patterns (DD/MM/YYYY) - structured format first
         self.date_patterns = [
+            r"Date:\s*(\d{1,2}/\d{1,2}/\d{4})",  # New structured format: "Date: 15/06/2024"
             r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b",
             r"\b(\d{1,2})-(\d{1,2})-(\d{4})\b",
             r"\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b",
@@ -101,8 +102,9 @@ class BaseATOHandler(ABC):
             r"\b(?:abn\s*:?\s*)?(\d{11})\b",
         ]
 
-        # GST patterns (10% in Australia)
+        # GST patterns (10% in Australia) - structured format first
         self.gst_patterns = [
+            r"GST:\s*\$?(\d+(?:\.\d{2})?)",  # New structured format: "GST: $4.55"
             r"(?:gst|tax)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
             r"(?:goods\s+and\s+services\s+tax)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
         ]
@@ -155,6 +157,7 @@ class BaseATOHandler(ABC):
 
         # Extract total amount
         total_patterns = [
+            r"Total:\s*\$?(\d+(?:\.\d{2})?)",  # New structured format: "Total: $45.50"
             r"(?:total|amount)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
             r"(?:grand\s+total)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
         ]
@@ -172,10 +175,20 @@ class BaseATOHandler(ABC):
         if abn_match:
             fields["abn"] = abn_match
 
-        # Extract business name (Australian businesses)
-        business_name = self._extract_australian_business_name(text)
-        if business_name:
-            fields["business_name"] = business_name
+        # Extract supplier/business name (structured format first)
+        supplier_patterns = [
+            r"Supplier:\s*(.+?)(?:\n|$)",  # New structured format: "Supplier: Business Name"
+        ]
+        supplier_match = self._extract_first_match(text, supplier_patterns)
+        if supplier_match:
+            fields["supplier_name"] = supplier_match.strip()
+            fields["business_name"] = supplier_match.strip()
+        else:
+            # Extract business name (Australian businesses) - fallback
+            business_name = self._extract_australian_business_name(text)
+            if business_name:
+                fields["business_name"] = business_name
+                fields["supplier_name"] = business_name
 
         return fields
 

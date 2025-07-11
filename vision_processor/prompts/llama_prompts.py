@@ -65,7 +65,20 @@ COMPLIANCE VALIDATION:
 - Assess business purpose evidence
 
 EXTRACTION REQUIREMENTS:
-Extract information with confidence scores and flag any compliance concerns. If information is unclear, note the uncertainty rather than guessing. Support business expense substantiation for tax purposes.""",
+Extract information with confidence scores and flag any compliance concerns. If information is unclear, note the uncertainty rather than guessing. Support business expense substantiation for tax purposes.
+
+OUTPUT FORMAT - Provide structured data in this exact format:
+Date: [DD/MM/YYYY]
+Supplier: [Business name]
+Total: [Amount with $ symbol]
+Fuel Type: [Petrol/Diesel/etc]
+Litres: [Quantity if available]
+GST: [GST amount if shown]
+ABN: [ABN if shown]
+Location: [Address if available]
+Receipt Number: [Number if available]
+
+Then provide your analysis and compliance assessment.""",
             DocumentType.TAX_INVOICE.value: """You are an Australian tax invoice compliance specialist with expertise in ATO requirements.
 
 ANALYZE this tax invoice for full ATO compliance:
@@ -123,7 +136,20 @@ COMPLIANCE CHECKS:
 - Check for personal use components requiring adjustment
 
 VALIDATION REQUIREMENTS:
-Extract all information with business expense context. Flag potential compliance issues and provide confidence assessments. Support accurate tax return preparation and ATO audit readiness.""",
+Extract all information with business expense context. Flag potential compliance issues and provide confidence assessments. Support accurate tax return preparation and ATO audit readiness.
+
+OUTPUT FORMAT - Provide structured data in this exact format:
+Date: [DD/MM/YYYY]
+Supplier: [Business name]
+Total: [Amount with $ symbol]
+Subtotal: [Amount before GST if shown]
+GST: [GST amount if shown]  
+ABN: [ABN if shown]
+Items: [List of items if available]
+Payment Method: [Method if shown]
+Receipt Number: [Number if available]
+
+Then provide your analysis and compliance assessment.""",
             DocumentType.BANK_STATEMENT.value: """You are an Australian banking and taxation expert specializing in business expense identification.
 
 ANALYZE this bank statement for business expense substantiation and ATO compliance:
