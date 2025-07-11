@@ -1123,10 +1123,16 @@ def create_document_handler(
 
         logger.info(f"Available handlers: {list(handler_map.keys())}")
         logger.info(f"Looking for handler for: {document_type}")
+        logger.info(f"Document type in handler map: {document_type in handler_map}")
         
         # Get the appropriate handler class, fallback to base handler
         handler_class = handler_map.get(document_type, DocumentHandler)
         logger.info(f"Selected handler class: {handler_class}")
+        
+        # Debug: Check if enum comparison is working
+        for key in handler_map.keys():
+            logger.info(f"Checking {key} == {document_type}: {key == document_type} (id: {id(key)} vs {id(document_type)})")
+            logger.info(f"Key type: {type(key)}, Document type: {type(document_type)}")
         
         if handler_class != DocumentHandler:
             logger.info(f"Using specialized handler: {handler_class.__name__}")
