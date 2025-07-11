@@ -1131,5 +1131,7 @@ def create_document_handler(
         
     except Exception as e:
         logger.error(f"Failed to import specialized handlers: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
         logger.info("Falling back to base DocumentHandler")
         return DocumentHandler(config)
