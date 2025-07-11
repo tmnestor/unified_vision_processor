@@ -20,6 +20,7 @@ from PIL import Image
 from ..classification import DocumentClassifier, DocumentType
 from ..confidence import ConfidenceManager
 from ..config.model_factory import ModelFactory
+from ..config.prompt_manager import PromptManager
 from ..config.unified_config import ExtractionMethod, UnifiedConfig
 from ..models.base_model import BaseVisionModel, ModelResponse
 from .awk_extractor import AWKExtractor
@@ -27,7 +28,6 @@ from .pipeline_components import (
     ATOComplianceHandler,
     EnhancedKeyValueParser,
     HighlightDetector,
-    PromptManager,
     create_document_handler,
 )
 
@@ -128,7 +128,8 @@ class UnifiedExtractionManager:
         self.awk_extractor = AWKExtractor(config)
         self.confidence_manager = ConfidenceManager(config)
         self.ato_compliance = ATOComplianceHandler(config)
-        self.prompt_manager = PromptManager(config)
+        self.prompt_manager = PromptManager()
+        self.prompt_manager.initialize()
 
         # InternVL integrations
         self.highlight_detector = HighlightDetector(config) if config.highlight_detection else None
@@ -271,10 +272,12 @@ class UnifiedExtractionManager:
             logger.info("Step 2: Model Inference")
             stages_completed.append(ProcessingStage.INFERENCE)
 
-            # Get prompt from prompt manager
-            prompt = self.prompt_manager.get_prompt(
+            # Get prompt from YAML-based prompt manager
+            classification_text = " ".join(classification_evidence) if classification_evidence else None
+            prompt = self.prompt_manager.get_prompt_for_document_type(
                 classified_type,
-                has_highlights=False,
+                model_type=self.config.model_type,
+                classification_response=classification_text,
             )
 
             # Process with model
