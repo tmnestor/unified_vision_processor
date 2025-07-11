@@ -144,13 +144,34 @@ python -c "import transformers; print(f'Transformers: {transformers.__version__}
 python -c "import bitsandbytes; print('BitsAndBytes: OK')"
 ```
 
-### Quality Assurance (when code exists)
-```bash
-# Code linting and formatting (pre-commit hook will run automatically)
-ruff check . --fix
-ruff format .
+### Quality Assurance and Code Standards
 
-# Type checking
+#### Ruff Code Quality Standards
+- **Configuration**: Follow the project's ruff configuration in pyproject.toml
+- **Line Length**: Aim for 108 characters max in NEW code (E501 ignored to keep existing code safe)
+- **Key Style Requirements**:
+  - Use double quotes for strings (quote-style = "double")
+  - Use spaces for indentation (indent-style = "space")
+  - Import organization: standard library → third-party → local
+  - Use pathlib instead of os.path (PTH rules)
+  - Prefer comprehensions over map/filter (C4 rules)
+  - **For NEW code**: Keep lines to 108 characters or less when possible
+
+#### Ignored Rules (Don't worry about these)
+- **E501**: Line too long (ignored to protect existing 1070+ long lines from breaking)
+- **ARG001/ARG002**: Unused function/method arguments (often required by frameworks)
+- **F841**: Unused local variables (common in debugging)
+
+#### Code Quality Commands
+```bash
+# Essential ruff workflow - run both commands together
+ruff check . --fix && ruff format .
+
+# Alternative: run separately
+ruff check . --fix    # Fix linting issues
+ruff format .         # Format code style
+
+# Type checking (optional)
 mypy vision_processor/
 
 # Testing
@@ -159,12 +180,20 @@ pytest tests/integration/ -v
 pytest tests/evaluation/ -v
 ```
 
+#### IMPORTANT: Always Run Ruff on Code Changes
+When writing or modifying code:
+1. Write the code following ruff standards
+2. **Always run**: `ruff check . --fix && ruff format .`
+3. Show the final ruff-processed result
+4. Only then commit or share the code
+
 ### Git Workflow
 ```bash
-# Pre-commit hook automatically runs ruff check before commits
-# Commits will fail if ruff check fails - fix issues before committing
+# Pre-commit hook is currently DISABLED to allow flexible commits
+# But you should still run ruff manually before committing
 
-# Standard git workflow
+# Recommended workflow
+ruff check . --fix && ruff format .  # Clean code first
 git add .
 git commit -m "feat: implement document classification system"
 git push origin main
@@ -257,5 +286,7 @@ The unified system provides migration tools for existing InternVL and Llama-3.2 
 - Use the unified_vision_processor conda environment for local development
 
 ## Important Notes
-- always run `ruff check . --fix --ignore ARG001,ARG002,F841` to ensure code quality
-- to run code, you must prefix with "export KMP_DUPLICATE_LIB_OK=TRUE && source /opt/homebrew/Caskroom/miniforge/base/bin/activate unified_vision_processor"
+- **Code Quality**: Always run `ruff check . --fix && ruff format .` on any code changes
+- **Environment**: To run code, you must prefix with "export KMP_DUPLICATE_LIB_OK=TRUE && source /opt/homebrew/Caskroom/miniforge/base/bin/activate unified_vision_processor"
+- **Ruff Standards**: Follow the ruff configuration - aim for 108 characters in new code, use double quotes, pathlib, and proper import organization
+- **Existing Code**: Don't modify existing long lines to avoid breaking working code
