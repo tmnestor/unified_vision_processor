@@ -273,16 +273,20 @@ class ATOComplianceValidator:
             formatted_amount: str = ""
             normalized_amount: str = ""
 
+        # For normalized_amount, return the numeric value without $ symbol for comparison
+        normalized_value = ""
+        if parsed_amount is not None:
+            normalized_value = str(parsed_amount)
+        elif formatted_amount:
+            # Strip $ symbol for normalized value
+            normalized_value = formatted_amount.replace("$", "").replace(",", "")
+
         return AmountValidationResult(
             is_valid=is_valid,
             errors=errors,
             parsed_amount=parsed_amount,
             formatted_amount=formatted_amount,
-            normalized_amount=formatted_amount
-            if formatted_amount
-            else str(parsed_amount)
-            if parsed_amount is not None
-            else "",
+            normalized_amount=normalized_value,
         )
 
     def assess_compliance(

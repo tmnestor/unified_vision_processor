@@ -380,6 +380,7 @@ class UnifiedExtractionManager:
                     overall_confidence=0.5,
                     quality_grade=QualityGrade.FAIR,
                     production_ready=False,
+                    component_scores={},
                     quality_flags=["confidence_assessment_failed"],
                     recommendations=["Manual review recommended"],
                 )

@@ -208,6 +208,8 @@ class DateValidator:
             "%d.%m.%Y",  # 01.01.2023
             "%d/%m/%y",  # 01/01/23
             "%d-%m-%y",  # 01-01-23
+            "%d %b %Y",  # 25 Mar 2024
+            "%d %B %Y",  # 25 March 2024
         ]
 
     def validate(
@@ -317,20 +319,6 @@ class GSTValidator:
             "total_difference": abs(total - expected_total),
         }
 
-        # Validate GST amount
-        if abs(gst_amount - expected_gst) > self.tolerance:
-            issues.append(
-                f"GST amount {gst_amount:.2f} does not match expected "
-                f"{expected_gst:.2f} (10% of {subtotal:.2f})",
-            )
-
-        # Validate total
-        if abs(total - expected_total) > self.tolerance:
-            issues.append(
-                f"Total amount {total:.2f} does not match expected "
-                f"{expected_total:.2f} (subtotal + GST)",
-            )
-
         # Check if amounts are positive
         if subtotal < 0:
             issues.append("Subtotal cannot be negative")
@@ -338,6 +326,25 @@ class GSTValidator:
             issues.append("GST amount cannot be negative")
         if total < 0:
             issues.append("Total amount cannot be negative")
+
+        # Handle special case: No GST (GST-exempt or under threshold)
+        if gst_amount == 0.0 and total == subtotal:
+            # This is valid - business may be GST-exempt or under $75k threshold
+            return True, calculated_values, issues
+
+        # Validate GST amount (with tolerance for rounding)
+        if abs(gst_amount - expected_gst) > self.tolerance:
+            issues.append(
+                f"GST amount {gst_amount:.2f} does not match expected "
+                f"{expected_gst:.2f} (10% of {subtotal:.2f})",
+            )
+
+        # Validate total (with tolerance for rounding)
+        if abs(total - expected_total) > self.tolerance:
+            issues.append(
+                f"Total amount {total:.2f} does not match expected "
+                f"{expected_total:.2f} (subtotal + GST)",
+            )
 
         return len(issues) == 0, calculated_values, issues
 
@@ -399,6 +406,10 @@ class GSTValidator:
 
     def validate_calculation(self, subtotal: float, gst: float, total: float) -> bool:
         """Simplified GST calculation validation for tests."""
+        # Handle special case: No GST (GST-exempt or under threshold)
+        if gst == 0.0 and total == subtotal:
+            return True
+
         # Calculate expected GST (10% of subtotal)
         expected_gst = subtotal * self.gst_rate
         expected_total = subtotal + expected_gst

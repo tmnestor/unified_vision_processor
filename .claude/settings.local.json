@@ -18,7 +18,8 @@
       "Bash(ruff check:*)",
       "Bash(git commit:*)",
       "Bash(python:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }
