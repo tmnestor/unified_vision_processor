@@ -1112,7 +1112,7 @@ def create_document_handler(
         from ..handlers.bank_statement_handler import BankStatementHandler
         from ..handlers.business_receipt_handler import BusinessReceiptHandler
         from ..handlers.fuel_receipt_handler import FuelReceiptHandler
-        logger.info(f"Creating specialized handler for {document_type.value}")
+        logger.info(f"Creating specialized handler for {document_type} (type: {type(document_type)}, value: {document_type.value})")
         
         # Map document types to their specialized handlers  
         handler_map = {
@@ -1121,8 +1121,13 @@ def create_document_handler(
             DocumentType.BANK_STATEMENT: BankStatementHandler,
         }
 
+        logger.info(f"Available handlers: {list(handler_map.keys())}")
+        logger.info(f"Looking for handler for: {document_type}")
+        
         # Get the appropriate handler class, fallback to base handler
         handler_class = handler_map.get(document_type, DocumentHandler)
+        logger.info(f"Selected handler class: {handler_class}")
+        
         if handler_class != DocumentHandler:
             logger.info(f"Using specialized handler: {handler_class.__name__}")
         else:
