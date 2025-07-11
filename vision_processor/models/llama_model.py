@@ -171,6 +171,11 @@ class LlamaVisionModel(BaseVisionModel):
             self.is_loaded = True
             logger.info(f"Model loaded successfully on {self.device}")
 
+            # Configure generation settings for stable inference (based on working implementation)
+            self.model.generation_config.max_length = 512  # Limit max generation
+            self.model.generation_config.do_sample = False  # Deterministic for consistency
+            self.model.config.use_cache = True  # Enable KV cache
+            
             # Store metadata for inference
             self.model._llama_config = {
                 "device_map": device_map,
