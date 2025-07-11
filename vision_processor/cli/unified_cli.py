@@ -216,15 +216,25 @@ def batch(
                             },
                         )
 
-                        # Extract key fields for progress display
-                        key_fields = ["total_amount", "supplier_name", "date"]
+                        # Extract key fields for progress display (check both standard and AWK field names)
+                        key_field_mappings = [
+                            (["total_amount", "total_value"], "total"),
+                            (["supplier_name", "supplier_value", "business_name"], "supplier"),
+                            (["date", "date_value"], "date")
+                        ]
                         extracted_info = []
-                        for field in key_fields:
-                            value = result.extracted_fields.get(field)
+                        
+                        for field_options, display_name in key_field_mappings:
+                            value = None
+                            for field in field_options:
+                                value = result.extracted_fields.get(field)
+                                if value:
+                                    break
+                            
                             if value:
                                 # Truncate long values
                                 display_value = str(value)[:20] + "..." if len(str(value)) > 20 else str(value)
-                                extracted_info.append(f"{field}:{display_value}")
+                                extracted_info.append(f"{display_name}:{display_value}")
 
                         fields_summary = " | ".join(extracted_info) if extracted_info else "No key fields"
 
