@@ -1094,7 +1094,7 @@ class EnhancedKeyValueParser(BasePipelineComponent):
 
 
 def create_document_handler(
-    _document_type: DocumentType,
+    document_type: DocumentType,
     config: Any,
 ) -> DocumentHandler:
     """Factory function to create document handlers.
@@ -1104,9 +1104,37 @@ def create_document_handler(
         config: Configuration object
 
     Returns:
-        Document handler instance
+        Document handler instance specialized for the document type
 
     """
-    # For Phase 1, return base handler
-    # Phase 5 will implement specific handlers
-    return DocumentHandler(config)
+    # Import specialized handlers
+    from ..handlers.accommodation_handler import AccommodationHandler
+    from ..handlers.bank_statement_handler import BankStatementHandler
+    from ..handlers.business_receipt_handler import BusinessReceiptHandler
+    from ..handlers.equipment_supplies_handler import EquipmentSuppliesHandler
+    from ..handlers.fuel_receipt_handler import FuelReceiptHandler
+    from ..handlers.meal_receipt_handler import MealReceiptHandler
+    from ..handlers.other_document_handler import OtherDocumentHandler
+    from ..handlers.parking_toll_handler import ParkingTollHandler
+    from ..handlers.professional_services_handler import ProfessionalServicesHandler
+    from ..handlers.tax_invoice_handler import TaxInvoiceHandler
+    from ..handlers.travel_document_handler import TravelDocumentHandler
+
+    # Map document types to their specialized handlers
+    handler_map = {
+        DocumentType.BUSINESS_RECEIPT: BusinessReceiptHandler,
+        DocumentType.FUEL_RECEIPT: FuelReceiptHandler,
+        DocumentType.TAX_INVOICE: TaxInvoiceHandler,
+        DocumentType.BANK_STATEMENT: BankStatementHandler,
+        DocumentType.MEAL_RECEIPT: MealReceiptHandler,
+        DocumentType.ACCOMMODATION: AccommodationHandler,
+        DocumentType.TRAVEL_DOCUMENT: TravelDocumentHandler,
+        DocumentType.PARKING_TOLL: ParkingTollHandler,
+        DocumentType.PROFESSIONAL_SERVICES: ProfessionalServicesHandler,
+        DocumentType.EQUIPMENT_SUPPLIES: EquipmentSuppliesHandler,
+        DocumentType.OTHER: OtherDocumentHandler,
+    }
+
+    # Get the appropriate handler class, fallback to base handler
+    handler_class = handler_map.get(document_type, DocumentHandler)
+    return handler_class(config)
