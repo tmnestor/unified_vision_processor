@@ -368,7 +368,7 @@ class ConfidenceManager(BasePipelineComponent):
         ):
             flags.append("low_ato_compliance")
 
-        if not compliance_result.compliance_passed:
+        if not compliance_result.passed:
             flags.append("ato_compliance_failed")
 
         # Business recognition flags
