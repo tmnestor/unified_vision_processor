@@ -64,7 +64,7 @@ class AustralianBankRecognizer:
         # Bank metadata and categorization
         self.bank_metadata = {
             "ANZ": {
-                "official_name": "Australia and New Zealand Banking Group",
+                "official_name": "ANZ Bank",
                 "common_names": ["ANZ", "Australia and New Zealand"],
                 "category": "big_four",
                 "bsb_ranges": [(10, 19), (70, 79), (550, 559)],
@@ -85,7 +85,7 @@ class AustralianBankRecognizer:
                 "market_share": "large",
             },
             "NAB": {
-                "official_name": "National Australia Bank",
+                "official_name": "NAB Bank",
                 "common_names": ["NAB", "National Australia Bank"],
                 "category": "big_four",
                 "bsb_ranges": [(80, 89), (300, 319)],
@@ -208,11 +208,17 @@ class AustralianBankRecognizer:
         """Check if a bank is one of Australia's Big Four."""
         self.initialize()
 
+        bank_name_lower = bank_name.lower()
         for _bank_key, metadata in self.bank_metadata.items():
             if metadata["category"] == "big_four":
-                if bank_name.lower() in metadata["official_name"].lower() or any(
-                    name.lower() in bank_name.lower()
-                    for name in metadata["common_names"]
+                # Check for exact matches
+                if bank_name_lower == metadata["official_name"].lower() or any(
+                    bank_name_lower == name.lower() for name in metadata["common_names"]
+                ):
+                    return True
+                # Check if any common name is contained in the input (but not substring matches of input in names)
+                if any(
+                    name.lower() in bank_name_lower for name in metadata["common_names"]
                 ):
                     return True
         return False
@@ -221,9 +227,16 @@ class AustralianBankRecognizer:
         """Get the category of a bank (big_four, regional, online, etc.)."""
         self.initialize()
 
+        bank_name_lower = bank_name.lower()
         for _bank_key, metadata in self.bank_metadata.items():
-            if bank_name.lower() in metadata["official_name"].lower() or any(
-                name.lower() in bank_name.lower() for name in metadata["common_names"]
+            # Check for exact matches
+            if bank_name_lower == metadata["official_name"].lower() or any(
+                bank_name_lower == name.lower() for name in metadata["common_names"]
+            ):
+                return metadata["category"]
+            # Check if any common name is contained in the input (but not substring matches of input in names)
+            if any(
+                name.lower() in bank_name_lower for name in metadata["common_names"]
             ):
                 return metadata["category"]
         return None
@@ -235,13 +248,12 @@ class AustralianBankRecognizer:
         if not matches:
             return 0.0
 
-        # Base confidence from number of matches
-        match_count = len(matches)
-        base_confidence = min(match_count * 0.3, 0.8)
+        # Start with higher base confidence for institutional matches
+        base_confidence = 0.6
 
         # Bonus for exact institutional matches
         if any(len(match) > 10 for match in matches):  # Long institutional names
-            base_confidence += 0.2
+            base_confidence += 0.3
 
         # Bonus for multiple different name variations
         unique_matches = set(matches)
@@ -262,9 +274,9 @@ class AustralianBankRecognizer:
 
         context_score = sum(1 for indicator in banking_indicators if indicator in text)
         if context_score >= 3:
-            base_confidence += 0.1
+            base_confidence += 0.2
         elif context_score >= 1:
-            base_confidence += 0.05
+            base_confidence += 0.1
 
         return min(base_confidence, 1.0)
 

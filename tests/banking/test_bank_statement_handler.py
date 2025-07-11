@@ -5,6 +5,7 @@ Tests the complete bank statement processing including transaction extraction,
 work expense identification, and integration with banking modules.
 """
 
+import re
 from unittest.mock import Mock, patch
 
 import pytest
@@ -237,13 +238,12 @@ class TestBankStatementHandler:
             found_category = None
             max_score = 0
 
-            for category, patterns in bank_handler.work_expense_patterns.items():
-                for pattern in patterns:
-                    if pattern in description.lower():
-                        score = 0.8  # Arbitrary high score for pattern match
-                        if score > max_score:
-                            max_score = score
-                            found_category = category
+            for category, pattern in bank_handler.work_expense_patterns.items():
+                if re.search(pattern, description.lower(), re.IGNORECASE):
+                    score = 0.8  # Arbitrary high score for pattern match
+                    if score > max_score:
+                        max_score = score
+                        found_category = category
 
             # Should categorize correctly for obvious cases
             if found_category:

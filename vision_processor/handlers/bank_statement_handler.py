@@ -342,12 +342,11 @@ class BankStatementHandler(BaseATOHandler):
             expense_category = "other"
 
             # Score transaction for work-relatedness
-            for category, patterns in self.work_expense_patterns.items():
-                for pattern in patterns:
-                    if re.search(pattern, description, re.IGNORECASE):
-                        work_score += 1
-                        expense_category = category
-                        break
+            for category, pattern in self.work_expense_patterns.items():
+                if re.search(pattern, description, re.IGNORECASE):
+                    work_score += 1
+                    expense_category = category
+                    break
 
             # Check for general work keywords
             for keyword in self.validation_rules["work_expense_keywords"]:

@@ -20,7 +20,8 @@
       "Bash(python:*)",
       "Bash(grep:*)",
       "Bash(sed:*)",
-      "Bash(pytest:*)"
+      "Bash(pytest:*)",
+      "Bash(source:*)"
     ],
     "deny": []
   }
