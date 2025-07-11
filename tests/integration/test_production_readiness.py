@@ -34,6 +34,16 @@ class TestProductionReadinessAssessment:
         config.awk_fallback = True
         return config
 
+    @pytest.fixture
+    def benchmark_documents(self, temp_directory):
+        """Create benchmark documents for batch testing."""
+        documents = []
+        for i in range(10):
+            doc_path = temp_directory / f"benchmark_doc_{i}.jpg"
+            doc_path.write_bytes(b"mock_benchmark_image_data")
+            documents.append(doc_path)
+        return documents
+
     def test_excellent_quality_grade_assessment(
         self, production_config, mock_image_path
     ):
@@ -43,13 +53,13 @@ class TestProductionReadinessAssessment:
             "vision_processor.config.model_factory.ModelFactory.create_model"
         ) as mock_factory:
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
                     with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
+                        "vision_processor.confidence.ConfidenceManager"
                     ) as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -130,13 +140,13 @@ class TestProductionReadinessAssessment:
             "vision_processor.config.model_factory.ModelFactory.create_model"
         ) as mock_factory:
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
                     with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
+                        "vision_processor.confidence.ConfidenceManager"
                     ) as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -207,13 +217,13 @@ class TestProductionReadinessAssessment:
             "vision_processor.config.model_factory.ModelFactory.create_model"
         ) as mock_factory:
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
                     with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
+                        "vision_processor.confidence.ConfidenceManager"
                     ) as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -294,13 +304,13 @@ class TestProductionReadinessAssessment:
             "vision_processor.config.model_factory.ModelFactory.create_model"
         ) as mock_factory:
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
                     with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
+                        "vision_processor.confidence.ConfidenceManager"
                     ) as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -385,13 +395,13 @@ class TestProductionReadinessAssessment:
             "vision_processor.config.model_factory.ModelFactory.create_model"
         ) as mock_factory:
             with patch(
-                "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                "vision_processor.classification.DocumentClassifier"
             ) as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
                     with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
+                        "vision_processor.confidence.ConfidenceManager"
                     ) as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -494,13 +504,13 @@ class TestProductionReadinessAssessment:
                 "vision_processor.config.model_factory.ModelFactory.create_model"
             ) as mock_factory:
                 with patch(
-                    "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                    "vision_processor.classification.DocumentClassifier"
                 ) as mock_classifier:
                     with patch(
                         "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                     ) as mock_awk:
                         with patch(
-                            "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
+                            "vision_processor.confidence.ConfidenceManager"
                         ) as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -584,13 +594,13 @@ class TestProductionReadinessAssessment:
                 "vision_processor.config.model_factory.ModelFactory.create_model"
             ) as mock_factory:
                 with patch(
-                    "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                    "vision_processor.classification.DocumentClassifier"
                 ) as mock_classifier:
                     with patch(
                         "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                     ) as mock_awk:
                         with patch(
-                            "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
+                            "vision_processor.confidence.ConfidenceManager"
                         ) as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -696,13 +706,13 @@ class TestProductionReadinessAssessment:
                 "vision_processor.config.model_factory.ModelFactory.create_model"
             ) as mock_factory:
                 with patch(
-                    "vision_processor.extraction.hybrid_extraction_manager.AustralianTaxClassifier"
+                    "vision_processor.classification.DocumentClassifier"
                 ) as mock_classifier:
                     with patch(
                         "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                     ) as mock_awk:
                         with patch(
-                            "vision_processor.extraction.hybrid_extraction_manager.ConfidenceIntegrationManager"
+                            "vision_processor.confidence.ConfidenceManager"
                         ) as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
