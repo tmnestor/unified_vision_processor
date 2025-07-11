@@ -155,6 +155,16 @@ class UnifiedExtractionManager:
             f"Initialized UnifiedExtractionManager with {config.model_type.value} model",
         )
 
+    def _use_test_components(self):
+        """Replace components with test mocks if available."""
+        if hasattr(self, "_test_mocks"):
+            if "classifier" in self._test_mocks:
+                self.classifier = self._test_mocks["classifier"]
+            if "confidence_manager" in self._test_mocks:
+                self.confidence_manager = self._test_mocks["confidence_manager"]
+            if "ato_handler" in self._test_mocks:
+                self.ato_compliance = self._test_mocks["ato_handler"]
+
     def _initialize_model(self) -> None:
         """Initialize the vision model."""
         try:
@@ -216,6 +226,9 @@ class UnifiedExtractionManager:
             ProcessingResult with comprehensive analysis
 
         """
+        # Use test components if available (for testing)
+        self._use_test_components()
+
         start_time = time.time()
         stages_completed = []
         quality_flags = []

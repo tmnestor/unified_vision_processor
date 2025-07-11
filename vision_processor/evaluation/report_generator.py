@@ -499,13 +499,21 @@ class ReportGenerator:
         error_html = ""
 
         for model_name, result in comparison_results.items():
-            if result.failed_documents or result.error_analysis:
+            # Handle both dict and object access patterns
+            failed_documents = getattr(result, "failed_documents", None) or result.get(
+                "failed_documents", []
+            )
+            error_analysis = getattr(result, "error_analysis", None) or result.get(
+                "error_analysis", {}
+            )
+
+            if failed_documents or error_analysis:
                 error_html += f"""
                 <div class="error-analysis">
                     <h4>⚠️ {model_name} Error Analysis</h4>
-                    <p><strong>Failed Documents:</strong> {len(result.failed_documents)}</p>
-                    {f"<p><strong>Failed Files:</strong> {', '.join(result.failed_documents[:5])}" + ("..." if len(result.failed_documents) > 5 else "") + "</p>" if result.failed_documents else ""}
-                    {f"<p><strong>Error Types:</strong> {', '.join(f'{k}: {v}' for k, v in result.error_analysis.items())}</p>" if result.error_analysis else ""}
+                    <p><strong>Failed Documents:</strong> {len(failed_documents)}</p>
+                    {f"<p><strong>Failed Files:</strong> {', '.join(failed_documents[:5])}" + ("..." if len(failed_documents) > 5 else "") + "</p>" if failed_documents else ""}
+                    {f"<p><strong>Error Types:</strong> {', '.join(f'{k}: {v}' for k, v in error_analysis.items())}</p>" if error_analysis else ""}
                 </div>
                 """
 
