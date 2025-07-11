@@ -220,10 +220,7 @@ class TaxInvoiceHandler(BaseATOHandler):
                 issues.append("Invalid supplier ABN format")
 
         # Validate GST calculation
-        if all(
-            field in fields and fields[field]
-            for field in ["subtotal", "gst_amount", "total_amount"]
-        ):
+        if all(field in fields and fields[field] for field in ["subtotal", "gst_amount", "total_amount"]):
             try:
                 subtotal = float(fields["subtotal"])
                 gst_amount = float(fields["gst_amount"])
@@ -232,18 +229,12 @@ class TaxInvoiceHandler(BaseATOHandler):
                 expected_gst = subtotal * self.validation_rules["gst_rate"]
                 expected_total = subtotal + gst_amount
 
-                if (
-                    abs(gst_amount - expected_gst)
-                    > self.validation_rules["gst_tolerance"]
-                ):
+                if abs(gst_amount - expected_gst) > self.validation_rules["gst_tolerance"]:
                     issues.append(
                         f"GST amount may be incorrect (expected ${expected_gst:.2f})",
                     )
 
-                if (
-                    abs(total_amount - expected_total)
-                    > self.validation_rules["gst_tolerance"]
-                ):
+                if abs(total_amount - expected_total) > self.validation_rules["gst_tolerance"]:
                     issues.append(
                         f"Total amount may be incorrect (expected ${expected_total:.2f})",
                     )
@@ -292,21 +283,15 @@ class TaxInvoiceHandler(BaseATOHandler):
 
                 # Merge with enhanced preference for highlighted data
                 for field, value in highlight_fields.items():
-                    if value and (
-                        field not in enhanced_fields or not enhanced_fields[field]
-                    ):
+                    if value and (field not in enhanced_fields or not enhanced_fields[field]):
                         enhanced_fields[field] = value
-                        enhanced_fields[f"{field}_highlight_confidence"] = (
-                            highlight_confidence
-                        )
+                        enhanced_fields[f"{field}_highlight_confidence"] = highlight_confidence
                         logger.info(f"Enhanced field {field} from highlight: {value}")
                     elif field in priority_fields and value:
                         # Override existing value if this is a priority field from highlights
                         if highlight_confidence > 0.7:
                             enhanced_fields[field] = value
-                            enhanced_fields[f"{field}_highlight_confidence"] = (
-                                highlight_confidence
-                            )
+                            enhanced_fields[f"{field}_highlight_confidence"] = highlight_confidence
                             logger.info(
                                 f"Override field {field} from high-confidence highlight: {value}",
                             )
@@ -363,10 +348,7 @@ class TaxInvoiceHandler(BaseATOHandler):
                         # For generic amounts, try to determine context
                         if "total" in highlight_text.lower():
                             fields["total_amount"] = amount
-                        elif (
-                            "gst" in highlight_text.lower()
-                            or "tax" in highlight_text.lower()
-                        ):
+                        elif "gst" in highlight_text.lower() or "tax" in highlight_text.lower():
                             fields["gst_amount"] = amount
                         elif "sub" in highlight_text.lower():
                             fields["subtotal"] = amount
@@ -431,10 +413,7 @@ class TaxInvoiceHandler(BaseATOHandler):
 
         # If we have subtotal and GST, calculate total
         elif (
-            "subtotal" in fields
-            and fields["subtotal"]
-            and "gst_amount" in fields
-            and fields["gst_amount"]
+            "subtotal" in fields and fields["subtotal"] and "gst_amount" in fields and fields["gst_amount"]
         ):
             try:
                 subtotal = float(fields["subtotal"])

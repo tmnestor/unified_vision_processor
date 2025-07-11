@@ -77,9 +77,7 @@ class ModelFactory:
 
         """
         # Validate path first
-        if model_path is None or (
-            isinstance(model_path, str) and not model_path.strip()
-        ):
+        if model_path is None or (isinstance(model_path, str) and not model_path.strip()):
             raise ValueError("Model path cannot be None or empty")
 
         # Convert string model_type to enum if needed
@@ -154,9 +152,7 @@ class ModelFactory:
                         "auto": DeviceConfig.AUTO,
                         "multi_gpu": DeviceConfig.MULTI_GPU,
                     }
-                    device_config = device_mapping.get(
-                        device_config.lower(), DeviceConfig.AUTO
-                    )
+                    device_config = device_mapping.get(device_config.lower(), DeviceConfig.AUTO)
                     logger.warning(
                         f"Converted device config string '{config.device_config}' to {device_config}"
                     )

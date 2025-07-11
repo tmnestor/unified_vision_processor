@@ -168,9 +168,7 @@ class AustralianBankRecognizer:
                 metadata = self.bank_metadata[bank_key]
 
                 # Calculate confidence based on match quality and frequency
-                confidence = self._calculate_confidence(
-                    pattern_matches, pattern, text_lower
-                )
+                confidence = self._calculate_confidence(pattern_matches, pattern, text_lower)
 
                 bank_match = BankMatch(
                     official_name=metadata["official_name"],
@@ -217,9 +215,7 @@ class AustralianBankRecognizer:
                 ):
                     return True
                 # Check if any common name is contained in the input (but not substring matches of input in names)
-                if any(
-                    name.lower() in bank_name_lower for name in metadata["common_names"]
-                ):
+                if any(name.lower() in bank_name_lower for name in metadata["common_names"]):
                     return True
         return False
 
@@ -235,15 +231,11 @@ class AustralianBankRecognizer:
             ):
                 return metadata["category"]
             # Check if any common name is contained in the input (but not substring matches of input in names)
-            if any(
-                name.lower() in bank_name_lower for name in metadata["common_names"]
-            ):
+            if any(name.lower() in bank_name_lower for name in metadata["common_names"]):
                 return metadata["category"]
         return None
 
-    def _calculate_confidence(
-        self, matches: list[str], _pattern: str, text: str
-    ) -> float:
+    def _calculate_confidence(self, matches: list[str], _pattern: str, text: str) -> float:
         """Calculate confidence score for bank recognition."""
         if not matches:
             return 0.0

@@ -441,11 +441,7 @@ class AWKExtractor:
         self.document_specific_patterns = {}
 
         for doc_type in DocumentType:
-            relevant_patterns = [
-                pattern
-                for pattern in self.patterns
-                if doc_type in pattern.document_types
-            ]
+            relevant_patterns = [pattern for pattern in self.patterns if doc_type in pattern.document_types]
             # Sort by priority (highest first)
             relevant_patterns.sort(key=lambda p: p.priority, reverse=True)
             self.document_specific_patterns[doc_type] = relevant_patterns
@@ -533,11 +529,7 @@ class AWKExtractor:
                 continue
 
             # Apply post-processing based on field type
-            if (
-                "amount" in field_name
-                or "total" in field_name
-                or "subtotal" in field_name
-            ):
+            if "amount" in field_name or "total" in field_name or "subtotal" in field_name:
                 processed[field_name] = self._clean_amount(value)
             elif "abn" in field_name:
                 processed[field_name] = self._clean_abn(value)

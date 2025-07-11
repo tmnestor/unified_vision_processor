@@ -44,23 +44,15 @@ class TestProductionReadinessAssessment:
             documents.append(doc_path)
         return documents
 
-    def test_excellent_quality_grade_assessment(
-        self, production_config, mock_image_path
-    ):
+    def test_excellent_quality_grade_assessment(self, production_config, mock_image_path):
         """Test assessment for excellent quality grade (Level 5)."""
         # Mock high-quality processing result
-        with patch(
-            "vision_processor.config.model_factory.ModelFactory.create_model"
-        ) as mock_factory:
-            with patch(
-                "vision_processor.classification.DocumentClassifier"
-            ) as mock_classifier:
+        with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
+            with patch("vision_processor.classification.DocumentClassifier") as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
-                    with patch(
-                        "vision_processor.confidence.ConfidenceManager"
-                    ) as mock_confidence:
+                    with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ) as mock_ato:
@@ -125,9 +117,7 @@ class TestProductionReadinessAssessment:
                                     ),
                                 ):
                                     # Mock handler to return excellent extraction
-                                    with patch.object(
-                                        manager, "_get_handler"
-                                    ) as mock_get_handler:
+                                    with patch.object(manager, "_get_handler") as mock_get_handler:
                                         mock_handler = MagicMock()
                                         mock_handler.extract_fields_primary.return_value = {
                                             "supplier_name": "Excellent Store",
@@ -137,12 +127,12 @@ class TestProductionReadinessAssessment:
                                             "gst_amount": "4.15",
                                             "invoice_number": "INV-12345",
                                         }
-                                        mock_handler.validate_fields.return_value = mock_handler.extract_fields_primary.return_value
+                                        mock_handler.validate_fields.return_value = (
+                                            mock_handler.extract_fields_primary.return_value
+                                        )
                                         mock_get_handler.return_value = mock_handler
 
-                                        result = manager.process_document(
-                                            mock_image_path
-                                        )
+                                        result = manager.process_document(mock_image_path)
 
         # Validate excellent quality assessment
         assert result.quality_grade == QualityGrade.EXCELLENT
@@ -154,18 +144,12 @@ class TestProductionReadinessAssessment:
 
     def test_good_quality_grade_assessment(self, production_config, mock_image_path):
         """Test assessment for good quality grade (Level 4)."""
-        with patch(
-            "vision_processor.config.model_factory.ModelFactory.create_model"
-        ) as mock_factory:
-            with patch(
-                "vision_processor.classification.DocumentClassifier"
-            ) as mock_classifier:
+        with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
+            with patch("vision_processor.classification.DocumentClassifier") as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
-                    with patch(
-                        "vision_processor.confidence.ConfidenceManager"
-                    ) as mock_confidence:
+                    with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ) as mock_ato:
@@ -184,9 +168,7 @@ class TestProductionReadinessAssessment:
                                 ["good_confidence_evidence"],
                             )
 
-                            mock_awk.return_value.extract.return_value = {
-                                "additional_field": "good_value"
-                            }
+                            mock_awk.return_value.extract.return_value = {"additional_field": "good_value"}
 
                             mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                 overall_confidence=0.85,
@@ -217,9 +199,7 @@ class TestProductionReadinessAssessment:
                                         recommendations=["Suitable for production"],
                                     ),
                                 ):
-                                    with patch.object(
-                                        manager, "_get_handler"
-                                    ) as mock_get_handler:
+                                    with patch.object(manager, "_get_handler") as mock_get_handler:
                                         mock_handler = MagicMock()
                                         mock_handler.extract_fields_primary.return_value = {
                                             "supplier_name": "Good Store",
@@ -227,12 +207,12 @@ class TestProductionReadinessAssessment:
                                             "date": "20/03/2024",
                                             "abn": "88000014675",
                                         }
-                                        mock_handler.validate_fields.return_value = mock_handler.extract_fields_primary.return_value
+                                        mock_handler.validate_fields.return_value = (
+                                            mock_handler.extract_fields_primary.return_value
+                                        )
                                         mock_get_handler.return_value = mock_handler
 
-                                        result = manager.process_document(
-                                            mock_image_path
-                                        )
+                                        result = manager.process_document(mock_image_path)
 
         # Validate good quality assessment
         assert result.quality_grade == QualityGrade.GOOD
@@ -243,18 +223,12 @@ class TestProductionReadinessAssessment:
 
     def test_fair_quality_grade_assessment(self, production_config, mock_image_path):
         """Test assessment for fair quality grade (Level 3)."""
-        with patch(
-            "vision_processor.config.model_factory.ModelFactory.create_model"
-        ) as mock_factory:
-            with patch(
-                "vision_processor.classification.DocumentClassifier"
-            ) as mock_classifier:
+        with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
+            with patch("vision_processor.classification.DocumentClassifier") as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
-                    with patch(
-                        "vision_processor.confidence.ConfidenceManager"
-                    ) as mock_confidence:
+                    with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ) as mock_ato:
@@ -273,9 +247,7 @@ class TestProductionReadinessAssessment:
                                 ["moderate_confidence"],
                             )
 
-                            mock_awk.return_value.extract.return_value = {
-                                "fallback_field": "fair_value"
-                            }
+                            mock_awk.return_value.extract.return_value = {"fallback_field": "fair_value"}
 
                             mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                 overall_confidence=0.70,
@@ -321,45 +293,35 @@ class TestProductionReadinessAssessment:
                                         ],
                                     ),
                                 ):
-                                    with patch.object(
-                                        manager, "_get_handler"
-                                    ) as mock_get_handler:
+                                    with patch.object(manager, "_get_handler") as mock_get_handler:
                                         mock_handler = MagicMock()
                                         mock_handler.extract_fields_primary.return_value = {
                                             "supplier_name": "Fair Store",
                                             "total_amount": "25.00",
                                             # Missing some fields
                                         }
-                                        mock_handler.validate_fields.return_value = mock_handler.extract_fields_primary.return_value
+                                        mock_handler.validate_fields.return_value = (
+                                            mock_handler.extract_fields_primary.return_value
+                                        )
                                         mock_get_handler.return_value = mock_handler
 
-                                        result = manager.process_document(
-                                            mock_image_path
-                                        )
+                                        result = manager.process_document(mock_image_path)
 
         # Validate fair quality assessment
         assert result.quality_grade == QualityGrade.FAIR
         assert 0.6 <= result.confidence_score < 0.8
         assert result.production_ready is False  # Fair quality requires manual review
         assert result.ato_compliance_score >= 0.7
-        assert "manual review recommended" in [
-            rec.lower() for rec in result.recommendations
-        ]
+        assert "manual review recommended" in [rec.lower() for rec in result.recommendations]
 
     def test_poor_quality_grade_assessment(self, production_config, mock_image_path):
         """Test assessment for poor quality grade (Level 2)."""
-        with patch(
-            "vision_processor.config.model_factory.ModelFactory.create_model"
-        ) as mock_factory:
-            with patch(
-                "vision_processor.classification.DocumentClassifier"
-            ) as mock_classifier:
+        with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
+            with patch("vision_processor.classification.DocumentClassifier") as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
-                    with patch(
-                        "vision_processor.confidence.ConfidenceManager"
-                    ) as mock_confidence:
+                    with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ) as mock_ato:
@@ -378,9 +340,7 @@ class TestProductionReadinessAssessment:
                                 ["low_confidence"],  # Poor classification
                             )
 
-                            mock_awk.return_value.extract.return_value = {
-                                "minimal_field": "poor_value"
-                            }
+                            mock_awk.return_value.extract.return_value = {"minimal_field": "poor_value"}
 
                             mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                 overall_confidence=0.50,
@@ -430,20 +390,18 @@ class TestProductionReadinessAssessment:
                                         ],
                                     ),
                                 ):
-                                    with patch.object(
-                                        manager, "_get_handler"
-                                    ) as mock_get_handler:
+                                    with patch.object(manager, "_get_handler") as mock_get_handler:
                                         mock_handler = MagicMock()
                                         mock_handler.extract_fields_primary.return_value = {
                                             "supplier_name": "Poor Store"
                                             # Very minimal extraction
                                         }
-                                        mock_handler.validate_fields.return_value = mock_handler.extract_fields_primary.return_value
+                                        mock_handler.validate_fields.return_value = (
+                                            mock_handler.extract_fields_primary.return_value
+                                        )
                                         mock_get_handler.return_value = mock_handler
 
-                                        result = manager.process_document(
-                                            mock_image_path
-                                        )
+                                        result = manager.process_document(mock_image_path)
 
         # Validate poor quality assessment
         assert result.quality_grade == QualityGrade.POOR
@@ -451,26 +409,16 @@ class TestProductionReadinessAssessment:
         assert result.production_ready is False
         assert result.ato_compliance_score < 0.7
         assert len(result.errors) > 0 or len(result.warnings) > 0
-        assert "manual processing required" in [
-            rec.lower() for rec in result.recommendations
-        ]
+        assert "manual processing required" in [rec.lower() for rec in result.recommendations]
 
-    def test_very_poor_quality_grade_assessment(
-        self, production_config, mock_image_path
-    ):
+    def test_very_poor_quality_grade_assessment(self, production_config, mock_image_path):
         """Test assessment for very poor quality grade (Level 1)."""
-        with patch(
-            "vision_processor.config.model_factory.ModelFactory.create_model"
-        ) as mock_factory:
-            with patch(
-                "vision_processor.classification.DocumentClassifier"
-            ) as mock_classifier:
+        with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
+            with patch("vision_processor.classification.DocumentClassifier") as mock_classifier:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk:
-                    with patch(
-                        "vision_processor.confidence.ConfidenceManager"
-                    ) as mock_confidence:
+                    with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ) as mock_ato:
@@ -539,17 +487,13 @@ class TestProductionReadinessAssessment:
                                         ],
                                     ),
                                 ):
-                                    with patch.object(
-                                        manager, "_get_handler"
-                                    ) as mock_get_handler:
+                                    with patch.object(manager, "_get_handler") as mock_get_handler:
                                         mock_handler = MagicMock()
                                         mock_handler.extract_fields_primary.return_value = {}  # No extraction
                                         mock_handler.validate_fields.return_value = {}
                                         mock_get_handler.return_value = mock_handler
 
-                                        result = manager.process_document(
-                                            mock_image_path
-                                        )
+                                        result = manager.process_document(mock_image_path)
 
         # Validate very poor quality assessment
         assert result.quality_grade == QualityGrade.VERY_POOR
@@ -559,9 +503,7 @@ class TestProductionReadinessAssessment:
         assert len(result.errors) > 0
         assert "reject document" in [rec.lower() for rec in result.recommendations]
 
-    def test_production_readiness_decision_matrix(
-        self, production_config, mock_image_path
-    ):
+    def test_production_readiness_decision_matrix(self, production_config, mock_image_path):
         """Test the production readiness decision matrix."""
         decision_matrix_tests = [
             # (confidence, ato_compliance, quality_grade, expected_production_ready)
@@ -590,18 +532,12 @@ class TestProductionReadinessAssessment:
             quality_grade,
             expected_ready,
         ) in decision_matrix_tests:
-            with patch(
-                "vision_processor.config.model_factory.ModelFactory.create_model"
-            ) as mock_factory:
-                with patch(
-                    "vision_processor.classification.DocumentClassifier"
-                ) as mock_classifier:
+            with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
+                with patch("vision_processor.classification.DocumentClassifier") as mock_classifier:
                     with patch(
                         "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                     ) as mock_awk:
-                        with patch(
-                            "vision_processor.confidence.ConfidenceManager"
-                        ) as mock_confidence:
+                        with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                             ) as mock_ato:
@@ -620,9 +556,7 @@ class TestProductionReadinessAssessment:
                                     ["test_evidence"],
                                 )
 
-                                mock_awk.return_value.extract.return_value = {
-                                    "test_field": "test_value"
-                                }
+                                mock_awk.return_value.extract.return_value = {"test_field": "test_value"}
 
                                 mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                     overall_confidence=confidence,
@@ -632,19 +566,15 @@ class TestProductionReadinessAssessment:
                                     recommendations=[],
                                 )
 
-                                mock_ato.return_value.assess_compliance.return_value = (
-                                    Mock(
-                                        compliance_score=ato_score,
-                                        passed=ato_score >= 0.7,
-                                        violations=[],
-                                        warnings=[],
-                                    )
+                                mock_ato.return_value.assess_compliance.return_value = Mock(
+                                    compliance_score=ato_score,
+                                    passed=ato_score >= 0.7,
+                                    violations=[],
+                                    warnings=[],
                                 )
 
                                 # Process document
-                                with UnifiedExtractionManager(
-                                    production_config
-                                ) as manager:
+                                with UnifiedExtractionManager(production_config) as manager:
                                     # Mock the confidence manager's assess_document_confidence method directly
                                     with patch.object(
                                         manager.confidence_manager,
@@ -657,21 +587,15 @@ class TestProductionReadinessAssessment:
                                             recommendations=[],
                                         ),
                                     ):
-                                        with patch.object(
-                                            manager, "_get_handler"
-                                        ) as mock_get_handler:
+                                        with patch.object(manager, "_get_handler") as mock_get_handler:
                                             mock_handler = MagicMock()
                                             mock_handler.extract_fields_primary.return_value = {
                                                 "test": "value"
                                             }
-                                            mock_handler.validate_fields.return_value = {
-                                                "test": "value"
-                                            }
+                                            mock_handler.validate_fields.return_value = {"test": "value"}
                                             mock_get_handler.return_value = mock_handler
 
-                                            result = manager.process_document(
-                                                mock_image_path
-                                            )
+                                            result = manager.process_document(mock_image_path)
 
             # Validate production readiness decision
             assert result.production_ready == expected_ready, (
@@ -692,18 +616,12 @@ class TestProductionReadinessAssessment:
         for threshold, test_confidence in threshold_tests:
             production_config.confidence_threshold = threshold
 
-            with patch(
-                "vision_processor.config.model_factory.ModelFactory.create_model"
-            ) as mock_factory:
-                with patch(
-                    "vision_processor.classification.DocumentClassifier"
-                ) as mock_classifier:
+            with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
+                with patch("vision_processor.classification.DocumentClassifier") as mock_classifier:
                     with patch(
                         "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                     ) as mock_awk:
-                        with patch(
-                            "vision_processor.confidence.ConfidenceManager"
-                        ) as mock_confidence:
+                        with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                             ) as mock_ato:
@@ -722,18 +640,13 @@ class TestProductionReadinessAssessment:
                                     ["evidence"],
                                 )
 
-                                mock_awk.return_value.extract.return_value = {
-                                    "field": "value"
-                                }
+                                mock_awk.return_value.extract.return_value = {"field": "value"}
 
                                 expected_ready = (
-                                    test_confidence >= threshold
-                                    and test_confidence >= 0.7
+                                    test_confidence >= threshold and test_confidence >= 0.7
                                 )  # Also needs good quality
                                 quality_grade = (
-                                    QualityGrade.GOOD
-                                    if test_confidence >= 0.8
-                                    else QualityGrade.FAIR
+                                    QualityGrade.GOOD if test_confidence >= 0.8 else QualityGrade.FAIR
                                 )
 
                                 mock_confidence.return_value.assess_document_confidence.return_value = Mock(
@@ -744,19 +657,15 @@ class TestProductionReadinessAssessment:
                                     recommendations=[],
                                 )
 
-                                mock_ato.return_value.assess_compliance.return_value = (
-                                    Mock(
-                                        compliance_score=0.85,
-                                        passed=True,
-                                        violations=[],
-                                        warnings=[],
-                                    )
+                                mock_ato.return_value.assess_compliance.return_value = Mock(
+                                    compliance_score=0.85,
+                                    passed=True,
+                                    violations=[],
+                                    warnings=[],
                                 )
 
                                 # Process document
-                                with UnifiedExtractionManager(
-                                    production_config
-                                ) as manager:
+                                with UnifiedExtractionManager(production_config) as manager:
                                     # Mock the confidence manager's assess_document_confidence method directly
                                     with patch.object(
                                         manager.confidence_manager,
@@ -769,21 +678,15 @@ class TestProductionReadinessAssessment:
                                             recommendations=[],
                                         ),
                                     ):
-                                        with patch.object(
-                                            manager, "_get_handler"
-                                        ) as mock_get_handler:
+                                        with patch.object(manager, "_get_handler") as mock_get_handler:
                                             mock_handler = MagicMock()
                                             mock_handler.extract_fields_primary.return_value = {
                                                 "test": "value"
                                             }
-                                            mock_handler.validate_fields.return_value = {
-                                                "test": "value"
-                                            }
+                                            mock_handler.validate_fields.return_value = {"test": "value"}
                                             mock_get_handler.return_value = mock_handler
 
-                                            result = manager.process_document(
-                                                mock_image_path
-                                            )
+                                            result = manager.process_document(mock_image_path)
 
                 # Validate threshold behavior
                 assert result.confidence_score == test_confidence
@@ -796,9 +699,7 @@ class TestProductionReadinessAssessment:
                 else:
                     assert result.production_ready is False
 
-    def test_batch_production_readiness_statistics(
-        self, production_config, benchmark_documents
-    ):
+    def test_batch_production_readiness_statistics(self, production_config, benchmark_documents):
         """Test production readiness statistics for batch processing."""
         batch_size = 5
         test_documents = benchmark_documents[:batch_size]
@@ -816,18 +717,12 @@ class TestProductionReadinessAssessment:
         results = []
 
         for i, doc_path in enumerate(test_documents):
-            with patch(
-                "vision_processor.config.model_factory.ModelFactory.create_model"
-            ) as mock_factory:
-                with patch(
-                    "vision_processor.classification.DocumentClassifier"
-                ) as mock_classifier:
+            with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
+                with patch("vision_processor.classification.DocumentClassifier") as mock_classifier:
                     with patch(
                         "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                     ) as mock_awk:
-                        with patch(
-                            "vision_processor.confidence.ConfidenceManager"
-                        ) as mock_confidence:
+                        with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                             ) as mock_ato:
@@ -853,9 +748,7 @@ class TestProductionReadinessAssessment:
                                     [f"evidence_{i}"],
                                 )
 
-                                mock_awk.return_value.extract.return_value = {
-                                    f"field_{i}": f"value_{i}"
-                                }
+                                mock_awk.return_value.extract.return_value = {f"field_{i}": f"value_{i}"}
 
                                 mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                     overall_confidence=confidence,
@@ -873,9 +766,7 @@ class TestProductionReadinessAssessment:
                                 )
 
                                 # Process document
-                                with UnifiedExtractionManager(
-                                    production_config
-                                ) as manager:
+                                with UnifiedExtractionManager(production_config) as manager:
                                     # Mock the confidence manager's assess_document_confidence method directly
                                     with patch.object(
                                         manager.confidence_manager,
@@ -888,9 +779,7 @@ class TestProductionReadinessAssessment:
                                             recommendations=[],
                                         ),
                                     ):
-                                        with patch.object(
-                                            manager, "_get_handler"
-                                        ) as mock_get_handler:
+                                        with patch.object(manager, "_get_handler") as mock_get_handler:
                                             mock_handler = MagicMock()
                                             mock_handler.extract_fields_primary.return_value = {
                                                 f"test_{i}": f"value_{i}"
@@ -910,14 +799,10 @@ class TestProductionReadinessAssessment:
 
         quality_distribution = {}
         for grade in QualityGrade:
-            quality_distribution[grade.value] = sum(
-                1 for r in results if r.quality_grade == grade
-            )
+            quality_distribution[grade.value] = sum(1 for r in results if r.quality_grade == grade)
 
         avg_confidence = sum(r.confidence_score for r in results) / total_documents
-        avg_ato_compliance = (
-            sum(r.ato_compliance_score for r in results) / total_documents
-        )
+        avg_ato_compliance = sum(r.ato_compliance_score for r in results) / total_documents
 
         # Validate batch statistics
         assert total_documents == batch_size
@@ -966,28 +851,16 @@ class TestProductionReadinessAssessment:
 
         # Calculate actual metrics
         total_docs = len(mock_batch_results)
-        production_ready_rate = (
-            sum(1 for r in mock_batch_results if r.production_ready) / total_docs
-        )
-        avg_confidence = (
-            sum(r.confidence_score for r in mock_batch_results) / total_docs
-        )
+        production_ready_rate = sum(1 for r in mock_batch_results if r.production_ready) / total_docs
+        avg_confidence = sum(r.confidence_score for r in mock_batch_results) / total_docs
         ato_compliance_rate = (
-            sum(1 for r in mock_batch_results if r.ato_compliance_score >= 0.9)
-            / total_docs
+            sum(1 for r in mock_batch_results if r.ato_compliance_score >= 0.9) / total_docs
         )
-        avg_processing_time = (
-            sum(r.processing_time for r in mock_batch_results) / total_docs
-        )
-        error_rate = (
-            sum(1 for r in mock_batch_results if len(r.errors) > 0) / total_docs
-        )
+        avg_processing_time = sum(r.processing_time for r in mock_batch_results) / total_docs
+        error_rate = sum(1 for r in mock_batch_results if len(r.errors) > 0) / total_docs
 
         # Validate deployment criteria
-        assert (
-            production_ready_rate
-            >= deployment_criteria["minimum_production_ready_rate"]
-        )
+        assert production_ready_rate >= deployment_criteria["minimum_production_ready_rate"]
         assert avg_confidence >= deployment_criteria["minimum_average_confidence"]
         assert ato_compliance_rate >= deployment_criteria["minimum_ato_compliance_rate"]
         assert avg_processing_time <= deployment_criteria["maximum_processing_time"]
@@ -996,16 +869,12 @@ class TestProductionReadinessAssessment:
         # Log deployment readiness
         deployment_ready = all(
             [
-                production_ready_rate
-                >= deployment_criteria["minimum_production_ready_rate"],
+                production_ready_rate >= deployment_criteria["minimum_production_ready_rate"],
                 avg_confidence >= deployment_criteria["minimum_average_confidence"],
-                ato_compliance_rate
-                >= deployment_criteria["minimum_ato_compliance_rate"],
+                ato_compliance_rate >= deployment_criteria["minimum_ato_compliance_rate"],
                 avg_processing_time <= deployment_criteria["maximum_processing_time"],
                 error_rate <= deployment_criteria["maximum_error_rate"],
             ]
         )
 
-        assert deployment_ready is True, (
-            "System meets all production deployment criteria"
-        )
+        assert deployment_ready is True, "System meets all production deployment criteria"

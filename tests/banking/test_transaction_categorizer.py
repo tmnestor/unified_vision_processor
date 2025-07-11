@@ -96,9 +96,7 @@ class TestAustralianTransactionCategorizer:
 
         work_expenses = categorizer.identify_work_expenses(transport_transactions)
 
-        parking_expenses = [
-            we for we in work_expenses if we.category in ["parking", "toll"]
-        ]
+        parking_expenses = [we for we in work_expenses if we.category in ["parking", "toll"]]
         assert len(parking_expenses) > 0
 
         for expense in parking_expenses:
@@ -114,9 +112,7 @@ class TestAustralianTransactionCategorizer:
 
         work_expenses = categorizer.identify_work_expenses(professional_transactions)
 
-        professional_expenses = [
-            we for we in work_expenses if we.category == "professional_services"
-        ]
+        professional_expenses = [we for we in work_expenses if we.category == "professional_services"]
         assert len(professional_expenses) > 0
 
         for expense in professional_expenses:
@@ -132,9 +128,7 @@ class TestAustralianTransactionCategorizer:
 
         work_expenses = categorizer.identify_work_expenses(office_transactions)
 
-        office_expenses = [
-            we for we in work_expenses if we.category == "office_supplies"
-        ]
+        office_expenses = [we for we in work_expenses if we.category == "office_supplies"]
         assert len(office_expenses) > 0
 
         for expense in office_expenses:
@@ -156,11 +150,7 @@ class TestAustralianTransactionCategorizer:
 
         # Check that business meals have higher confidence than personal meals
         business_meal = next(
-            (
-                we
-                for we in meal_expenses
-                if "business" in we.transaction.description.lower()
-            ),
+            (we for we in meal_expenses if "business" in we.transaction.description.lower()),
             None,
         )
         if business_meal:
@@ -187,9 +177,7 @@ class TestAustralianTransactionCategorizer:
             Transaction("17/06/2024", "Client Meeting Lunch", -45.50, "debit"),
         ]
 
-        work_expenses = categorizer.identify_work_expenses(
-            transactions_with_business_context
-        )
+        work_expenses = categorizer.identify_work_expenses(transactions_with_business_context)
 
         # Should identify these as work expenses due to business context
         assert len(work_expenses) > 0
@@ -209,38 +197,26 @@ class TestAustralianTransactionCategorizer:
         work_expenses = categorizer.identify_work_expenses(mixed_transactions)
 
         # Should only identify clear business expenses
-        fuel_expenses = [
-            we for we in work_expenses if "bp" in we.transaction.description.lower()
-        ]
+        fuel_expenses = [we for we in work_expenses if "bp" in we.transaction.description.lower()]
         assert len(fuel_expenses) > 0
 
         # Grocery shopping should not be identified as work expense
-        grocery_expenses = [
-            we
-            for we in work_expenses
-            if "grocery" in we.transaction.description.lower()
-        ]
+        grocery_expenses = [we for we in work_expenses if "grocery" in we.transaction.description.lower()]
         assert len(grocery_expenses) == 0
 
     def test_deduplication(self, categorizer):
         """Test transaction deduplication functionality."""
         duplicate_transactions = [
             Transaction("15/06/2024", "BP Fuel Station", -85.50, "debit"),
-            Transaction(
-                "15/06/2024", "BP Fuel Station", -85.50, "debit"
-            ),  # Exact duplicate
+            Transaction("15/06/2024", "BP Fuel Station", -85.50, "debit"),  # Exact duplicate
             Transaction("15/06/2024", "Wilson Parking", -12.00, "debit"),
         ]
 
         work_expenses = categorizer.identify_work_expenses(duplicate_transactions)
 
         # Should deduplicate similar transactions
-        bp_expenses = [
-            we for we in work_expenses if "bp" in we.transaction.description.lower()
-        ]
-        assert (
-            len(bp_expenses) <= 1
-        )  # Should only have one BP transaction after deduplication
+        bp_expenses = [we for we in work_expenses if "bp" in we.transaction.description.lower()]
+        assert len(bp_expenses) <= 1  # Should only have one BP transaction after deduplication
 
     def test_expense_summary_generation(self, categorizer, sample_transactions):
         """Test generation of expense summary statistics."""

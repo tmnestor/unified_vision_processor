@@ -133,11 +133,7 @@ class SROIEEvaluator:
             }
 
         # Process each document
-        field_mapping = (
-            self.enhanced_field_mapping
-            if use_enhanced_fields
-            else self.sroie_field_mapping
-        )
+        field_mapping = self.enhanced_field_mapping if use_enhanced_fields else self.sroie_field_mapping
 
         for i, image_file in enumerate(image_files, 1):
             logger.info(
@@ -301,9 +297,7 @@ class SROIEEvaluator:
                 "avg_processing_time": result.get("processing_statistics", {}).get(
                     "avg_processing_time", 0.0
                 ),
-                "total_documents": result.get("dataset_info", {}).get(
-                    "total_documents", 0
-                ),
+                "total_documents": result.get("dataset_info", {}).get("total_documents", 0),
                 "sroie_field_scores": result.get("sroie_metrics", {}),
             }
 
@@ -334,8 +328,7 @@ class SROIEEvaluator:
         # Calculate summary statistics
         if comparison_results:
             all_f1_scores = [
-                result["overall_metrics"]["average_f1"]
-                for result in comparison_results.values()
+                result["overall_metrics"]["average_f1"] for result in comparison_results.values()
             ]
             all_processing_times = [
                 result["processing_statistics"]["avg_processing_time"]

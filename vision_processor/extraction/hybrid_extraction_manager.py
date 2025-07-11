@@ -131,13 +131,9 @@ class UnifiedExtractionManager:
         self.prompt_manager = PromptManager(config)
 
         # InternVL integrations
-        self.highlight_detector = (
-            HighlightDetector(config) if config.highlight_detection else None
-        )
+        self.highlight_detector = HighlightDetector(config) if config.highlight_detection else None
         self.enhanced_parser = (
-            EnhancedKeyValueParser(config)
-            if config.extraction_method == ExtractionMethod.HYBRID
-            else None
+            EnhancedKeyValueParser(config) if config.extraction_method == ExtractionMethod.HYBRID else None
         )
 
         # Initialize all components
@@ -306,10 +302,7 @@ class UnifiedExtractionManager:
             extracted_fields = handler.extract_fields_primary(model_response.raw_text)
 
             # InternVL Integration: Enhanced Key-Value Parser
-            if (
-                self.config.extraction_method == ExtractionMethod.HYBRID
-                and self.enhanced_parser
-            ):
+            if self.config.extraction_method == ExtractionMethod.HYBRID and self.enhanced_parser:
                 enhanced_fields = self.enhanced_parser.parse(model_response.raw_text)
                 extracted_fields = self._merge_extractions(
                     extracted_fields,
@@ -370,10 +363,7 @@ class UnifiedExtractionManager:
             ato_compliance_score = compliance_result.compliance_score
 
             # Populate warnings and errors from compliance assessment
-            if (
-                hasattr(compliance_result, "violations")
-                and compliance_result.violations
-            ):
+            if hasattr(compliance_result, "violations") and compliance_result.violations:
                 errors.extend(compliance_result.violations)
             if hasattr(compliance_result, "warnings") and compliance_result.warnings:
                 warnings.extend(compliance_result.warnings)
@@ -574,15 +564,9 @@ class UnifiedExtractionManager:
         stats = self.processing_stats.copy()
 
         if stats["total_documents"] > 0:
-            stats["success_rate"] = (
-                stats["successful_extractions"] / stats["total_documents"]
-            )
-            stats["awk_fallback_rate"] = (
-                stats["awk_fallbacks"] / stats["total_documents"]
-            )
-            stats["production_ready_rate"] = (
-                stats["production_ready"] / stats["total_documents"]
-            )
+            stats["success_rate"] = stats["successful_extractions"] / stats["total_documents"]
+            stats["awk_fallback_rate"] = stats["awk_fallbacks"] / stats["total_documents"]
+            stats["production_ready_rate"] = stats["production_ready"] / stats["total_documents"]
         else:
             stats["success_rate"] = 0.0
             stats["awk_fallback_rate"] = 0.0
@@ -627,9 +611,7 @@ class UnifiedExtractionManager:
     def __repr__(self) -> str:
         # Handle both enum and string values defensively
         model_value = getattr(self.config.model_type, "value", self.config.model_type)
-        pipeline_value = getattr(
-            self.config.processing_pipeline, "value", self.config.processing_pipeline
-        )
+        pipeline_value = getattr(self.config.processing_pipeline, "value", self.config.processing_pipeline)
         return (
             f"UnifiedExtractionManager("
             f"model={model_value}, "

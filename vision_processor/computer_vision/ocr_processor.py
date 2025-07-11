@@ -307,9 +307,7 @@ class OCRProcessor:
             return self._run_easyocr(image)
         if engine == "both":
             # Try both engines and use the result with higher confidence
-            tesseract_result = (
-                self._run_tesseract_ocr(image) if self.tesseract else ("", 0.0)
-            )
+            tesseract_result = self._run_tesseract_ocr(image) if self.tesseract else ("", 0.0)
             easyocr_result = self._run_easyocr(image) if self.easyocr else ("", 0.0)
 
             if tesseract_result[1] >= easyocr_result[1]:
@@ -341,18 +339,14 @@ class OCRProcessor:
 
             for _i, (word, conf) in enumerate(zip(words, confidences, strict=False)):
                 if conf > 0 and word.strip():  # Valid confidence and non-empty word
-                    if (
-                        conf >= self.ocr_config["min_confidence"] * 100
-                    ):  # Tesseract uses 0-100 scale
+                    if conf >= self.ocr_config["min_confidence"] * 100:  # Tesseract uses 0-100 scale
                         filtered_words.append(word.strip())
                         total_confidence += conf
                         valid_words += 1
 
             if valid_words > 0:
                 text = " ".join(filtered_words)
-                avg_confidence = total_confidence / (
-                    valid_words * 100
-                )  # Normalize to 0-1
+                avg_confidence = total_confidence / (valid_words * 100)  # Normalize to 0-1
                 return text, avg_confidence
             return "", 0.0
 

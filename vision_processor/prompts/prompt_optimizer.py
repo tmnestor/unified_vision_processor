@@ -78,8 +78,7 @@ class PromptOptimizer:
 
         # Calculate composite performance score
         performance_score = (
-            confidence_score * self.confidence_weight
-            + extraction_accuracy * self.accuracy_weight
+            confidence_score * self.confidence_weight + extraction_accuracy * self.accuracy_weight
         )
 
         # Record performance
@@ -187,10 +186,7 @@ class PromptOptimizer:
         )
 
         # Performance gap analysis
-        performance_gap = (
-            best_strategy[1]["average_performance"]
-            - worst_strategy[1]["average_performance"]
-        )
+        performance_gap = best_strategy[1]["average_performance"] - worst_strategy[1]["average_performance"]
 
         if performance_gap > 0.2:
             recommendations.append(
@@ -258,10 +254,7 @@ class PromptOptimizer:
             comparison["strategy2"]["samples"] = len(strategy2_data)
 
         # Determine winner
-        if (
-            comparison["strategy1"]["performance"]
-            and comparison["strategy2"]["performance"]
-        ):
+        if comparison["strategy1"]["performance"] and comparison["strategy2"]["performance"]:
             perf1 = comparison["strategy1"]["performance"]
             perf2 = comparison["strategy2"]["performance"]
 
@@ -281,17 +274,11 @@ class PromptOptimizer:
         # Generate recommendation
         if comparison["winner"] and comparison["winner"] != "tie":
             if comparison["confidence"] > 0.6:
-                comparison["recommendation"] = (
-                    f"Strong preference for {comparison['winner']}"
-                )
+                comparison["recommendation"] = f"Strong preference for {comparison['winner']}"
             elif comparison["confidence"] > 0.3:
-                comparison["recommendation"] = (
-                    f"Moderate preference for {comparison['winner']}"
-                )
+                comparison["recommendation"] = f"Moderate preference for {comparison['winner']}"
             else:
-                comparison["recommendation"] = (
-                    f"Weak preference for {comparison['winner']}"
-                )
+                comparison["recommendation"] = f"Weak preference for {comparison['winner']}"
         else:
             comparison["recommendation"] = "No clear preference - continue A/B testing"
 

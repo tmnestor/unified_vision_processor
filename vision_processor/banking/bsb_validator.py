@@ -257,11 +257,7 @@ class AustralianBSBValidator:
 
     def get_bank_by_category(self, category: str) -> list[str]:
         """Get banks by category (big_four, regional, online, international)."""
-        return [
-            bank
-            for bank, config in self.bank_ranges.items()
-            if config["category"] == category
-        ]
+        return [bank for bank, config in self.bank_ranges.items() if config["category"] == category]
 
     def is_big_four_bsb(self, bsb: str) -> bool:
         """Check if BSB belongs to one of Australia's Big Four banks."""
@@ -303,8 +299,6 @@ class AustralianBSBValidator:
             # Sort by distance and suggest closest banks
             closest_banks.sort(key=lambda x: x[1])
             if closest_banks:
-                suggestions.append(
-                    f"Check if this BSB belongs to {closest_banks[0][0]}"
-                )
+                suggestions.append(f"Check if this BSB belongs to {closest_banks[0][0]}")
 
         return suggestions

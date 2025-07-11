@@ -63,16 +63,12 @@ class AustralianTransactionCategorizer:
         # Work expense patterns for business transaction identification
         self.work_expense_patterns = {
             "fuel": {
-                "patterns": [
-                    r"\b(?:bp|shell|caltex|ampol|mobil|7-eleven|fuel|petrol|diesel|unleaded)\b"
-                ],
+                "patterns": [r"\b(?:bp|shell|caltex|ampol|mobil|7-eleven|fuel|petrol|diesel|unleaded)\b"],
                 "ato_category": "Work-related car expenses",
                 "confidence_weight": 0.9,
             },
             "parking": {
-                "patterns": [
-                    r"\b(?:parking|secure parking|wilson|ace park|meter|space)\b"
-                ],
+                "patterns": [r"\b(?:parking|secure parking|wilson|ace park|meter|space)\b"],
                 "ato_category": "Work-related car expenses",
                 "confidence_weight": 0.8,
             },
@@ -82,30 +78,22 @@ class AustralianTransactionCategorizer:
                 "confidence_weight": 0.9,
             },
             "transport": {
-                "patterns": [
-                    r"\b(?:uber|taxi|cab|train|bus|metro|opal|myki|translink)\b"
-                ],
+                "patterns": [r"\b(?:uber|taxi|cab|train|bus|metro|opal|myki|translink)\b"],
                 "ato_category": "Work-related travel expenses",
                 "confidence_weight": 0.7,
             },
             "accommodation": {
-                "patterns": [
-                    r"\b(?:hotel|motel|accommodation|booking\.com|airbnb|hilton|marriott)\b"
-                ],
+                "patterns": [r"\b(?:hotel|motel|accommodation|booking\.com|airbnb|hilton|marriott)\b"],
                 "ato_category": "Work-related travel expenses",
                 "confidence_weight": 0.8,
             },
             "meals": {
-                "patterns": [
-                    r"\b(?:restaurant|cafe|lunch|dinner|coffee|meal|food|catering)\b"
-                ],
+                "patterns": [r"\b(?:restaurant|cafe|lunch|dinner|coffee|meal|food|catering)\b"],
                 "ato_category": "Meal entertainment expenses",
                 "confidence_weight": 0.6,  # Lower confidence as personal meals are common
             },
             "office_supplies": {
-                "patterns": [
-                    r"\b(?:officeworks|staples|office supplies|stationery|paper|ink|pens)\b"
-                ],
+                "patterns": [r"\b(?:officeworks|staples|office supplies|stationery|paper|ink|pens)\b"],
                 "ato_category": "Office expenses",
                 "confidence_weight": 0.8,
             },
@@ -117,16 +105,12 @@ class AustralianTransactionCategorizer:
                 "confidence_weight": 0.9,
             },
             "equipment": {
-                "patterns": [
-                    r"\b(?:computer|laptop|software|equipment|tools|machinery|printer|scanner)\b"
-                ],
+                "patterns": [r"\b(?:computer|laptop|software|equipment|tools|machinery|printer|scanner)\b"],
                 "ato_category": "Business equipment",
                 "confidence_weight": 0.8,
             },
             "communications": {
-                "patterns": [
-                    r"\b(?:telstra|optus|vodafone|phone|internet|mobile|telecommunications)\b"
-                ],
+                "patterns": [r"\b(?:telstra|optus|vodafone|phone|internet|mobile|telecommunications)\b"],
                 "ato_category": "Phone and internet expenses",
                 "confidence_weight": 0.7,
             },
@@ -138,9 +122,7 @@ class AustralianTransactionCategorizer:
                 "confidence_weight": 0.8,
             },
             "banking": {
-                "patterns": [
-                    r"\b(?:bank fee|transaction fee|merchant fee|account fee|banking)\b"
-                ],
+                "patterns": [r"\b(?:bank fee|transaction fee|merchant fee|account fee|banking)\b"],
                 "ato_category": "Bank charges",
                 "confidence_weight": 0.9,
             },
@@ -234,9 +216,7 @@ class AustralianTransactionCategorizer:
             },
         }
 
-        logger.info(
-            "AustralianTransactionCategorizer initialized with 12 expense categories"
-        )
+        logger.info("AustralianTransactionCategorizer initialized with 12 expense categories")
         self.initialized = True
 
     def extract_transactions(self, text: str) -> list[Transaction]:
@@ -254,7 +234,9 @@ class AustralianTransactionCategorizer:
 
         # Australian transaction line pattern (date, description, amount)
         # Supports DD/MM/YY and DD/MM/YYYY formats
-        transaction_pattern = r"^(\d{1,2}/\d{1,2}(?:/\d{2,4})?)\s+(.{5,50}?)\s+([\-\+]?\$?\d+(?:\.\d{2})?)\s*$"
+        transaction_pattern = (
+            r"^(\d{1,2}/\d{1,2}(?:/\d{2,4})?)\s+(.{5,50}?)\s+([\-\+]?\$?\d+(?:\.\d{2})?)\s*$"
+        )
 
         for line in lines:
             line = line.strip()
@@ -281,9 +263,7 @@ class AustralianTransactionCategorizer:
 
         return transactions
 
-    def identify_work_expenses(
-        self, transactions: list[Transaction]
-    ) -> list[WorkExpense]:
+    def identify_work_expenses(self, transactions: list[Transaction]) -> list[WorkExpense]:
         """Identify and categorize work-related expenses from transactions.
 
         Args:
@@ -306,9 +286,7 @@ class AustralianTransactionCategorizer:
                 continue
 
             work_expense = self._categorize_transaction(transaction)
-            if (
-                work_expense and work_expense.work_score >= 0.3
-            ):  # Minimum confidence threshold
+            if work_expense and work_expense.work_score >= 0.3:  # Minimum confidence threshold
                 work_expenses.append(work_expense)
 
         # Deduplicate similar transactions
@@ -375,9 +353,7 @@ class AustralianTransactionCategorizer:
 
         return None
 
-    def _deduplicate_expenses(
-        self, work_expenses: list[WorkExpense]
-    ) -> list[WorkExpense]:
+    def _deduplicate_expenses(self, work_expenses: list[WorkExpense]) -> list[WorkExpense]:
         """Remove duplicate or very similar work expenses."""
         if len(work_expenses) <= 1:
             return work_expenses
@@ -425,13 +401,9 @@ class AustralianTransactionCategorizer:
             if expense.ato_category not in ato_categories:
                 ato_categories[expense.ato_category] = {"count": 0, "amount": 0.0}
             ato_categories[expense.ato_category]["count"] += 1
-            ato_categories[expense.ato_category]["amount"] += abs(
-                expense.transaction.amount
-            )
+            ato_categories[expense.ato_category]["amount"] += abs(expense.transaction.amount)
 
-        average_confidence = sum(expense.confidence for expense in work_expenses) / len(
-            work_expenses
-        )
+        average_confidence = sum(expense.confidence for expense in work_expenses) / len(work_expenses)
 
         return {
             "total_expenses": len(work_expenses),

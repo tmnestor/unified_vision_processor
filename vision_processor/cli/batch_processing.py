@@ -166,16 +166,12 @@ def process(
         _display_batch_analysis(analysis, model_type.value)
 
         # Save results
-        results_file = (
-            output_directory / f"batch_results_{model}_{int(time.time())}.json"
-        )
+        results_file = output_directory / f"batch_results_{model}_{int(time.time())}.json"
         _save_batch_results(results, analysis, results_file)
 
         # Generate report if requested
         if generate_report:
-            report_file = (
-                output_directory / f"batch_report_{model}_{int(time.time())}.html"
-            )
+            report_file = output_directory / f"batch_report_{model}_{int(time.time())}.html"
             _generate_comprehensive_report(
                 results,
                 analysis,
@@ -463,9 +459,7 @@ def _process_parallel(
                     if monitor_quality:
                         total_processed = sum(quality_stats.values())
                         if total_processed > 0:
-                            excellent_rate = (
-                                quality_stats["excellent"] / total_processed * 100
-                            )
+                            excellent_rate = quality_stats["excellent"] / total_processed * 100
                             progress.update(
                                 task,
                                 advance=1,
@@ -590,12 +584,8 @@ def _analyze_batch_results(
             "average_confidence": sum(confidence_scores) / len(confidence_scores),
             "min_confidence": min(confidence_scores),
             "max_confidence": max(confidence_scores),
-            "above_threshold": sum(
-                1 for c in confidence_scores if c >= confidence_threshold
-            ),
-            "below_threshold": sum(
-                1 for c in confidence_scores if c < confidence_threshold
-            ),
+            "above_threshold": sum(1 for c in confidence_scores if c >= confidence_threshold),
+            "below_threshold": sum(1 for c in confidence_scores if c < confidence_threshold),
         }
 
         # Production readiness
@@ -603,11 +593,8 @@ def _analyze_batch_results(
         analysis["production_readiness"] = {
             "ready_count": production_ready_count,
             "ready_rate": production_rate,
-            "overall_ready": production_rate
-            >= 0.8,  # 80% threshold for batch readiness
-            "confidence_above_threshold": analysis["confidence_analysis"][
-                "above_threshold"
-            ],
+            "overall_ready": production_rate >= 0.8,  # 80% threshold for batch readiness
+            "confidence_above_threshold": analysis["confidence_analysis"]["above_threshold"],
         }
 
         # Performance metrics
@@ -662,11 +649,7 @@ def _display_batch_analysis(analysis: dict, model_name: str) -> None:
     summary_table.add_row(
         "Success Rate",
         f"{summary['success_rate']:.1%}",
-        "🟢"
-        if summary["success_rate"] >= 0.95
-        else "🟡"
-        if summary["success_rate"] >= 0.8
-        else "🔴",
+        "🟢" if summary["success_rate"] >= 0.95 else "🟡" if summary["success_rate"] >= 0.8 else "🔴",
     )
     summary_table.add_row("Total Time", f"{summary['total_processing_time']:.1f}s", "⏱️")
     summary_table.add_row(
@@ -813,11 +796,7 @@ def _run_production_monitoring(
                     "Success Rate",
                     f"{success_rate:.1%}",
                     "≥95%",
-                    "🟢"
-                    if success_rate >= 0.95
-                    else "🟡"
-                    if success_rate >= 0.8
-                    else "🔴",
+                    "🟢" if success_rate >= 0.95 else "🟡" if success_rate >= 0.8 else "🔴",
                 )
 
                 # Production ready rate
@@ -838,11 +817,7 @@ def _run_production_monitoring(
                     "Processing Speed",
                     f"{docs_per_sec:.2f} docs/s",
                     "≥0.5 docs/s",
-                    "🟢"
-                    if docs_per_sec >= 0.5
-                    else "🟡"
-                    if docs_per_sec >= 0.2
-                    else "🔴",
+                    "🟢" if docs_per_sec >= 0.5 else "🟡" if docs_per_sec >= 0.2 else "🔴",
                 )
 
                 # Confidence
@@ -854,18 +829,12 @@ def _run_production_monitoring(
                     "Avg Confidence",
                     f"{avg_confidence:.3f}",
                     "≥0.7",
-                    "🟢"
-                    if avg_confidence >= 0.7
-                    else "🟡"
-                    if avg_confidence >= 0.5
-                    else "🔴",
+                    "🟢" if avg_confidence >= 0.7 else "🟡" if avg_confidence >= 0.5 else "🔴",
                 )
 
                 # Update iteration
                 iteration += 1
-                monitoring_table.title = (
-                    f"🔍 Real-time Monitoring (Iteration {iteration})"
-                )
+                monitoring_table.title = f"🔍 Real-time Monitoring (Iteration {iteration})"
 
                 # Sleep until next refresh
                 time.sleep(refresh_interval)

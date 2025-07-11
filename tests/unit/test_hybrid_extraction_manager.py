@@ -25,24 +25,18 @@ class TestUnifiedExtractionManager:
     @pytest.fixture
     def mock_extraction_manager(self, test_config):
         """Create a mock extraction manager with all dependencies mocked."""
-        with patch(
-            "vision_processor.config.model_factory.ModelFactory.create_model"
-        ) as mock_factory:
+        with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
             # Setup mocks for all components
             mock_model = MagicMock()
             mock_model.model_type = "internvl3"
             mock_model.get_memory_usage.return_value = 1024.0
             mock_factory.return_value = mock_model
 
-            with patch(
-                "vision_processor.classification.DocumentClassifier"
-            ) as mock_classifier_class:
+            with patch("vision_processor.classification.DocumentClassifier") as mock_classifier_class:
                 with patch(
                     "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
                 ) as mock_awk_class:
-                    with patch(
-                        "vision_processor.confidence.ConfidenceManager"
-                    ) as mock_confidence_class:
+                    with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence_class:
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
                         ) as mock_ato_class:
@@ -95,9 +89,7 @@ class TestUnifiedExtractionManager:
                                         processing_time=1.5,
                                     )
 
-                                    mock_awk.extract.return_value = {
-                                        "awk_supplier": "AWK Store"
-                                    }
+                                    mock_awk.extract.return_value = {"awk_supplier": "AWK Store"}
 
                                     def mock_confidence_assessment(
                                         _raw_text,
@@ -113,39 +105,31 @@ class TestUnifiedExtractionManager:
 
                                         # Check for low classification confidence (< 0.6 threshold)
                                         if classification_confidence < 0.6:
-                                            quality_flags.append(
-                                                "low_classification_confidence"
-                                            )
+                                            quality_flags.append("low_classification_confidence")
                                             # Cap confidence at 0.5 for low classification confidence
                                             base_confidence = min(base_confidence, 0.5)
 
                                         return Mock(
                                             overall_confidence=base_confidence,
-                                            quality_grade="fair"
-                                            if base_confidence <= 0.5
-                                            else "good",
+                                            quality_grade="fair" if base_confidence <= 0.5 else "good",
                                             production_ready=base_confidence > 0.7,
                                             quality_flags=quality_flags,
-                                            recommendations=[
-                                                "Manual review recommended"
-                                            ]
+                                            recommendations=["Manual review recommended"]
                                             if base_confidence <= 0.5
                                             else [],
                                         )
 
-                                    mock_confidence.assess_document_confidence.side_effect = mock_confidence_assessment
+                                    mock_confidence.assess_document_confidence.side_effect = (
+                                        mock_confidence_assessment
+                                    )
 
                                     # Create a real-ish compliance result object
                                     compliance_result = Mock()
-                                    compliance_result.compliance_score = (
-                                        0.90  # Real float, not Mock
-                                    )
+                                    compliance_result.compliance_score = 0.90  # Real float, not Mock
                                     compliance_result.passed = True
                                     compliance_result.violations = []
                                     compliance_result.warnings = []
-                                    mock_ato.assess_compliance.return_value = (
-                                        compliance_result
-                                    )
+                                    mock_ato.assess_compliance.return_value = compliance_result
 
                                     mock_highlights.detect_highlights.return_value = []
                                     mock_prompt.get_prompt.return_value = (
@@ -169,9 +153,7 @@ class TestUnifiedExtractionManager:
         """Test extraction manager initialization."""
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
             with patch("vision_processor.classification.DocumentClassifier"):
-                with patch(
-                    "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
-                ):
+                with patch("vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"):
                     with patch("vision_processor.confidence.ConfidenceManager"):
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -189,9 +171,7 @@ class TestUnifiedExtractionManager:
                                 assert manager.ato_compliance is not None
                                 assert manager.prompt_manager is not None
 
-    def test_seven_step_pipeline_execution(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_seven_step_pipeline_execution(self, mock_extraction_manager, mock_image_path):
         """Test the complete 7-step Llama pipeline execution."""
         # Execute processing
         result = mock_extraction_manager.process_document(mock_image_path)
@@ -213,23 +193,19 @@ class TestUnifiedExtractionManager:
         assert ProcessingStage.ATO_COMPLIANCE in result.stages_completed
         assert ProcessingStage.CONFIDENCE_INTEGRATION in result.stages_completed
 
-    def test_step1_document_classification(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_step1_document_classification(self, mock_extraction_manager, mock_image_path):
         """Test Step 1: Document Classification."""
         # Test with auto-detection
         result = mock_extraction_manager.process_document(mock_image_path)
 
         # Verify classification was called using stored mock reference
-        mock_extraction_manager._test_mocks[
-            "classifier"
-        ].classify_with_evidence.assert_called_once_with(mock_image_path)
+        mock_extraction_manager._test_mocks["classifier"].classify_with_evidence.assert_called_once_with(
+            mock_image_path
+        )
         assert result.document_type == "business_receipt"
 
         # Test with predefined document type
-        result = mock_extraction_manager.process_document(
-            mock_image_path, document_type="fuel_receipt"
-        )
+        result = mock_extraction_manager.process_document(mock_image_path, document_type="fuel_receipt")
 
         assert result.document_type == "fuel_receipt"
 
@@ -241,9 +217,7 @@ class TestUnifiedExtractionManager:
         mock_extraction_manager.model.process_image.assert_called()
         assert result.raw_response == "Mock model response"
 
-    def test_step3_handler_selection_and_primary_extraction(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_step3_handler_selection_and_primary_extraction(self, mock_extraction_manager, mock_image_path):
         """Test Step 3: Handler Selection and Primary Extraction."""
         with patch(
             "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
@@ -267,9 +241,7 @@ class TestUnifiedExtractionManager:
             mock_handler.extract_fields_primary.assert_called_once()
             mock_handler.validate_fields.assert_called_once()
 
-    def test_step4_awk_fallback_activation(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_step4_awk_fallback_activation(self, mock_extraction_manager, mock_image_path):
         """Test Step 4: AWK Fallback when extraction quality is insufficient."""
         with patch.object(
             mock_extraction_manager,
@@ -280,9 +252,7 @@ class TestUnifiedExtractionManager:
                 "vision_processor.extraction.hybrid_extraction_manager.create_document_handler"
             ) as mock_create_handler:
                 mock_handler = MagicMock()
-                mock_handler.extract_fields_primary.return_value = {
-                    "supplier_name": "Test"
-                }  # Insufficient
+                mock_handler.extract_fields_primary.return_value = {"supplier_name": "Test"}  # Insufficient
                 mock_handler.validate_fields.return_value = {
                     "supplier_name": "Test",
                     "awk_supplier": "AWK Store",
@@ -343,9 +313,7 @@ class TestUnifiedExtractionManager:
             # Verify validation was called
             mock_handler.validate_fields.assert_called_once()
 
-    def test_step6_ato_compliance_assessment(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_step6_ato_compliance_assessment(self, mock_extraction_manager, mock_image_path):
         """Test Step 6: ATO Compliance Assessment."""
         result = mock_extraction_manager.process_document(mock_image_path)
 
@@ -353,9 +321,7 @@ class TestUnifiedExtractionManager:
         mock_extraction_manager.ato_compliance.assess_compliance.assert_called_once()
         assert result.ato_compliance_score == 0.90
 
-    def test_step7_confidence_integration(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_step7_confidence_integration(self, mock_extraction_manager, mock_image_path):
         """Test Step 7: Confidence Integration and Production Readiness."""
         result = mock_extraction_manager.process_document(mock_image_path)
 
@@ -367,18 +333,14 @@ class TestUnifiedExtractionManager:
         assert result.quality_grade == QualityGrade.GOOD
         assert result.production_ready is True
 
-    def test_internvl_highlight_detection_integration(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_internvl_highlight_detection_integration(self, mock_extraction_manager, mock_image_path):
         """Test InternVL highlight detection integration."""
         # Configure for InternVL with highlight detection
         mock_extraction_manager.config.highlight_detection = True
         mock_extraction_manager.config.model_type = ModelType.INTERNVL3
 
         # Setup highlight detection for bank statements
-        mock_extraction_manager._test_mocks[
-            "highlights"
-        ].detect_highlights.return_value = [
+        mock_extraction_manager._test_mocks["highlights"].detect_highlights.return_value = [
             {
                 "color": "yellow",
                 "bbox": [100, 100, 200, 120],
@@ -387,9 +349,7 @@ class TestUnifiedExtractionManager:
         ]
 
         # Mock classification to return bank statement
-        mock_extraction_manager._test_mocks[
-            "classifier"
-        ].classify_with_evidence.return_value = (
+        mock_extraction_manager._test_mocks["classifier"].classify_with_evidence.return_value = (
             DocumentType.BANK_STATEMENT,
             0.90,
             ["evidence"],
@@ -409,9 +369,7 @@ class TestUnifiedExtractionManager:
 
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
             with patch("vision_processor.classification.DocumentClassifier"):
-                with patch(
-                    "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
-                ):
+                with patch("vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"):
                     with patch("vision_processor.confidence.ConfidenceManager"):
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -440,9 +398,7 @@ class TestUnifiedExtractionManager:
                                         mock_handler.validate_fields.return_value = {
                                             "merged_field": "merged_value"
                                         }
-                                        mock_handler.ensure_initialized.return_value = (
-                                            None
-                                        )
+                                        mock_handler.ensure_initialized.return_value = None
                                         mock_create_handler.return_value = mock_handler
 
                                         manager.process_document(mock_image_path)
@@ -450,14 +406,10 @@ class TestUnifiedExtractionManager:
                                         # Verify enhanced parser was used
                                         mock_parser.return_value.parse.assert_called_once()
 
-    def test_graceful_degradation_on_classification_failure(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_graceful_degradation_on_classification_failure(self, mock_extraction_manager, mock_image_path):
         """Test graceful degradation when classification fails."""
         # Mock classification failure (low confidence)
-        mock_extraction_manager._test_mocks[
-            "classifier"
-        ].classify_with_evidence.return_value = (
+        mock_extraction_manager._test_mocks["classifier"].classify_with_evidence.return_value = (
             DocumentType.UNKNOWN,
             0.3,
             ["low_confidence"],
@@ -471,14 +423,10 @@ class TestUnifiedExtractionManager:
         # Confidence should reflect the uncertainty
         assert result.confidence_score <= 0.5
 
-    def test_graceful_degradation_on_model_failure(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_graceful_degradation_on_model_failure(self, mock_extraction_manager, mock_image_path):
         """Test graceful degradation when model inference fails."""
         # Mock model failure
-        mock_extraction_manager._test_mocks[
-            "model"
-        ].process_image.side_effect = Exception("Model failed")
+        mock_extraction_manager._test_mocks["model"].process_image.side_effect = Exception("Model failed")
 
         # Should handle the error gracefully and return a result with errors
         result = mock_extraction_manager.process_document(mock_image_path)
@@ -488,9 +436,7 @@ class TestUnifiedExtractionManager:
         assert len(result.errors) > 0
         assert any("Model failed" in str(error) for error in result.errors)
 
-    def test_processing_time_measurement(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_processing_time_measurement(self, mock_extraction_manager, mock_image_path):
         """Test processing time measurement accuracy."""
         result = mock_extraction_manager.process_document(mock_image_path)
 
@@ -506,9 +452,7 @@ class TestUnifiedExtractionManager:
         assert result.memory_usage_mb > 0
         assert isinstance(result.memory_usage_mb, float)
 
-    def test_error_collection_and_reporting(
-        self, mock_extraction_manager, mock_image_path
-    ):
+    def test_error_collection_and_reporting(self, mock_extraction_manager, mock_image_path):
         """Test error collection during processing."""
         # Mock a component that generates warnings
         mock_extraction_manager.ato_compliance.assess_compliance.return_value = Mock(
@@ -527,9 +471,7 @@ class TestUnifiedExtractionManager:
         """Test context manager support for resource cleanup."""
         with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
             with patch("vision_processor.classification.DocumentClassifier"):
-                with patch(
-                    "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
-                ):
+                with patch("vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"):
                     with patch("vision_processor.confidence.ConfidenceManager"):
                         with patch(
                             "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"
@@ -543,9 +485,7 @@ class TestUnifiedExtractionManager:
                                     assert hasattr(manager, "__enter__")
                                     assert hasattr(manager, "__exit__")
 
-    def test_batch_processing_capability(
-        self, mock_extraction_manager, sample_dataset_files
-    ):
+    def test_batch_processing_capability(self, mock_extraction_manager, sample_dataset_files):
         """Test batch processing capabilities."""
         dataset_dir, _ = sample_dataset_files
         image_files = list(dataset_dir.glob("*.jpg"))
@@ -574,13 +514,9 @@ class TestUnifiedExtractionManager:
             for key, value in config_update.items():
                 setattr(test_config, key, value)
 
-            with patch(
-                "vision_processor.config.model_factory.ModelFactory.create_model"
-            ):
+            with patch("vision_processor.config.model_factory.ModelFactory.create_model"):
                 with patch("vision_processor.classification.DocumentClassifier"):
-                    with patch(
-                        "vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"
-                    ):
+                    with patch("vision_processor.extraction.hybrid_extraction_manager.AWKExtractor"):
                         with patch("vision_processor.confidence.ConfidenceManager"):
                             with patch(
                                 "vision_processor.extraction.hybrid_extraction_manager.ATOComplianceHandler"

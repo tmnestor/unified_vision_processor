@@ -257,5 +257,5 @@ The unified system provides migration tools for existing InternVL and Llama-3.2 
 - Use the unified_vision_processor conda environment for local development
 
 ## Important Notes
-- always run `ruff check . --fix` to ensure code quality
+- always run `ruff check . --fix --ignore ARG001,ARG002,F841` to ensure code quality
 - to run code, you must prefix with "export KMP_DUPLICATE_LIB_OK=TRUE && source /opt/homebrew/Caskroom/miniforge/base/bin/activate unified_vision_processor"

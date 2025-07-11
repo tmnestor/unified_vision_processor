@@ -40,9 +40,7 @@ class TestPerformanceValidation:
             documents.append(doc_path)
         return documents
 
-    def test_single_document_processing_speed(
-        self, performance_config, mock_image_path
-    ):
+    def test_single_document_processing_speed(self, performance_config, mock_image_path):
         """Test single document processing speed benchmarks."""
         processing_times = {}
 
@@ -50,18 +48,12 @@ class TestPerformanceValidation:
         for model_type in [ModelType.INTERNVL3, ModelType.LLAMA32_VISION]:
             performance_config.model_type = model_type
 
-            with patch(
-                "vision_processor.config.model_factory.ModelFactory.create_model"
-            ) as mock_factory:
+            with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
                 with patch(
                     "vision_processor.classification.document_classifier.DocumentClassifier"
                 ) as mock_classifier:
-                    with patch(
-                        "vision_processor.extraction.awk_extractor.AWKExtractor"
-                    ) as mock_awk:
-                        with patch(
-                            "vision_processor.confidence.ConfidenceManager"
-                        ) as mock_confidence:
+                    with patch("vision_processor.extraction.awk_extractor.AWKExtractor") as mock_awk:
+                        with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.pipeline_components.ATOComplianceHandler"
                             ) as mock_ato:
@@ -72,9 +64,7 @@ class TestPerformanceValidation:
                                     confidence=0.85,
                                     processing_time=1.5,
                                 )
-                                mock_model.get_memory_usage.return_value = (
-                                    256.0  # Mock memory usage in MB
-                                )
+                                mock_model.get_memory_usage.return_value = 256.0  # Mock memory usage in MB
                                 mock_factory.return_value = mock_model
 
                                 # Setup other mocks
@@ -83,9 +73,7 @@ class TestPerformanceValidation:
                                     0.85,
                                     ["evidence"],
                                 )
-                                mock_awk.return_value.extract.return_value = {
-                                    "field": "value"
-                                }
+                                mock_awk.return_value.extract.return_value = {"field": "value"}
                                 mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                     overall_confidence=0.82,
                                     quality_grade=Mock(value="good"),
@@ -93,21 +81,17 @@ class TestPerformanceValidation:
                                     quality_flags=[],
                                     recommendations=[],
                                 )
-                                mock_ato.return_value.assess_compliance.return_value = (
-                                    Mock(
-                                        compliance_score=0.90,
-                                        passed=True,
-                                        violations=[],
-                                        warnings=[],
-                                    )
+                                mock_ato.return_value.assess_compliance.return_value = Mock(
+                                    compliance_score=0.90,
+                                    passed=True,
+                                    violations=[],
+                                    warnings=[],
                                 )
 
                                 # Measure processing time
                                 start_time = time.time()
 
-                                with UnifiedExtractionManager(
-                                    performance_config
-                                ) as manager:
+                                with UnifiedExtractionManager(performance_config) as manager:
                                     result = manager.process_document(mock_image_path)
 
                                 end_time = time.time()
@@ -124,9 +108,7 @@ class TestPerformanceValidation:
         llama_time = processing_times["llama32_vision"]["total_time"]
 
         # Both should complete within reasonable time (< 10 seconds for mocked processing)
-        assert internvl_time < 10.0, (
-            f"InternVL processing too slow: {internvl_time:.2f}s"
-        )
+        assert internvl_time < 10.0, f"InternVL processing too slow: {internvl_time:.2f}s"
         assert llama_time < 10.0, f"Llama processing too slow: {llama_time:.2f}s"
 
         # Performance difference should be reasonable (within test environment variations)
@@ -137,34 +119,24 @@ class TestPerformanceValidation:
 
         # Memory usage should be reasonable
         for model_name, metrics in processing_times.items():
-            assert metrics["memory_usage"] > 0, (
-                f"Memory usage not tracked for {model_name}"
-            )
+            assert metrics["memory_usage"] > 0, f"Memory usage not tracked for {model_name}"
             assert metrics["memory_usage"] < 10000, (
                 f"Memory usage too high for {model_name}: {metrics['memory_usage']:.1f}MB"
             )
 
-    def test_batch_processing_performance(
-        self, performance_config, benchmark_documents
-    ):
+    def test_batch_processing_performance(self, performance_config, benchmark_documents):
         """Test batch processing performance benchmarks."""
         batch_performance = {}
 
         for model_type in [ModelType.INTERNVL3, ModelType.LLAMA32_VISION]:
             performance_config.model_type = model_type
 
-            with patch(
-                "vision_processor.config.model_factory.ModelFactory.create_model"
-            ) as mock_factory:
+            with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
                 with patch(
                     "vision_processor.classification.document_classifier.DocumentClassifier"
                 ) as mock_classifier:
-                    with patch(
-                        "vision_processor.extraction.awk_extractor.AWKExtractor"
-                    ) as mock_awk:
-                        with patch(
-                            "vision_processor.confidence.ConfidenceManager"
-                        ) as mock_confidence:
+                    with patch("vision_processor.extraction.awk_extractor.AWKExtractor") as mock_awk:
+                        with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.pipeline_components.ATOComplianceHandler"
                             ) as mock_ato:
@@ -175,9 +147,7 @@ class TestPerformanceValidation:
                                     confidence=0.85,
                                     processing_time=1.5,
                                 )
-                                mock_model.get_memory_usage.return_value = (
-                                    256.0  # Mock memory usage in MB
-                                )
+                                mock_model.get_memory_usage.return_value = 256.0  # Mock memory usage in MB
                                 mock_factory.return_value = mock_model
 
                                 mock_classifier.return_value.classify_with_evidence.return_value = (
@@ -185,9 +155,7 @@ class TestPerformanceValidation:
                                     0.85,
                                     ["evidence"],
                                 )
-                                mock_awk.return_value.extract.return_value = {
-                                    "field": "value"
-                                }
+                                mock_awk.return_value.extract.return_value = {"field": "value"}
                                 mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                     overall_confidence=0.82,
                                     quality_grade=Mock(value="good"),
@@ -195,21 +163,17 @@ class TestPerformanceValidation:
                                     quality_flags=[],
                                     recommendations=[],
                                 )
-                                mock_ato.return_value.assess_compliance.return_value = (
-                                    Mock(
-                                        compliance_score=0.90,
-                                        passed=True,
-                                        violations=[],
-                                        warnings=[],
-                                    )
+                                mock_ato.return_value.assess_compliance.return_value = Mock(
+                                    compliance_score=0.90,
+                                    passed=True,
+                                    violations=[],
+                                    warnings=[],
                                 )
 
                                 # Measure batch processing time
                                 start_time = time.time()
 
-                                with UnifiedExtractionManager(
-                                    performance_config
-                                ) as manager:
+                                with UnifiedExtractionManager(performance_config) as manager:
                                     results = []
                                     for doc_path in benchmark_documents:
                                         result = manager.process_document(doc_path)
@@ -221,8 +185,7 @@ class TestPerformanceValidation:
                                 batch_performance[model_type.value] = {
                                     "total_documents": len(benchmark_documents),
                                     "total_time": total_time,
-                                    "avg_time_per_doc": total_time
-                                    / len(benchmark_documents),
+                                    "avg_time_per_doc": total_time / len(benchmark_documents),
                                     "throughput": len(benchmark_documents) / total_time,
                                     "results": results,
                                 }
@@ -245,9 +208,7 @@ class TestPerformanceValidation:
 
         # Batch processing should be more efficient than individual processing
         # (This is a rough estimate for mocked processing)
-        expected_individual_time = (
-            len(benchmark_documents) * 2.0
-        )  # 2 seconds per doc individually
+        expected_individual_time = len(benchmark_documents) * 2.0  # 2 seconds per doc individually
         assert internvl_perf["total_time"] < expected_individual_time
         assert llama_perf["total_time"] < expected_individual_time
 
@@ -258,18 +219,12 @@ class TestPerformanceValidation:
         for model_type in [ModelType.INTERNVL3, ModelType.LLAMA32_VISION]:
             performance_config.model_type = model_type
 
-            with patch(
-                "vision_processor.config.model_factory.ModelFactory.create_model"
-            ) as mock_factory:
+            with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
                 with patch(
                     "vision_processor.classification.document_classifier.DocumentClassifier"
                 ) as mock_classifier:
-                    with patch(
-                        "vision_processor.extraction.awk_extractor.AWKExtractor"
-                    ) as mock_awk:
-                        with patch(
-                            "vision_processor.confidence.ConfidenceManager"
-                        ) as mock_confidence:
+                    with patch("vision_processor.extraction.awk_extractor.AWKExtractor") as mock_awk:
+                        with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.pipeline_components.ATOComplianceHandler"
                             ) as mock_ato:
@@ -280,9 +235,7 @@ class TestPerformanceValidation:
                                     confidence=0.85,
                                     processing_time=1.5,
                                 )
-                                mock_model.get_memory_usage.return_value = (
-                                    256.0  # Mock memory usage in MB
-                                )
+                                mock_model.get_memory_usage.return_value = 256.0  # Mock memory usage in MB
                                 mock_factory.return_value = mock_model
 
                                 # Setup other mocks
@@ -291,9 +244,7 @@ class TestPerformanceValidation:
                                     0.85,
                                     ["evidence"],
                                 )
-                                mock_awk.return_value.extract.return_value = {
-                                    "field": "value"
-                                }
+                                mock_awk.return_value.extract.return_value = {"field": "value"}
                                 mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                     overall_confidence=0.82,
                                     quality_grade=Mock(value="good"),
@@ -301,26 +252,20 @@ class TestPerformanceValidation:
                                     quality_flags=[],
                                     recommendations=[],
                                 )
-                                mock_ato.return_value.assess_compliance.return_value = (
-                                    Mock(
-                                        compliance_score=0.90,
-                                        passed=True,
-                                        violations=[],
-                                        warnings=[],
-                                    )
+                                mock_ato.return_value.assess_compliance.return_value = Mock(
+                                    compliance_score=0.90,
+                                    passed=True,
+                                    violations=[],
+                                    warnings=[],
                                 )
 
                                 # Process multiple documents to test memory management
                                 peak_memory = 0
                                 baseline_memory = 500  # MB baseline
 
-                                with UnifiedExtractionManager(
-                                    performance_config
-                                ) as manager:
+                                with UnifiedExtractionManager(performance_config) as manager:
                                     for _i in range(5):
-                                        result = manager.process_document(
-                                            mock_image_path
-                                        )
+                                        result = manager.process_document(mock_image_path)
                                         current_memory = result.memory_usage_mb
                                         peak_memory = max(peak_memory, current_memory)
 
@@ -343,9 +288,7 @@ class TestPerformanceValidation:
             )
 
             # Memory efficiency should be reasonable
-            assert profile["memory_efficiency"] > 0.1, (
-                f"Memory efficiency too low for {model_name}"
-            )
+            assert profile["memory_efficiency"] > 0.1, f"Memory efficiency too low for {model_name}"
 
     def test_scalability_validation(self, performance_config, benchmark_documents):
         """Test scalability with increasing document loads."""
@@ -367,12 +310,8 @@ class TestPerformanceValidation:
                     with patch(
                         "vision_processor.classification.document_classifier.DocumentClassifier"
                     ) as mock_classifier:
-                        with patch(
-                            "vision_processor.extraction.awk_extractor.AWKExtractor"
-                        ) as mock_awk:
-                            with patch(
-                                "vision_processor.confidence.ConfidenceManager"
-                            ) as mock_confidence:
+                        with patch("vision_processor.extraction.awk_extractor.AWKExtractor") as mock_awk:
+                            with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                                 with patch(
                                     "vision_processor.extraction.pipeline_components.ATOComplianceHandler"
                                 ) as mock_ato:
@@ -390,15 +329,15 @@ class TestPerformanceValidation:
                                         0.85,
                                         ["evidence"],
                                     )
-                                    mock_awk.return_value.extract.return_value = {
-                                        "field": "value"
-                                    }
-                                    mock_confidence.return_value.assess_document_confidence.return_value = Mock(
-                                        overall_confidence=0.82,
-                                        quality_grade=Mock(value="good"),
-                                        production_ready=True,
-                                        quality_flags=[],
-                                        recommendations=[],
+                                    mock_awk.return_value.extract.return_value = {"field": "value"}
+                                    mock_confidence.return_value.assess_document_confidence.return_value = (
+                                        Mock(
+                                            overall_confidence=0.82,
+                                            quality_grade=Mock(value="good"),
+                                            production_ready=True,
+                                            quality_flags=[],
+                                            recommendations=[],
+                                        )
                                     )
                                     mock_ato.return_value.assess_compliance.return_value = Mock(
                                         compliance_score=0.90,
@@ -410,21 +349,16 @@ class TestPerformanceValidation:
                                     # Measure processing time for this batch size
                                     start_time = time.time()
 
-                                    with UnifiedExtractionManager(
-                                        performance_config
-                                    ) as manager:
+                                    with UnifiedExtractionManager(performance_config) as manager:
                                         for doc_path in test_documents:
                                             manager.process_document(doc_path)
 
                                     end_time = time.time()
                                     processing_time = end_time - start_time
 
-                                    scalability_results[model_type.value][
-                                        batch_size
-                                    ] = {
+                                    scalability_results[model_type.value][batch_size] = {
                                         "processing_time": processing_time,
-                                        "avg_time_per_doc": processing_time
-                                        / batch_size,
+                                        "avg_time_per_doc": processing_time / batch_size,
                                         "throughput": batch_size / processing_time,
                                     }
 
@@ -457,9 +391,7 @@ class TestPerformanceValidation:
             # Variation in average time per document should be reasonable
             if min_avg_time > 0:
                 variation_ratio = max_avg_time / min_avg_time
-                assert (
-                    variation_ratio < 5.0
-                ), (  # More lenient for test environment timing variations
+                assert variation_ratio < 5.0, (  # More lenient for test environment timing variations
                     f"High variation in per-document time for {model_name}: {variation_ratio:.2f}x"
                 )
 
@@ -470,18 +402,12 @@ class TestPerformanceValidation:
         for model_type in [ModelType.INTERNVL3, ModelType.LLAMA32_VISION]:
             performance_config.model_type = model_type
 
-            with patch(
-                "vision_processor.config.model_factory.ModelFactory.create_model"
-            ) as mock_factory:
+            with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
                 with patch(
                     "vision_processor.classification.document_classifier.DocumentClassifier"
                 ) as mock_classifier:
-                    with patch(
-                        "vision_processor.extraction.awk_extractor.AWKExtractor"
-                    ) as mock_awk:
-                        with patch(
-                            "vision_processor.confidence.ConfidenceManager"
-                        ) as mock_confidence:
+                    with patch("vision_processor.extraction.awk_extractor.AWKExtractor") as mock_awk:
+                        with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.pipeline_components.ATOComplianceHandler"
                             ) as mock_ato:
@@ -500,9 +426,7 @@ class TestPerformanceValidation:
                                         processing_time=1.5,
                                     )
 
-                                mock_model.process_image.side_effect = (
-                                    mock_process_image
-                                )
+                                mock_model.process_image.side_effect = mock_process_image
                                 mock_factory.return_value = mock_model
 
                                 # Setup other mocks
@@ -511,9 +435,7 @@ class TestPerformanceValidation:
                                     0.85,
                                     ["evidence"],
                                 )
-                                mock_awk.return_value.extract.return_value = {
-                                    "field": "value"
-                                }
+                                mock_awk.return_value.extract.return_value = {"field": "value"}
                                 mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                     overall_confidence=0.82,
                                     quality_grade=Mock(value="good"),
@@ -521,13 +443,11 @@ class TestPerformanceValidation:
                                     quality_flags=[],
                                     recommendations=[],
                                 )
-                                mock_ato.return_value.assess_compliance.return_value = (
-                                    Mock(
-                                        compliance_score=0.90,
-                                        passed=True,
-                                        violations=[],
-                                        warnings=[],
-                                    )
+                                mock_ato.return_value.assess_compliance.return_value = Mock(
+                                    compliance_score=0.90,
+                                    passed=True,
+                                    violations=[],
+                                    warnings=[],
                                 )
 
                                 # Test error recovery
@@ -535,9 +455,7 @@ class TestPerformanceValidation:
                                 failed_processes = 0
                                 total_time = 0
 
-                                with UnifiedExtractionManager(
-                                    performance_config
-                                ) as manager:
+                                with UnifiedExtractionManager(performance_config) as manager:
                                     for _i in range(5):
                                         try:
                                             start_time = time.time()
@@ -551,12 +469,10 @@ class TestPerformanceValidation:
                                 error_recovery_results[model_type.value] = {
                                     "successful_processes": successful_processes,
                                     "failed_processes": failed_processes,
-                                    "total_processes": successful_processes
-                                    + failed_processes,
+                                    "total_processes": successful_processes + failed_processes,
                                     "success_rate": successful_processes
                                     / (successful_processes + failed_processes),
-                                    "avg_time_per_success": total_time
-                                    / successful_processes
+                                    "avg_time_per_success": total_time / successful_processes
                                     if successful_processes > 0
                                     else 0,
                                 }
@@ -564,9 +480,7 @@ class TestPerformanceValidation:
         # Validate error recovery performance
         for model_name, results in error_recovery_results.items():
             # Should have some successful processes despite errors
-            assert results["successful_processes"] > 0, (
-                f"No successful processes for {model_name}"
-            )
+            assert results["successful_processes"] > 0, f"No successful processes for {model_name}"
 
             # Success rate should be reasonable (we expect 1 failure out of 5)
             assert results["success_rate"] >= 0.6, (
@@ -585,18 +499,12 @@ class TestPerformanceValidation:
         for model_type in [ModelType.INTERNVL3, ModelType.LLAMA32_VISION]:
             performance_config.model_type = model_type
 
-            with patch(
-                "vision_processor.config.model_factory.ModelFactory.create_model"
-            ) as mock_factory:
+            with patch("vision_processor.config.model_factory.ModelFactory.create_model") as mock_factory:
                 with patch(
                     "vision_processor.classification.document_classifier.DocumentClassifier"
                 ) as mock_classifier:
-                    with patch(
-                        "vision_processor.extraction.awk_extractor.AWKExtractor"
-                    ) as mock_awk:
-                        with patch(
-                            "vision_processor.confidence.ConfidenceManager"
-                        ) as mock_confidence:
+                    with patch("vision_processor.extraction.awk_extractor.AWKExtractor") as mock_awk:
+                        with patch("vision_processor.confidence.ConfidenceManager") as mock_confidence:
                             with patch(
                                 "vision_processor.extraction.pipeline_components.ATOComplianceHandler"
                             ) as mock_ato:
@@ -607,9 +515,7 @@ class TestPerformanceValidation:
                                     confidence=0.85,
                                     processing_time=1.5,
                                 )
-                                mock_model.get_memory_usage.return_value = (
-                                    256.0  # Mock memory usage in MB
-                                )
+                                mock_model.get_memory_usage.return_value = 256.0  # Mock memory usage in MB
                                 mock_factory.return_value = mock_model
 
                                 mock_classifier.return_value.classify_with_evidence.return_value = (
@@ -617,9 +523,7 @@ class TestPerformanceValidation:
                                     0.85,
                                     ["evidence"],
                                 )
-                                mock_awk.return_value.extract.return_value = {
-                                    "field": "value"
-                                }
+                                mock_awk.return_value.extract.return_value = {"field": "value"}
                                 mock_confidence.return_value.assess_document_confidence.return_value = Mock(
                                     overall_confidence=0.82,
                                     quality_grade=Mock(value="good"),
@@ -627,13 +531,11 @@ class TestPerformanceValidation:
                                     quality_flags=[],
                                     recommendations=[],
                                 )
-                                mock_ato.return_value.assess_compliance.return_value = (
-                                    Mock(
-                                        compliance_score=0.90,
-                                        passed=True,
-                                        violations=[],
-                                        warnings=[],
-                                    )
+                                mock_ato.return_value.assess_compliance.return_value = Mock(
+                                    compliance_score=0.90,
+                                    passed=True,
+                                    violations=[],
+                                    warnings=[],
                                 )
 
                                 # Test multiple manager lifecycles
@@ -644,9 +546,7 @@ class TestPerformanceValidation:
                                 for _i in range(3):
                                     # Measure creation time
                                     start_time = time.time()
-                                    manager = UnifiedExtractionManager(
-                                        performance_config
-                                    )
+                                    manager = UnifiedExtractionManager(performance_config)
                                     creation_time = time.time() - start_time
                                     creation_times.append(creation_time)
 
@@ -663,12 +563,9 @@ class TestPerformanceValidation:
                                     cleanup_times.append(cleanup_time)
 
                                 cleanup_performance[model_type.value] = {
-                                    "avg_creation_time": sum(creation_times)
-                                    / len(creation_times),
-                                    "avg_processing_time": sum(processing_times)
-                                    / len(processing_times),
-                                    "avg_cleanup_time": sum(cleanup_times)
-                                    / len(cleanup_times),
+                                    "avg_creation_time": sum(creation_times) / len(creation_times),
+                                    "avg_processing_time": sum(processing_times) / len(processing_times),
+                                    "avg_cleanup_time": sum(cleanup_times) / len(cleanup_times),
                                     "total_lifecycle_time": sum(creation_times)
                                     + sum(processing_times)
                                     + sum(cleanup_times),

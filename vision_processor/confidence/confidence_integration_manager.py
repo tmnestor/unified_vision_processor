@@ -177,16 +177,12 @@ class ConfidenceManager(BasePipelineComponent):
             # When classification confidence is critically low, cap overall confidence
             # to ensure graceful degradation
             max_confidence_with_low_classification = 0.5
-            overall_confidence = min(
-                overall_confidence, max_confidence_with_low_classification
-            )
+            overall_confidence = min(overall_confidence, max_confidence_with_low_classification)
 
         # Additional graceful degradation for other critical issues
         if "ato_compliance_failed" in quality_flags:
             max_confidence_with_compliance_failure = 0.4
-            overall_confidence = min(
-                overall_confidence, max_confidence_with_compliance_failure
-            )
+            overall_confidence = min(overall_confidence, max_confidence_with_compliance_failure)
 
         # Determine quality grade
         quality_grade = self._determine_quality_grade(overall_confidence)
@@ -195,8 +191,7 @@ class ConfidenceManager(BasePipelineComponent):
         # Handle mock objects safely in comparison
         try:
             production_ready = (
-                overall_confidence
-                >= self.quality_thresholds["minimum_production_confidence"]
+                overall_confidence >= self.quality_thresholds["minimum_production_confidence"]
             )
         except TypeError:
             # Handle MagicMock comparison errors
@@ -362,10 +357,7 @@ class ConfidenceManager(BasePipelineComponent):
             flags.append("insufficient_fields")
 
         # ATO compliance flags
-        if (
-            component_scores["ato_compliance"]
-            < self.quality_thresholds["minimum_ato_compliance"]
-        ):
+        if component_scores["ato_compliance"] < self.quality_thresholds["minimum_ato_compliance"]:
             flags.append("low_ato_compliance")
 
         if not compliance_result.passed:
@@ -381,10 +373,7 @@ class ConfidenceManager(BasePipelineComponent):
             for component in self.component_weights
         )
 
-        if (
-            overall_confidence
-            < self.quality_thresholds["minimum_production_confidence"]
-        ):
+        if overall_confidence < self.quality_thresholds["minimum_production_confidence"]:
             flags.append("below_production_threshold")
 
         return flags

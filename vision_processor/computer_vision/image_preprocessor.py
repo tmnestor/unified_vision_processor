@@ -176,9 +176,7 @@ class ImagePreprocessor:
             pil_image = Image.open(image_path)
 
             # Get file info
-            file_size = (
-                Path(image_path).stat().st_size if Path(image_path).exists() else None
-            )
+            file_size = Path(image_path).stat().st_size if Path(image_path).exists() else None
             format_info = pil_image.format
             dpi = pil_image.info.get("dpi")
 
@@ -353,12 +351,7 @@ class ImagePreprocessor:
         min_dim = self.preprocessing_config["min_dimension"]
 
         # Check if resizing is needed
-        if (
-            width <= max_dim
-            and height <= max_dim
-            and width >= min_dim
-            and height >= min_dim
-        ):
+        if width <= max_dim and height <= max_dim and width >= min_dim and height >= min_dim:
             if target_width is None or abs(width - target_width) < 100:
                 return image, None
 
@@ -395,11 +388,7 @@ class ImagePreprocessor:
         """Deskew image to correct rotation."""
         try:
             # Convert to grayscale
-            gray = (
-                cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                if len(image.shape) == 3
-                else image
-            )
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
 
             # Find skew angle using Hough line transform
             edges = cv2.Canny(gray, 50, 150, apertureSize=3)
@@ -462,11 +451,7 @@ class ImagePreprocessor:
         """Remove borders/margins from image."""
         try:
             # Convert to grayscale for border detection
-            gray = (
-                cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                if len(image.shape) == 3
-                else image
-            )
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
 
             # Find contours
             _, binary = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY)
@@ -573,11 +558,7 @@ class ImagePreprocessor:
             }
 
             # Convert to grayscale for analysis
-            gray = (
-                cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                if len(image.shape) == 3
-                else image
-            )
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
 
             # 1. Sharpness (Laplacian variance)
             laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
@@ -628,11 +609,7 @@ class ImagePreprocessor:
             quality_score = self._calculate_quality_score(image)
 
             # Convert to grayscale for detailed analysis
-            gray = (
-                cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-                if len(image.shape) == 3
-                else image
-            )
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
 
             # Detailed metrics
             metrics = {
@@ -656,9 +633,7 @@ class ImagePreprocessor:
                 recommendations.append("Image appears blurry - consider resharpening")
 
             brightness_range = self.quality_params["brightness_range"]
-            if not (
-                brightness_range[0] <= metrics["brightness"] <= brightness_range[1]
-            ):
+            if not (brightness_range[0] <= metrics["brightness"] <= brightness_range[1]):
                 if metrics["brightness"] < brightness_range[0]:
                     recommendations.append(
                         "Image is too dark - consider brightness enhancement",

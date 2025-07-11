@@ -307,15 +307,11 @@ class TestUnifiedConfig:
         config = UnifiedConfig()
 
         # Test invalid confidence threshold
-        with pytest.raises(
-            ValueError, match="Confidence threshold must be between 0.0 and 1.0"
-        ):
+        with pytest.raises(ValueError, match="Confidence threshold must be between 0.0 and 1.0"):
             config.confidence_threshold = 2.0
 
         # Test invalid quality threshold
-        with pytest.raises(
-            ValueError, match="Quality threshold must be between 0.0 and 1.0"
-        ):
+        with pytest.raises(ValueError, match="Quality threshold must be between 0.0 and 1.0"):
             config.quality_threshold = -0.5
 
         # Test invalid batch size

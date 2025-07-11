@@ -186,9 +186,7 @@ class BusinessReceiptHandler(BaseATOHandler):
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
                 payment_type = match.group(1).lower()
-                if payment_type in [
-                    pm.lower() for pm in self.validation_rules["payment_methods"]
-                ]:
+                if payment_type in [pm.lower() for pm in self.validation_rules["payment_methods"]]:
                     return payment_type
 
         return ""
@@ -289,19 +287,14 @@ class BusinessReceiptHandler(BaseATOHandler):
         # Validate payment method
         if fields.get("payment_method"):
             payment_method = fields["payment_method"].lower()
-            valid_methods = [
-                pm.lower() for pm in self.validation_rules["payment_methods"]
-            ]
+            valid_methods = [pm.lower() for pm in self.validation_rules["payment_methods"]]
             if payment_method not in valid_methods:
                 issues.append(
                     f"Unrecognized payment method: {fields['payment_method']}",
                 )
 
         # Validate GST calculation consistency
-        if all(
-            field in fields and fields[field]
-            for field in ["subtotal", "gst_amount", "total_amount"]
-        ):
+        if all(field in fields and fields[field] for field in ["subtotal", "gst_amount", "total_amount"]):
             try:
                 subtotal = float(fields["subtotal"])
                 gst_amount = float(fields["gst_amount"])
@@ -347,12 +340,8 @@ class BusinessReceiptHandler(BaseATOHandler):
         # Validate business name recognition
         if fields.get("business_name"):
             business_name = fields["business_name"].lower()
-            known_businesses = [
-                name.lower() for name in self.retail_chain_patterns.keys()
-            ]
-            if not any(
-                known_business in business_name for known_business in known_businesses
-            ):
+            known_businesses = [name.lower() for name in self.retail_chain_patterns.keys()]
+            if not any(known_business in business_name for known_business in known_businesses):
                 # Not necessarily an error, but worth noting
                 logger.info(
                     f"Business name '{fields['business_name']}' not in known Australian retailers",
@@ -402,21 +391,15 @@ class BusinessReceiptHandler(BaseATOHandler):
 
                 # Merge with enhanced preference for highlighted data
                 for field, value in highlight_fields.items():
-                    if value and (
-                        field not in enhanced_fields or not enhanced_fields[field]
-                    ):
+                    if value and (field not in enhanced_fields or not enhanced_fields[field]):
                         enhanced_fields[field] = value
-                        enhanced_fields[f"{field}_highlight_confidence"] = (
-                            highlight_confidence
-                        )
+                        enhanced_fields[f"{field}_highlight_confidence"] = highlight_confidence
                         logger.info(f"Enhanced field {field} from highlight: {value}")
                     elif field in priority_fields and value:
                         # Override existing value if this is a priority field from highlights
                         if highlight_confidence > 0.7:
                             enhanced_fields[field] = value
-                            enhanced_fields[f"{field}_highlight_confidence"] = (
-                                highlight_confidence
-                            )
+                            enhanced_fields[f"{field}_highlight_confidence"] = highlight_confidence
                             logger.info(
                                 f"Override field {field} from high-confidence highlight: {value}",
                             )
@@ -470,10 +453,7 @@ class BusinessReceiptHandler(BaseATOHandler):
                         # For generic amounts, try to determine context
                         if "total" in highlight_text.lower():
                             fields["total_amount"] = amount
-                        elif (
-                            "gst" in highlight_text.lower()
-                            or "tax" in highlight_text.lower()
-                        ):
+                        elif "gst" in highlight_text.lower() or "tax" in highlight_text.lower():
                             fields["gst_amount"] = amount
                         elif "sub" in highlight_text.lower():
                             fields["subtotal"] = amount
@@ -578,10 +558,7 @@ class BusinessReceiptHandler(BaseATOHandler):
 
         # If we have subtotal and GST, calculate total
         elif (
-            "subtotal" in fields
-            and fields["subtotal"]
-            and "gst_amount" in fields
-            and fields["gst_amount"]
+            "subtotal" in fields and fields["subtotal"] and "gst_amount" in fields and fields["gst_amount"]
         ):
             try:
                 subtotal = float(fields["subtotal"])
@@ -729,8 +706,8 @@ class BusinessReceiptHandler(BaseATOHandler):
 
             categorized_item = item.copy()
             categorized_item["business_category"] = item_category
-            categorized_item["business_expense_likelihood"] = (
-                self._calculate_business_likelihood(description, item_category)
+            categorized_item["business_expense_likelihood"] = self._calculate_business_likelihood(
+                description, item_category
             )
             categorized_items.append(categorized_item)
 

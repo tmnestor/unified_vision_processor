@@ -535,8 +535,7 @@ class DocumentClassifier(BasePipelineComponent):
         for category, businesses in self.australian_businesses.items():
             for business in businesses:
                 if business in text and not any(
-                    b["business"].lower() == business.lower()
-                    for b in evidence["business_matches"]
+                    b["business"].lower() == business.lower() for b in evidence["business_matches"]
                 ):
                     business_score += 0.3
                     evidence["business_matches"].append(

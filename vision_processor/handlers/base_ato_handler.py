@@ -200,9 +200,7 @@ class BaseATOHandler(ABC):
         for key, value in enhanced.items():
             if key not in merged or not merged[key]:
                 merged[key] = value
-            elif (
-                value and isinstance(value, str) and len(value) > len(str(merged[key]))
-            ):
+            elif value and isinstance(value, str) and len(value) > len(str(merged[key])):
                 # Prefer longer, more detailed extractions
                 merged[key] = value
 
@@ -263,10 +261,7 @@ class BaseATOHandler(ABC):
                 issues.append("Invalid ABN format (must be 11 digits)")
 
         # Validate GST calculation if present
-        if all(
-            field in fields and fields[field]
-            for field in ["total_amount", "gst_amount"]
-        ):
+        if all(field in fields and fields[field] for field in ["total_amount", "gst_amount"]):
             try:
                 total = float(fields["total_amount"])
                 gst = float(fields["gst_amount"])
@@ -300,9 +295,7 @@ class BaseATOHandler(ABC):
             field_completeness = 1.0
         else:
             extracted_count = sum(
-                1
-                for field in self.required_fields + self.optional_fields
-                if fields.get(field)
+                1 for field in self.required_fields + self.optional_fields if fields.get(field)
             )
             field_completeness = extracted_count / total_fields
 

@@ -95,9 +95,7 @@ class TestBankStatementComputerVision:
 
     def test_highlight_conversion(self, highlight_processor, sample_highlights):
         """Test conversion of generic highlights to banking highlights."""
-        banking_highlights = highlight_processor._convert_to_banking_highlights(
-            sample_highlights
-        )
+        banking_highlights = highlight_processor._convert_to_banking_highlights(sample_highlights)
 
         assert len(banking_highlights) == len(sample_highlights)
 
@@ -112,19 +110,14 @@ class TestBankStatementComputerVision:
 
     def test_content_type_classification(self, highlight_processor, sample_highlights):
         """Test classification of highlight content types."""
-        banking_highlights = highlight_processor._convert_to_banking_highlights(
-            sample_highlights
-        )
+        banking_highlights = highlight_processor._convert_to_banking_highlights(sample_highlights)
 
         for highlight in banking_highlights:
             content_type = highlight_processor._classify_highlight_content(highlight)
             assert content_type in ["transaction", "account_info", "header", "unknown"]
 
             # Check specific classifications
-            if (
-                "fuel" in highlight.extracted_text.lower()
-                or "parking" in highlight.extracted_text.lower()
-            ):
+            if "fuel" in highlight.extracted_text.lower() or "parking" in highlight.extracted_text.lower():
                 assert content_type == "transaction"
             elif "account" in highlight.extracted_text.lower():
                 assert content_type == "account_info"
@@ -163,14 +156,10 @@ class TestBankStatementComputerVision:
         ]
 
         for text, expected_min_score in test_cases:
-            score, category, indicators = (
-                highlight_processor._calculate_work_expense_score(text)
-            )
+            score, category, indicators = highlight_processor._calculate_work_expense_score(text)
 
             assert 0.0 <= score <= 1.0
-            assert (
-                score >= expected_min_score or score < expected_min_score
-            )  # Allow some variance
+            assert score >= expected_min_score or score < expected_min_score  # Allow some variance
 
             if score > 0.5:
                 assert len(indicators) > 0  # Should have business indicators
@@ -207,9 +196,7 @@ class TestBankStatementComputerVision:
         assert low_bonus < bonus  # Should be lower bonus
 
     @patch("vision_processor.computer_vision.ocr_processor.OCRProcessor")
-    def test_text_extraction_from_highlight(
-        self, mock_ocr_class, highlight_processor, mock_image_path
-    ):
+    def test_text_extraction_from_highlight(self, mock_ocr_class, highlight_processor, mock_image_path):
         """Test OCR text extraction from highlight regions."""
         # Mock OCR processor
         mock_ocr = Mock()
@@ -226,9 +213,7 @@ class TestBankStatementComputerVision:
             content_type="transaction",
         )
 
-        extracted_text = highlight_processor._extract_highlight_text(
-            mock_image_path, highlight
-        )
+        extracted_text = highlight_processor._extract_highlight_text(mock_image_path, highlight)
 
         assert extracted_text == "BP Fuel Station -85.50"
         mock_ocr.initialize.assert_called_once()
@@ -242,13 +227,9 @@ class TestBankStatementComputerVision:
         sample_statement_text,
     ):
         """Test identification of work expense highlights."""
-        with patch.object(
-            highlight_processor, "_extract_highlight_text", return_value=""
-        ):
-            highlighted_transactions = (
-                highlight_processor.process_bank_statement_highlights(
-                    mock_image_path, sample_highlights, sample_statement_text
-                )
+        with patch.object(highlight_processor, "_extract_highlight_text", return_value=""):
+            highlighted_transactions = highlight_processor.process_bank_statement_highlights(
+                mock_image_path, sample_highlights, sample_statement_text
             )
 
             work_expenses = highlight_processor.identify_work_expense_highlights(
@@ -273,9 +254,7 @@ class TestBankStatementComputerVision:
         # Sample highlighted transactions
         highlighted_transactions = [
             HighlightedTransaction(
-                highlight=BankingHighlight(
-                    100, 200, 200, 20, "yellow", 0.9, "transaction"
-                ),
+                highlight=BankingHighlight(100, 200, 200, 20, "yellow", 0.9, "transaction"),
                 transaction_data={"description": "BP Fuel Station", "amount": -85.50},
                 work_expense_score=0.8,
                 category="fuel",
@@ -327,9 +306,7 @@ class TestBankStatementComputerVision:
 
         highlighted_transactions = [matching_highlight, non_matching_highlight]
 
-        match = highlight_processor._find_matching_highlight(
-            transaction, highlighted_transactions
-        )
+        match = highlight_processor._find_matching_highlight(transaction, highlighted_transactions)
 
         assert match is not None
         assert match.category == "fuel"  # Should match the fuel transaction
@@ -338,18 +315,14 @@ class TestBankStatementComputerVision:
         """Test generation of highlight summary statistics."""
         highlighted_transactions = [
             HighlightedTransaction(
-                highlight=BankingHighlight(
-                    100, 200, 200, 20, "yellow", 0.9, "transaction"
-                ),
+                highlight=BankingHighlight(100, 200, 200, 20, "yellow", 0.9, "transaction"),
                 transaction_data={"description": "BP Fuel", "amount": -85.50},
                 work_expense_score=0.8,
                 category="fuel",
                 business_indicators=["fuel"],
             ),
             HighlightedTransaction(
-                highlight=BankingHighlight(
-                    100, 220, 200, 20, "green", 0.8, "transaction"
-                ),
+                highlight=BankingHighlight(100, 220, 200, 20, "green", 0.8, "transaction"),
                 transaction_data={"description": "Wilson Parking", "amount": -12.00},
                 work_expense_score=0.7,
                 category="parking",
@@ -366,9 +339,7 @@ class TestBankStatementComputerVision:
         assert "average_work_score" in summary
 
         assert summary["total_highlights"] == 2
-        assert (
-            summary["work_expenses"] >= 1
-        )  # At least one should qualify as work expense
+        assert summary["work_expenses"] >= 1  # At least one should qualify as work expense
         assert "fuel" in summary["categories"]
         assert "parking" in summary["categories"]
         assert "yellow" in summary["colors"]
@@ -422,15 +393,11 @@ class TestBankStatementComputerVision:
         assert "fuel" in highlight_processor.business_keywords
 
         # Should be able to score work expenses
-        score, category, indicators = highlight_processor._calculate_work_expense_score(
-            transaction_text
-        )
+        score, category, indicators = highlight_processor._calculate_work_expense_score(transaction_text)
         assert score > 0
         assert len(indicators) > 0
 
-    def test_performance_with_large_highlight_lists(
-        self, highlight_processor, mock_image_path
-    ):
+    def test_performance_with_large_highlight_lists(self, highlight_processor, mock_image_path):
         """Test performance with large numbers of highlights."""
         import time
 
@@ -450,9 +417,7 @@ class TestBankStatementComputerVision:
             )
 
         start_time = time.time()
-        with patch.object(
-            highlight_processor, "_extract_highlight_text", return_value=""
-        ):
+        with patch.object(highlight_processor, "_extract_highlight_text", return_value=""):
             result = highlight_processor.process_bank_statement_highlights(
                 mock_image_path, large_highlight_list, "sample text"
             )

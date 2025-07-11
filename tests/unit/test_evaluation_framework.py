@@ -213,9 +213,7 @@ class TestModelComparator:
             ),
         }
 
-        efficiency_report = model_comparator.benchmark_processing_efficiency(
-            mock_results
-        )
+        efficiency_report = model_comparator.benchmark_processing_efficiency(mock_results)
 
         assert "model_efficiency" in efficiency_report
         assert "comparative_analysis" in efficiency_report
@@ -277,9 +275,7 @@ class TestMetricsCalculator:
         self, metrics_calculator, sample_extracted_fields, sample_ground_truth
     ):
         """Test exact match score calculation."""
-        exact_match = metrics_calculator.calculate_exact_match(
-            sample_extracted_fields, sample_ground_truth
-        )
+        exact_match = metrics_calculator.calculate_exact_match(sample_extracted_fields, sample_ground_truth)
 
         assert isinstance(exact_match, float)
         assert 0.0 <= exact_match <= 1.0
@@ -297,15 +293,11 @@ class TestMetricsCalculator:
 
         # For this test data, exact match uses field-specific normalization
         # so it may be higher than fuzzy match which uses raw string similarity
-        exact_match = metrics_calculator.calculate_exact_match(
-            sample_extracted_fields, sample_ground_truth
-        )
+        exact_match = metrics_calculator.calculate_exact_match(sample_extracted_fields, sample_ground_truth)
         # Both should be valid scores between 0 and 1
         assert 0.0 <= exact_match <= 1.0
 
-    def test_ato_compliance_scoring(
-        self, metrics_calculator, sample_extracted_fields, sample_ground_truth
-    ):
+    def test_ato_compliance_scoring(self, metrics_calculator, sample_extracted_fields, sample_ground_truth):
         """Test ATO compliance scoring."""
         ato_score = metrics_calculator.calculate_ato_compliance_score(
             sample_extracted_fields, sample_ground_truth
@@ -500,9 +492,7 @@ class TestReportGenerator:
             },
         }
 
-        html_report = report_generator.generate_model_comparison_report(
-            mock_results, format_type="html"
-        )
+        html_report = report_generator.generate_model_comparison_report(mock_results, format_type="html")
 
         assert isinstance(html_report, str)
         assert "<html" in html_report
@@ -521,9 +511,7 @@ class TestReportGenerator:
             }
         }
 
-        json_report = report_generator.generate_model_comparison_report(
-            mock_results, format_type="json"
-        )
+        json_report = report_generator.generate_model_comparison_report(mock_results, format_type="json")
 
         # Should be valid JSON
         json_data = json.loads(json_report)
@@ -541,9 +529,7 @@ class TestReportGenerator:
             }
         }
 
-        text_report = report_generator.generate_model_comparison_report(
-            mock_results, format_type="text"
-        )
+        text_report = report_generator.generate_model_comparison_report(mock_results, format_type="text")
 
         assert isinstance(text_report, str)
         assert "MODEL COMPARISON REPORT" in text_report
@@ -551,16 +537,12 @@ class TestReportGenerator:
 
     def test_report_file_saving(self, report_generator):
         """Test saving reports to files."""
-        mock_results = {
-            "internvl3": {"model_name": "internvl3", "average_f1_score": 0.85}
-        }
+        mock_results = {"internvl3": {"model_name": "internvl3", "average_f1_score": 0.85}}
 
         with tempfile.TemporaryDirectory() as temp_dir:
             output_path = Path(temp_dir) / "test_report.html"
 
-            report_generator.save_report_to_file(
-                mock_results, output_path, format_type="html"
-            )
+            report_generator.save_report_to_file(mock_results, output_path, format_type="html")
 
             assert output_path.exists()
             assert output_path.stat().st_size > 0

@@ -88,19 +88,13 @@ class TestBankStatementHandler:
             "closing_balance",
         ]
 
-        extracted_count = sum(
-            1 for field in expected_fields if field in fields and fields[field]
-        )
+        extracted_count = sum(1 for field in expected_fields if field in fields and fields[field])
         assert extracted_count > 0  # Should extract at least some account information
 
-    def test_transaction_extraction_integration(
-        self, bank_handler, sample_statement_text
-    ):
+    def test_transaction_extraction_integration(self, bank_handler, sample_statement_text):
         """Test integration with transaction extraction."""
         # Mock the transaction categorizer to test integration
-        with patch(
-            "vision_processor.banking.AustralianTransactionCategorizer"
-        ) as mock_categorizer:
+        with patch("vision_processor.banking.AustralianTransactionCategorizer") as mock_categorizer:
             mock_instance = Mock()
             mock_categorizer.return_value = mock_instance
             mock_instance.extract_transactions.return_value = [
@@ -127,9 +121,7 @@ class TestBankStatementHandler:
             ]
 
             # Extract fields which should trigger transaction processing
-            fields = bank_handler._extract_document_specific_fields(
-                sample_statement_text
-            )
+            fields = bank_handler._extract_document_specific_fields(sample_statement_text)
 
             # Should have processed transactions
             assert "transactions" in fields or "work_expenses" in fields
@@ -182,9 +174,7 @@ class TestBankStatementHandler:
         17/06/2024  JB Hi-Fi Electronics          -299.00
         """
 
-        fields = bank_handler._extract_document_specific_fields(
-            australian_business_text
-        )
+        fields = bank_handler._extract_document_specific_fields(australian_business_text)
 
         # Should recognize Australian business context
         # This could be reflected in business_score or similar metrics
@@ -217,10 +207,7 @@ class TestBankStatementHandler:
         # Should validate successfully with required fields
         validation_result = bank_handler.validate_fields(minimal_fields)
 
-        assert (
-            validation_result.validation_passed
-            or len(validation_result.validation_issues) == 0
-        )
+        assert validation_result.validation_passed or len(validation_result.validation_issues) == 0
 
     def test_transaction_categorization_accuracy(self, bank_handler):
         """Test accuracy of transaction categorization."""
@@ -268,9 +255,7 @@ class TestBankStatementHandler:
             "work_expenses",
         ]
 
-        extracted_ato_fields = sum(
-            1 for field in ato_relevant_fields if field in fields and fields[field]
-        )
+        extracted_ato_fields = sum(1 for field in ato_relevant_fields if field in fields and fields[field])
         assert extracted_ato_fields > 0
 
     def test_confidence_scoring_integration(self, bank_handler, sample_statement_text):
@@ -290,9 +275,7 @@ class TestBankStatementHandler:
             "transactions",  # Transaction parsing successful
         ]
 
-        confidence_score = sum(
-            1 for indicator in confidence_indicators if fields.get(indicator)
-        )
+        confidence_score = sum(1 for indicator in confidence_indicators if fields.get(indicator))
         assert confidence_score > 0
 
     def test_error_handling(self, bank_handler):
@@ -339,9 +322,7 @@ class TestBankStatementHandler:
             "statement_period_from",
             "statement_period_to",
         ]
-        extracted_banking_fields = sum(
-            1 for field in banking_fields if field in fields and fields[field]
-        )
+        extracted_banking_fields = sum(1 for field in banking_fields if field in fields and fields[field])
 
         # Should extract at least some banking information
         assert extracted_banking_fields > 0

@@ -53,10 +53,7 @@ class TestAustralianBankRecognizer:
             matches = bank_recognizer.recognize_banks(text)
             assert len(matches) > 0
             # Check that the recognized bank name contains expected text
-            found = any(
-                expected_bank.lower() in match.official_name.lower()
-                for match in matches
-            )
+            found = any(expected_bank.lower() in match.official_name.lower() for match in matches)
             assert found
 
     def test_online_bank_recognition(self, bank_recognizer):
@@ -194,9 +191,7 @@ class TestAustralianBankRecognizer:
 
         if matches_with_context and matches_no_context:
             # Context should improve confidence
-            assert (
-                matches_with_context[0].confidence >= matches_no_context[0].confidence
-            )
+            assert matches_with_context[0].confidence >= matches_no_context[0].confidence
 
     def test_empty_and_invalid_input(self, bank_recognizer):
         """Test handling of empty and invalid input."""

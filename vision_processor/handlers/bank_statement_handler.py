@@ -292,7 +292,9 @@ class BankStatementHandler(BaseATOHandler):
         lines = text.split("\n")
 
         # Transaction line pattern (date, description, amount)
-        transaction_pattern = r"^(\d{1,2}/\d{1,2}(?:/\d{2,4})?)\s+(.{5,50}?)\s+([\-\+]?\$?\d+(?:\.\d{2})?)\s*$"
+        transaction_pattern = (
+            r"^(\d{1,2}/\d{1,2}(?:/\d{2,4})?)\s+(.{5,50}?)\s+([\-\+]?\$?\d+(?:\.\d{2})?)\s*$"
+        )
 
         for line in lines:
             line = line.strip()
@@ -419,9 +421,7 @@ class BankStatementHandler(BaseATOHandler):
                 if "amount" in transaction:
                     try:
                         amount = float(transaction["amount"])
-                        min_amount, max_amount = self.validation_rules[
-                            "transaction_amount_range"
-                        ]
+                        min_amount, max_amount = self.validation_rules["transaction_amount_range"]
                         if not (min_amount <= amount <= max_amount):
                             issues.append(
                                 f"Transaction {i + 1} amount ${amount:,.2f} outside reasonable range",
@@ -431,8 +431,7 @@ class BankStatementHandler(BaseATOHandler):
 
         # Validate statement period dates
         if all(
-            field in fields and fields[field]
-            for field in ["statement_period_from", "statement_period_to"]
+            field in fields and fields[field] for field in ["statement_period_from", "statement_period_to"]
         ):
             from_date = fields["statement_period_from"]
             to_date = fields["statement_period_to"]

@@ -220,9 +220,7 @@ class LlamaVisionModel(BaseVisionModel):
 
             # Move to appropriate device
             if hasattr(self.model, "device") and self.model.device.type != "cpu":
-                test_inputs = {
-                    k: v.to(self.model.device) for k, v in test_inputs.items()
-                }
+                test_inputs = {k: v.to(self.model.device) for k, v in test_inputs.items()}
 
             with torch.no_grad():
                 test_outputs = self.model.generate(
@@ -287,10 +285,7 @@ class LlamaVisionModel(BaseVisionModel):
         # Move to correct device
         if self.device.type != "cpu":
             device_target = self.device.type
-            inputs = {
-                k: v.to(device_target) if hasattr(v, "to") else v
-                for k, v in inputs.items()
-            }
+            inputs = {k: v.to(device_target) if hasattr(v, "to") else v for k, v in inputs.items()}
 
         return inputs
 

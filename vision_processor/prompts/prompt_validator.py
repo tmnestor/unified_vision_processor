@@ -107,9 +107,7 @@ class PromptValidator:
         )
 
         # Calculate overall scores
-        validation_result["effectiveness_score"] = (
-            structure_score + content_score + compliance_score
-        ) / 3
+        validation_result["effectiveness_score"] = (structure_score + content_score + compliance_score) / 3
         validation_result["compatibility_score"] = compatibility_score
         validation_result["validation_score"] = (
             validation_result["effectiveness_score"] + compatibility_score
@@ -119,11 +117,7 @@ class PromptValidator:
         validation_result["passed"] = (
             validation_result["validation_score"] >= 0.7
             and len(
-                [
-                    issue
-                    for issue in validation_result["issues"]
-                    if issue["severity"] == "critical"
-                ],
+                [issue for issue in validation_result["issues"] if issue["severity"] == "critical"],
             )
             == 0
         )
@@ -229,9 +223,7 @@ class PromptValidator:
 
         expected_keywords = document_keywords.get(document_type, [])
         found_keywords = sum(
-            1
-            for keyword in expected_keywords
-            if re.search(rf"\b{keyword}\b", prompt, re.IGNORECASE)
+            1 for keyword in expected_keywords if re.search(rf"\b{keyword}\b", prompt, re.IGNORECASE)
         )
 
         if expected_keywords:
@@ -332,9 +324,7 @@ class PromptValidator:
         # Required keywords for model
         required_keywords = requirements["required_keywords"]
         found_required = sum(
-            1
-            for keyword in required_keywords
-            if re.search(rf"\b{keyword}\b", prompt, re.IGNORECASE)
+            1 for keyword in required_keywords if re.search(rf"\b{keyword}\b", prompt, re.IGNORECASE)
         )
 
         if found_required < len(required_keywords):
@@ -370,9 +360,7 @@ class PromptValidator:
 
         # Check for Australian context
         australian_terms_found = sum(
-            1
-            for term in self.required_australian_terms
-            if re.search(rf"\b{term}\b", prompt, re.IGNORECASE)
+            1 for term in self.required_australian_terms if re.search(rf"\b{term}\b", prompt, re.IGNORECASE)
         )
 
         if australian_terms_found < 2:
@@ -455,9 +443,7 @@ class PromptValidator:
                 issue_counts[issue_type] = issue_counts.get(issue_type, 0) + 1
 
         if library_results["total_prompts"] > 0:
-            library_results["average_score"] = (
-                total_score / library_results["total_prompts"]
-            )
+            library_results["average_score"] = total_score / library_results["total_prompts"]
 
         library_results["summary_issues"] = issue_counts
 

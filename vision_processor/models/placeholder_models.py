@@ -92,10 +92,7 @@ class PlaceholderInternVLModel(BaseVisionModel):
         **_kwargs,
     ) -> list[ModelResponse]:
         """Process batch of images."""
-        return [
-            self.process_image(img, prompt)
-            for img, prompt in zip(image_paths, prompts, strict=False)
-        ]
+        return [self.process_image(img, prompt) for img, prompt in zip(image_paths, prompts, strict=False)]
 
     def _apply_quantization(self) -> None:
         """Placeholder quantization."""
@@ -180,10 +177,7 @@ class PlaceholderLlamaVisionModel(BaseVisionModel):
         **_kwargs,
     ) -> list[ModelResponse]:
         """Process batch of images."""
-        return [
-            self.process_image(img, prompt)
-            for img, prompt in zip(image_paths, prompts, strict=False)
-        ]
+        return [self.process_image(img, prompt) for img, prompt in zip(image_paths, prompts, strict=False)]
 
     def _apply_quantization(self) -> None:
         """Placeholder quantization."""

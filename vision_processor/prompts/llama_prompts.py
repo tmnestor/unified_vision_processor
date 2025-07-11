@@ -441,9 +441,7 @@ Extract with small business tax implications and concession opportunities.""",
     def get_prompt_statistics(self) -> dict[str, any]:
         """Get comprehensive statistics about Llama prompts."""
         document_type_prompts = sum(
-            1
-            for key in self.ato_prompts.keys()
-            if key in [dt.value for dt in DocumentType]
+            1 for key in self.ato_prompts.keys() if key in [dt.value for dt in DocumentType]
         )
         specialized_prompts = len(self.ato_prompts) - document_type_prompts
 

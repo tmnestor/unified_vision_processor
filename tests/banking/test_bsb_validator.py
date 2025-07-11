@@ -47,10 +47,7 @@ class TestAustralianBSBValidator:
         for bsb, expected_bank in big_four_bsbs:
             result = bsb_validator.validate(bsb)
             if result.bank_name:  # If recognized
-                assert (
-                    expected_bank in result.bank_name
-                    or result.bank_name in expected_bank
-                )
+                assert expected_bank in result.bank_name or result.bank_name in expected_bank
                 assert result.bank_category == "big_four"
 
     def test_regional_bank_bsbs(self, bsb_validator):
@@ -64,10 +61,7 @@ class TestAustralianBSBValidator:
         for bsb, expected_bank in regional_bsbs:
             result = bsb_validator.validate(bsb)
             if result.bank_name:  # If recognized
-                assert (
-                    expected_bank in result.bank_name
-                    or result.bank_name in expected_bank
-                )
+                assert expected_bank in result.bank_name or result.bank_name in expected_bank
 
     def test_online_bank_bsbs(self, bsb_validator):
         """Test validation of online bank BSBs."""
@@ -93,10 +87,7 @@ class TestAustralianBSBValidator:
             assert len(result.validation_issues) > 0
             # Check that error message contains expected type
             issue_text = " ".join(result.validation_issues).lower()
-            assert any(
-                expected_word in issue_text
-                for expected_word in expected_issue_type.lower().split()
-            )
+            assert any(expected_word in issue_text for expected_word in expected_issue_type.lower().split())
 
     def test_non_digit_handling(self, bsb_validator):
         """Test handling of BSBs with non-digit characters."""
@@ -252,9 +243,7 @@ class TestAustralianBSBValidator:
             if bsb == "000000":
                 # Should detect as invalid placeholder
                 assert not result.is_valid
-                assert any(
-                    "invalid" in issue.lower() for issue in result.validation_issues
-                )
+                assert any("invalid" in issue.lower() for issue in result.validation_issues)
             elif bsb == "123456":
                 # Might be flagged as placeholder depending on implementation
                 issue_text = " ".join(result.validation_issues).lower()

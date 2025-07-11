@@ -1089,9 +1089,7 @@ class AustralianBusinessRegistry:
                 "chemist_warehouse": "Chemist Warehouse",
             }
 
-            simple_name = simple_name_mapping.get(
-                business_key, best_match["official_name"]
-            )
+            simple_name = simple_name_mapping.get(business_key, best_match["official_name"])
 
             return BusinessRecognitionResult(
                 is_recognized=True,
@@ -1102,9 +1100,7 @@ class AustralianBusinessRegistry:
                 abn=best_match["abn"],
             )
         else:
-            return BusinessRecognitionResult(
-                is_recognized=False, business_name=text, confidence_score=0.0
-            )
+            return BusinessRecognitionResult(is_recognized=False, business_name=text, confidence_score=0.0)
 
     def validate_business_context(
         self,
@@ -1132,9 +1128,7 @@ class AustralianBusinessRegistry:
         # Find business in registry
         business_info = None
         for _business_key, info in self.business_registry.items():
-            if business_name.lower() in [
-                kw.lower() for kw in info["recognition_keywords"]
-            ]:
+            if business_name.lower() in [kw.lower() for kw in info["recognition_keywords"]]:
                 business_info = info
                 break
 
@@ -1229,9 +1223,7 @@ class AustralianBusinessRegistry:
         if industry == "fuel_retail":
             # Fuel receipts should have fuel-specific fields
             fuel_fields = ["litres", "fuel_type", "price_per_litre"]
-            missing_fuel_fields = [
-                f for f in fuel_fields if not extracted_fields.get(f)
-            ]
+            missing_fuel_fields = [f for f in fuel_fields if not extracted_fields.get(f)]
             if missing_fuel_fields:
                 issues.append(
                     f"Missing fuel-specific fields: {', '.join(missing_fuel_fields)}",
@@ -1240,9 +1232,7 @@ class AustralianBusinessRegistry:
         elif industry == "banking":
             # Bank statements should have banking fields
             banking_fields = ["account_number", "bsb"]
-            missing_banking_fields = [
-                f for f in banking_fields if not extracted_fields.get(f)
-            ]
+            missing_banking_fields = [f for f in banking_fields if not extracted_fields.get(f)]
             if missing_banking_fields:
                 issues.append(
                     f"Missing banking fields: {', '.join(missing_banking_fields)}",
@@ -1251,9 +1241,7 @@ class AustralianBusinessRegistry:
         elif industry == "airline":
             # Travel documents should have travel fields
             travel_fields = ["passenger_name", "flight_number"]
-            missing_travel_fields = [
-                f for f in travel_fields if not extracted_fields.get(f)
-            ]
+            missing_travel_fields = [f for f in travel_fields if not extracted_fields.get(f)]
             if missing_travel_fields:
                 issues.append(
                     f"Missing travel fields: {', '.join(missing_travel_fields)}",
@@ -1276,21 +1264,15 @@ class AustralianBusinessRegistry:
         for business_info in self.business_registry.values():
             # Count by industry
             industry = business_info["industry"]
-            stats["businesses_by_industry"][industry] = (
-                stats["businesses_by_industry"].get(industry, 0) + 1
-            )
+            stats["businesses_by_industry"][industry] = stats["businesses_by_industry"].get(industry, 0) + 1
 
             # Count by business type
             biz_type = business_info["business_type"]
-            stats["businesses_by_type"][biz_type] = (
-                stats["businesses_by_type"].get(biz_type, 0) + 1
-            )
+            stats["businesses_by_type"][biz_type] = stats["businesses_by_type"].get(biz_type, 0) + 1
 
             # Count by state presence
             for state in business_info["states"]:
-                stats["businesses_by_state"][state] = (
-                    stats["businesses_by_state"].get(state, 0) + 1
-                )
+                stats["businesses_by_state"][state] = stats["businesses_by_state"].get(state, 0) + 1
 
         return stats
 
@@ -1366,9 +1348,7 @@ class AustralianBusinessRegistry:
                         "food_fast": "restaurant",
                     }
 
-                    category = category_mapping.get(
-                        business_info["industry"], business_info["industry"]
-                    )
+                    category = category_mapping.get(business_info["industry"], business_info["industry"])
 
                     return BusinessCategoryResult(
                         category=category,

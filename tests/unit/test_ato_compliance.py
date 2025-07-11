@@ -154,13 +154,9 @@ class TestATOComplianceValidator:
             result = ato_validator.validate_amount_format(amount)
             assert result.is_valid is False
 
-    def test_comprehensive_document_compliance(
-        self, ato_validator, sample_extracted_fields
-    ):
+    def test_comprehensive_document_compliance(self, ato_validator, sample_extracted_fields):
         """Test comprehensive document compliance assessment."""
-        result = ato_validator.assess_compliance(
-            sample_extracted_fields, DocumentType.TAX_INVOICE
-        )
+        result = ato_validator.assess_compliance(sample_extracted_fields, DocumentType.TAX_INVOICE)
 
         assert hasattr(result, "compliance_score")
         assert hasattr(result, "passed")
@@ -183,9 +179,7 @@ class TestATOComplianceValidator:
             "items": ["Groceries", "Household items"],
         }
 
-        result = ato_validator.assess_compliance(
-            business_receipt_fields, DocumentType.BUSINESS_RECEIPT
-        )
+        result = ato_validator.assess_compliance(business_receipt_fields, DocumentType.BUSINESS_RECEIPT)
 
         assert result.compliance_score > 0.7  # Should be reasonably compliant
         assert result.passed is True
@@ -201,9 +195,7 @@ class TestATOComplianceValidator:
             "vehicle_registration": "ABC123",
         }
 
-        result = ato_validator.assess_compliance(
-            fuel_receipt_fields, DocumentType.FUEL_RECEIPT
-        )
+        result = ato_validator.assess_compliance(fuel_receipt_fields, DocumentType.FUEL_RECEIPT)
 
         # Fuel receipts should pass basic compliance
         assert result.compliance_score > 0.6
@@ -224,9 +216,7 @@ class TestATOComplianceValidator:
             ],
         }
 
-        result = ato_validator.assess_compliance(
-            bank_statement_fields, DocumentType.BANK_STATEMENT
-        )
+        result = ato_validator.assess_compliance(bank_statement_fields, DocumentType.BANK_STATEMENT)
 
         # Bank statements have different compliance requirements
         assert result.compliance_score >= 0.0

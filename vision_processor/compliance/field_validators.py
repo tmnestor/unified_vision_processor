@@ -345,8 +345,7 @@ class GSTValidator:
         # Validate total (with tolerance for rounding)
         if abs(total - expected_total) > self.tolerance:
             issues.append(
-                f"Total amount {total:.2f} does not match expected "
-                f"{expected_total:.2f} (subtotal + GST)",
+                f"Total amount {total:.2f} does not match expected {expected_total:.2f} (subtotal + GST)",
             )
 
         return len(issues) == 0, calculated_values, issues

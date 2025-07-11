@@ -174,9 +174,7 @@ def sample_confidence_scores() -> Dict[str, float]:
 def mock_model() -> MagicMock:
     """Create a mock vision model."""
     model = MagicMock()
-    model.process_image.return_value = Mock(
-        raw_text="Mock response", confidence=0.85, processing_time=1.5
-    )
+    model.process_image.return_value = Mock(raw_text="Mock response", confidence=0.85, processing_time=1.5)
     model.model_type = "internvl3"
     model.device = "cpu"
     return model

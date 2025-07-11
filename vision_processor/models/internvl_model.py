@@ -93,10 +93,7 @@ class InternVLModel(BaseVisionModel):
         # Extract model size from path
         model_size = None
         for size_key in num_layers_mapping:
-            if (
-                size_key in str(model_name)
-                or size_key.replace("-", "_").lower() in str(model_name).lower()
-            ):
+            if size_key in str(model_name) or size_key.replace("-", "_").lower() in str(model_name).lower():
                 model_size = size_key
                 break
 
@@ -428,9 +425,7 @@ class InternVLModel(BaseVisionModel):
                 # Try alternative interface with explicit device handling
                 input_ids = self.tokenizer.encode(prompt, return_tensors="pt")
                 if self.device.type == "cuda":
-                    input_ids = (
-                        input_ids.cuda()
-                    )  # Use .cuda() to match pixel_values device
+                    input_ids = input_ids.cuda()  # Use .cuda() to match pixel_values device
 
                 try:
                     with torch.no_grad():

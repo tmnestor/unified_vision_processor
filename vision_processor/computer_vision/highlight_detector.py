@@ -204,11 +204,7 @@ class HighlightDetector:
             area = cv2.contourArea(contour)
 
             # Filter by area
-            if (
-                self.detection_params["min_area"]
-                <= area
-                <= self.detection_params["max_area"]
-            ):
+            if self.detection_params["min_area"] <= area <= self.detection_params["max_area"]:
                 highlight = HighlightRegion(
                     x=x,
                     y=y,
@@ -354,9 +350,7 @@ class HighlightDetector:
 
         # Filter by minimum confidence
         filtered_highlights = [
-            h
-            for h in highlights
-            if h.confidence >= self.detection_params["min_confidence"]
+            h for h in highlights if h.confidence >= self.detection_params["min_confidence"]
         ]
 
         return filtered_highlights

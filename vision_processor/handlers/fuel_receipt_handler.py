@@ -320,8 +320,7 @@ class FuelReceiptHandler(BaseATOHandler):
 
         # Cross-validate litres and price calculation
         if all(
-            field in fields and fields[field]
-            for field in ["litres", "price_per_litre", "total_amount"]
+            field in fields and fields[field] for field in ["litres", "price_per_litre", "total_amount"]
         ):
             try:
                 litres = float(fields["litres"])
@@ -381,21 +380,15 @@ class FuelReceiptHandler(BaseATOHandler):
 
                 # Merge with enhanced preference for highlighted data
                 for field, value in highlight_fields.items():
-                    if value and (
-                        field not in enhanced_fields or not enhanced_fields[field]
-                    ):
+                    if value and (field not in enhanced_fields or not enhanced_fields[field]):
                         enhanced_fields[field] = value
-                        enhanced_fields[f"{field}_highlight_confidence"] = (
-                            highlight_confidence
-                        )
+                        enhanced_fields[f"{field}_highlight_confidence"] = highlight_confidence
                         logger.info(f"Enhanced field {field} from highlight: {value}")
                     elif field in priority_fields and value:
                         # Override existing value if this is a priority field from highlights
                         if highlight_confidence > 0.7:
                             enhanced_fields[field] = value
-                            enhanced_fields[f"{field}_highlight_confidence"] = (
-                                highlight_confidence
-                            )
+                            enhanced_fields[f"{field}_highlight_confidence"] = highlight_confidence
                             logger.info(
                                 f"Override field {field} from high-confidence highlight: {value}",
                             )
@@ -451,9 +444,7 @@ class FuelReceiptHandler(BaseATOHandler):
 
     def _validate_fuel_calculations(self, fields: dict[str, Any]) -> dict[str, Any]:
         """Validate and correct fuel calculations after highlight enhancement."""
-        if all(
-            field in fields and fields[field] for field in ["litres", "price_per_litre"]
-        ):
+        if all(field in fields and fields[field] for field in ["litres", "price_per_litre"]):
             try:
                 litres = float(fields["litres"])
                 price_per_litre = float(fields["price_per_litre"])
@@ -473,9 +464,7 @@ class FuelReceiptHandler(BaseATOHandler):
                     # If highlighted calculation is more accurate, use it
                     if difference > 2.0 and calculated_total > 0:
                         # Check if calculation is more reasonable
-                        if (
-                            5.0 <= calculated_total <= 500.0
-                        ):  # Reasonable fuel purchase range
+                        if 5.0 <= calculated_total <= 500.0:  # Reasonable fuel purchase range
                             fields["total_amount"] = calculated_total
                             fields["corrected_from_calculation"] = True
                             logger.info(

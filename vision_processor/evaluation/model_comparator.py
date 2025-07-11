@@ -233,9 +233,7 @@ class ModelComparator:
         list(model_results.keys())
 
         # Overall performance parity
-        f1_scores = {
-            name: result.average_f1_score for name, result in model_results.items()
-        }
+        f1_scores = {name: result.average_f1_score for name, result in model_results.items()}
         f1_values = list(f1_scores.values())
         f1_std = self._calculate_standard_deviation(f1_values)
         f1_mean = sum(f1_values) / len(f1_values)
@@ -248,10 +246,7 @@ class ModelComparator:
         }
 
         # Processing time parity
-        processing_times = {
-            name: result.average_processing_time
-            for name, result in model_results.items()
-        }
+        processing_times = {name: result.average_processing_time for name, result in model_results.items()}
         time_values = list(processing_times.values())
         time_std = self._calculate_standard_deviation(time_values)
         time_mean = sum(time_values) / len(time_values)
@@ -259,9 +254,7 @@ class ModelComparator:
         parity_report["processing_parity"] = {
             "processing_times": processing_times,
             "time_standard_deviation": time_std,
-            "time_coefficient_of_variation": time_std / time_mean
-            if time_mean > 0
-            else 0,
+            "time_coefficient_of_variation": time_std / time_mean if time_mean > 0 else 0,
             "similar_speed": time_std / time_mean <= 0.5 if time_mean > 0 else True,
         }
 
@@ -355,8 +348,7 @@ class ModelComparator:
                 "fastest_speed": fastest_model[1]["documents_per_second"],
                 "speed_variance": self._calculate_standard_deviation(efficiencies),
                 "relative_speeds": {
-                    name: metrics["documents_per_second"]
-                    / fastest_model[1]["documents_per_second"]
+                    name: metrics["documents_per_second"] / fastest_model[1]["documents_per_second"]
                     for name, metrics in efficiency_report["model_efficiency"].items()
                 },
             }
@@ -410,13 +402,9 @@ class ModelComparator:
         # Add direct field access for tests - ensure boolean values
         fairness_report["identical_pipeline"] = bool(config.identical_pipeline)
         fairness_report["same_prompts"] = bool(config.standardized_prompts)
-        fairness_report["same_evaluation_metrics"] = (
-            True  # Always true in unified system
-        )
+        fairness_report["same_evaluation_metrics"] = True  # Always true in unified system
         fairness_report["llama_foundation"] = True  # Always true in unified system
-        fairness_report["bias_risk"] = (
-            "low" if fairness_report["fairness_score"] == 1.0 else "medium"
-        )
+        fairness_report["bias_risk"] = "low" if fairness_report["fairness_score"] == 1.0 else "medium"
 
         # Generate recommendations
         if fairness_report["fairness_score"] < 1.0:
@@ -496,12 +484,10 @@ class ModelComparator:
             # Add SROIE metrics if available
             if model_name in sroie_results:
                 sroie_result = sroie_results[model_name]
-                ranking_entry["metrics"]["sroie_f1"] = sroie_result["overall_metrics"][
-                    "average_f1"
+                ranking_entry["metrics"]["sroie_f1"] = sroie_result["overall_metrics"]["average_f1"]
+                ranking_entry["metrics"]["sroie_success_rate"] = sroie_result["overall_metrics"][
+                    "success_rate"
                 ]
-                ranking_entry["metrics"]["sroie_success_rate"] = sroie_result[
-                    "overall_metrics"
-                ]["success_rate"]
 
             rankings.append(ranking_entry)
 
@@ -538,11 +524,7 @@ class ModelComparator:
         for ranking_entry in rankings:
             overall_score = sum(
                 weights.get(metric, 0)
-                * (
-                    len(rankings)
-                    + 1
-                    - ranking_entry["ranks"].get(metric, len(rankings))
-                )
+                * (len(rankings) + 1 - ranking_entry["ranks"].get(metric, len(rankings)))
                 for metric in weights
             )
             ranking_entry["overall_score"] = overall_score

@@ -187,41 +187,29 @@ class ATOComplianceValidator:
             normalized_abn=formatted_abn,
         )
 
-    def validate_gst_calculation(
-        self, fields_or_subtotal, gst_amount=None, total=None
-    ) -> Any:
+    def validate_gst_calculation(self, fields_or_subtotal, gst_amount=None, total=None) -> Any:
         """Validate GST calculation correctness - returns validation result object."""
         # Handle case where test passes fields dictionary
         if isinstance(fields_or_subtotal, dict):
             fields = fields_or_subtotal
             try:
-                subtotal = float(
-                    fields.get("subtotal", "0").replace("$", "").replace(",", "")
-                )
-                gst_amount = float(
-                    fields.get("gst_amount", "0").replace("$", "").replace(",", "")
-                )
-                total = float(
-                    fields.get("total_amount", "0").replace("$", "").replace(",", "")
-                )
+                subtotal = float(fields.get("subtotal", "0").replace("$", "").replace(",", ""))
+                gst_amount = float(fields.get("gst_amount", "0").replace("$", "").replace(",", ""))
+                total = float(fields.get("total_amount", "0").replace("$", "").replace(",", ""))
             except (ValueError, AttributeError):
-                return self._create_gst_result(
-                    False, {}, ["Invalid numeric values in fields"]
-                )
+                return self._create_gst_result(False, {}, ["Invalid numeric values in fields"])
         else:
             # Handle separate parameters
             subtotal = fields_or_subtotal
             if gst_amount is None and total is None:
                 return self._create_gst_result(True, {}, [])
 
-        is_valid, calculated_values, errors = (
-            self.gst_validator.validate_gst_calculation(subtotal, gst_amount, total)
+        is_valid, calculated_values, errors = self.gst_validator.validate_gst_calculation(
+            subtotal, gst_amount, total
         )
         return self._create_gst_result(is_valid, calculated_values, errors)
 
-    def _create_gst_result(
-        self, is_valid: bool, calculated_values: dict, errors: list[str]
-    ) -> Any:
+    def _create_gst_result(self, is_valid: bool, calculated_values: dict, errors: list[str]) -> Any:
         """Create GST validation result object."""
         from dataclasses import dataclass
 
@@ -231,15 +219,11 @@ class ATOComplianceValidator:
             errors: list[str]
             calculated_values: dict = None
 
-        return GSTValidationResult(
-            is_valid=is_valid, errors=errors, calculated_values=calculated_values
-        )
+        return GSTValidationResult(is_valid=is_valid, errors=errors, calculated_values=calculated_values)
 
     def validate_date_format(self, date_str: str) -> Any:
         """Validate Australian date format - returns validation result object."""
-        is_valid, parsed_date, formatted_date, errors = self.date_validator.validate(
-            date_str
-        )
+        is_valid, parsed_date, formatted_date, errors = self.date_validator.validate(date_str)
         from dataclasses import dataclass
 
         @dataclass
@@ -260,9 +244,7 @@ class ATOComplianceValidator:
 
     def validate_amount_format(self, amount_str: str) -> Any:
         """Validate and parse Australian currency amount - returns validation result object."""
-        is_valid, parsed_amount, formatted_amount, errors = (
-            self.amount_validator.validate(amount_str)
-        )
+        is_valid, parsed_amount, formatted_amount, errors = self.amount_validator.validate(amount_str)
         from dataclasses import dataclass
 
         @dataclass
@@ -329,8 +311,8 @@ class ATOComplianceValidator:
         compliance_score += format_score * 0.25
 
         # Component 3: Business validation (20%)
-        business_score, business_issues, business_recs = (
-            self._validate_business_context(extracted_fields, document_type, raw_text)
+        business_score, business_issues, business_recs = self._validate_business_context(
+            extracted_fields, document_type, raw_text
         )
         compliance_issues.extend(business_issues)
         recommendations.extend(business_recs)
@@ -398,9 +380,7 @@ class ATOComplianceValidator:
         missing_required = []
         for field in required_fields:
             field_value = extracted_fields.get(field)
-            if not field_value or (
-                isinstance(field_value, str) and not field_value.strip()
-            ):
+            if not field_value or (isinstance(field_value, str) and not field_value.strip()):
                 missing_required.append(field)
 
         if missing_required:
@@ -452,8 +432,8 @@ class ATOComplianceValidator:
 
         # Validate BSB if present
         if extracted_fields.get("bsb"):
-            is_valid, formatted_bsb, bsb_issues, bank_name = (
-                self.bsb_validator.validate(extracted_fields["bsb"])
+            is_valid, formatted_bsb, bsb_issues, bank_name = self.bsb_validator.validate(
+                extracted_fields["bsb"]
             )
             if not is_valid:
                 issues.extend([f"BSB: {issue}" for issue in bsb_issues])
@@ -469,8 +449,8 @@ class ATOComplianceValidator:
         date_fields = ["date", "check_in_date", "check_out_date", "invoice_date"]
         for field in date_fields:
             if extracted_fields.get(field):
-                is_valid, parsed_date, formatted_date, date_issues = (
-                    self.date_validator.validate(extracted_fields[field])
+                is_valid, parsed_date, formatted_date, date_issues = self.date_validator.validate(
+                    extracted_fields[field]
                 )
                 if not is_valid:
                     issues.extend([f"{field}: {issue}" for issue in date_issues])
@@ -480,8 +460,8 @@ class ATOComplianceValidator:
                     # Update with formatted date and add financial year
                     extracted_fields[field] = formatted_date
                     if parsed_date and field == "date":
-                        extracted_fields["financial_year"] = (
-                            self.date_validator.get_financial_year(parsed_date)
+                        extracted_fields["financial_year"] = self.date_validator.get_financial_year(
+                            parsed_date
                         )
 
         # Validate amounts (basic format check)
@@ -525,25 +505,19 @@ class ATOComplianceValidator:
         recognized_business = self.business_registry.recognize_business(raw_text)
 
         # If no business found in raw text, try supplier name
-        if not recognized_business.is_recognized and extracted_fields.get(
-            "supplier_name"
-        ):
+        if not recognized_business.is_recognized and extracted_fields.get("supplier_name"):
             supplier_text = extracted_fields["supplier_name"]
-            recognized_business = self.business_registry.recognize_business(
-                supplier_text
-            )
+            recognized_business = self.business_registry.recognize_business(supplier_text)
 
         business_score = 0.0
 
         if recognized_business.is_recognized:
             # Use the recognized business
             business_name = extracted_fields.get("supplier_name", "")
-            is_valid, context_issues, context_recs = (
-                self.business_registry.validate_business_context(
-                    business_name,
-                    document_type.value,
-                    extracted_fields,
-                )
+            is_valid, context_issues, context_recs = self.business_registry.validate_business_context(
+                business_name,
+                document_type.value,
+                extracted_fields,
             )
 
             if is_valid:
@@ -554,9 +528,7 @@ class ATOComplianceValidator:
                 recommendations.extend(context_recs)
 
             # Add business information to extracted fields
-            extracted_fields["recognized_business"] = (
-                recognized_business.normalized_name
-            )
+            extracted_fields["recognized_business"] = recognized_business.normalized_name
             extracted_fields["business_industry"] = recognized_business.industry
 
         # No recognized business - check if we have supplier name
@@ -610,12 +582,10 @@ class ATOComplianceValidator:
             total_val = float(str(total_amount).replace("$", "").replace(",", ""))
 
             # Validate GST calculation
-            is_valid, calc_values, gst_issues = (
-                self.gst_validator.validate_gst_calculation(
-                    subtotal_val,
-                    gst_val,
-                    total_val,
-                )
+            is_valid, calc_values, gst_issues = self.gst_validator.validate_gst_calculation(
+                subtotal_val,
+                gst_val,
+                total_val,
             )
 
             if is_valid:
@@ -660,9 +630,7 @@ class ATOComplianceValidator:
                 score -= 0.2
 
         elif document_type == DocumentType.BANK_STATEMENT:
-            if not (
-                extracted_fields.get("account_number") and extracted_fields.get("bsb")
-            ):
+            if not (extracted_fields.get("account_number") and extracted_fields.get("bsb")):
                 issues.append("Bank statement must include account number and BSB")
                 score -= 0.3
 

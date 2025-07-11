@@ -212,16 +212,12 @@ class BankStatementHighlightProcessor:
                         1.0,
                     )
                 else:
-                    enhanced["work_expense_score"] = (
-                        matching_highlight.work_expense_score
-                    )
+                    enhanced["work_expense_score"] = matching_highlight.work_expense_score
 
                 # Add highlight metadata
                 enhanced["highlighted"] = True
                 enhanced["highlight_color"] = matching_highlight.highlight.color
-                enhanced["highlight_confidence"] = (
-                    matching_highlight.highlight.confidence
-                )
+                enhanced["highlight_confidence"] = matching_highlight.highlight.confidence
                 enhanced["business_indicators"] = matching_highlight.business_indicators
 
                 # Use highlighted category if more specific
@@ -444,17 +440,12 @@ class BankStatementHighlightProcessor:
             if (
                 transaction_desc
                 and highlight_desc
-                and len(set(transaction_desc.split()) & set(highlight_desc.split()))
-                >= 2
+                and len(set(transaction_desc.split()) & set(highlight_desc.split())) >= 2
             ):
                 return highlighted
 
             # Check for amount match
-            if (
-                transaction_amount
-                and highlight_amount
-                and transaction_amount in highlight_amount
-            ):
+            if transaction_amount and highlight_amount and transaction_amount in highlight_amount:
                 return highlighted
 
         return None
@@ -473,9 +464,7 @@ class BankStatementHighlightProcessor:
                 "average_work_score": 0.0,
             }
 
-        work_expenses = [
-            t for t in highlighted_transactions if t.work_expense_score >= 0.6
-        ]
+        work_expenses = [t for t in highlighted_transactions if t.work_expense_score >= 0.6]
 
         categories = {}
         colors = {}

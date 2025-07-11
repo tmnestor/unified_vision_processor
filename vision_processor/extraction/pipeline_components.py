@@ -599,8 +599,7 @@ class DocumentClassifier(BasePipelineComponent):
         for category, businesses in self.australian_businesses.items():
             for business in businesses:
                 if business in text and not any(
-                    b["business"].lower() == business.lower()
-                    for b in evidence["business_matches"]
+                    b["business"].lower() == business.lower() for b in evidence["business_matches"]
                 ):
                     business_score += 0.3
                     evidence["business_matches"].append(
@@ -713,10 +712,7 @@ class ConfidenceManager(BasePipelineComponent):
         quality_grade = self._determine_quality_grade(overall_confidence)
 
         # Determine production readiness
-        production_ready = (
-            overall_confidence
-            >= self.quality_thresholds["minimum_production_confidence"]
-        )
+        production_ready = overall_confidence >= self.quality_thresholds["minimum_production_confidence"]
 
         # Generate quality flags
         quality_flags = self._generate_quality_flags(
@@ -880,10 +876,7 @@ class ConfidenceManager(BasePipelineComponent):
             flags.append("insufficient_fields")
 
         # ATO compliance flags
-        if (
-            component_scores["ato_compliance"]
-            < self.quality_thresholds["minimum_ato_compliance"]
-        ):
+        if component_scores["ato_compliance"] < self.quality_thresholds["minimum_ato_compliance"]:
             flags.append("low_ato_compliance")
 
         if not compliance_result.compliance_passed:
@@ -899,10 +892,7 @@ class ConfidenceManager(BasePipelineComponent):
             for component in self.component_weights
         )
 
-        if (
-            overall_confidence
-            < self.quality_thresholds["minimum_production_confidence"]
-        ):
+        if overall_confidence < self.quality_thresholds["minimum_production_confidence"]:
             flags.append("below_production_threshold")
 
         return flags
@@ -1017,9 +1007,7 @@ class PromptManager(BasePipelineComponent):
 
         """
         # Placeholder implementation
-        highlight_suffix = (
-            " Pay special attention to any highlighted areas." if has_highlights else ""
-        )
+        highlight_suffix = " Pay special attention to any highlighted areas." if has_highlights else ""
         return f"Extract all key information from this {document_type.value} document.{highlight_suffix}"
 
 

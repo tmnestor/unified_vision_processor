@@ -264,11 +264,9 @@ class UnifiedEvaluator:
                 )
 
                 # Calculate evaluation metrics
-                precision, recall, f1_score = (
-                    self.metrics_calculator.calculate_prf_metrics(
-                        standardized_extracted,
-                        standardized_ground_truth,
-                    )
+                precision, recall, f1_score = self.metrics_calculator.calculate_prf_metrics(
+                    standardized_extracted,
+                    standardized_ground_truth,
                 )
 
                 exact_match_score = self.metrics_calculator.calculate_exact_match(
@@ -293,9 +291,7 @@ class UnifiedEvaluator:
                     exact_match_score=exact_match_score,
                     awk_fallback_used=processing_result.awk_fallback_used,
                     highlights_detected=processing_result.highlights_detected,
-                    stages_completed=[
-                        stage.value for stage in processing_result.stages_completed
-                    ],
+                    stages_completed=[stage.value for stage in processing_result.stages_completed],
                     success=True,
                 )
 
@@ -356,9 +352,7 @@ class UnifiedEvaluator:
         dataset_path = Path(dataset_path)
         ground_truth_path = Path(ground_truth_path)
 
-        logger.info(
-            f"Starting dataset evaluation: {dataset_path} with {effective_model_name}"
-        )
+        logger.info(f"Starting dataset evaluation: {dataset_path} with {effective_model_name}")
 
         # Find all images and corresponding ground truth
         image_files = list(dataset_path.glob("*.jpg")) + list(
@@ -417,9 +411,7 @@ class UnifiedEvaluator:
             average_f1_score=aggregated_metrics["f1_score"],
             average_confidence=aggregated_metrics["confidence"],
             total_processing_time=total_processing_time,
-            average_processing_time=total_processing_time / total_documents
-            if total_documents > 0
-            else 0.0,
+            average_processing_time=total_processing_time / total_documents if total_documents > 0 else 0.0,
             production_ready_count=aggregated_metrics["production_ready_count"],
             production_ready_rate=aggregated_metrics["production_ready_rate"],
             awk_fallback_rate=aggregated_metrics["awk_fallback_rate"],
@@ -527,10 +519,7 @@ class UnifiedEvaluator:
         for field in ground_truth:
             if field in extracted:
                 # Exact match for now - could be enhanced with fuzzy matching
-                if (
-                    str(extracted[field]).lower().strip()
-                    == str(ground_truth[field]).lower().strip()
-                ):
+                if str(extracted[field]).lower().strip() == str(ground_truth[field]).lower().strip():
                     field_accuracy[field] = 1.0
                 else:
                     field_accuracy[field] = 0.0
@@ -571,18 +560,14 @@ class UnifiedEvaluator:
         )
 
         # Production readiness statistics
-        production_ready_count = sum(
-            1 for r in successful_results if r.production_ready
-        )
+        production_ready_count = sum(1 for r in successful_results if r.production_ready)
         production_ready_rate = production_ready_count / len(successful_results)
 
         # Pipeline statistics
         awk_fallback_count = sum(1 for r in successful_results if r.awk_fallback_used)
         awk_fallback_rate = awk_fallback_count / len(successful_results)
 
-        highlight_count = sum(
-            1 for r in successful_results if r.highlights_detected > 0
-        )
+        highlight_count = sum(1 for r in successful_results if r.highlights_detected > 0)
         highlight_rate = highlight_count / len(successful_results)
 
         # Quality distribution

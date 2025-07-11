@@ -8,9 +8,7 @@ from setuptools import find_packages, setup
 
 # Read the README file
 readme_path = Path(__file__).parent / "README.md"
-long_description = (
-    readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
-)
+long_description = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
 
 # Read requirements
 requirements_path = Path(__file__).parent / "requirements.txt"

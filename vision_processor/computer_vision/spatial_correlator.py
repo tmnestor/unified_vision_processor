@@ -166,11 +166,7 @@ class SpatialCorrelator:
             if isinstance(image_path, (str, type(None))):
                 image = None  # We'll work with coordinates only
             else:
-                image = (
-                    cv2.imread(str(image_path))
-                    if hasattr(image_path, "__str__")
-                    else None
-                )
+                image = cv2.imread(str(image_path)) if hasattr(image_path, "__str__") else None
 
             for highlight in highlights:
                 correlation = self._analyze_highlight_correlation(
@@ -342,14 +338,10 @@ class SpatialCorrelator:
 
         # Filter by confidence
         min_confidence = self.spatial_config["min_text_confidence"]
-        quality_regions = [
-            r for r in surrounding_regions if r.confidence >= min_confidence
-        ]
+        quality_regions = [r for r in surrounding_regions if r.confidence >= min_confidence]
 
         if not quality_regions:
-            quality_regions = surrounding_regions[
-                :3
-            ]  # Take top 3 if none meet confidence threshold
+            quality_regions = surrounding_regions[:3]  # Take top 3 if none meet confidence threshold
 
         # Group by position
         context_parts = {
@@ -442,16 +434,14 @@ class SpatialCorrelator:
         # Horizontal alignment
         h_overlap = max(
             0,
-            min(highlight.x + highlight.width, region.x + region.width)
-            - max(highlight.x, region.x),
+            min(highlight.x + highlight.width, region.x + region.width) - max(highlight.x, region.x),
         )
         h_alignment = h_overlap / max(highlight.width, region.width)
 
         # Vertical alignment
         v_overlap = max(
             0,
-            min(highlight.y + highlight.height, region.y + region.height)
-            - max(highlight.y, region.y),
+            min(highlight.y + highlight.height, region.y + region.height) - max(highlight.y, region.y),
         )
         v_alignment = v_overlap / max(highlight.height, region.height)
 
@@ -478,9 +468,7 @@ class SpatialCorrelator:
             height_match = height_range[0] <= highlight.height <= height_range[1]
             width_match = width_range[0] <= highlight.width <= width_range[1]
 
-            analysis["transaction_row_likelihood"] = (
-                0.8 if (height_match and width_match) else 0.3
-            )
+            analysis["transaction_row_likelihood"] = 0.8 if (height_match and width_match) else 0.3
 
             # Check for expected fields
             expected_fields = transaction_pattern.get("expected_fields", [])
@@ -624,8 +612,7 @@ class SpatialCorrelator:
                     [c for c in correlations if c.correlation_score < 0.4],
                 ),
             },
-            "average_correlation_score": sum(c.correlation_score for c in correlations)
-            / len(correlations),
+            "average_correlation_score": sum(c.correlation_score for c in correlations) / len(correlations),
             "best_correlations": [],
             "spatial_insights": {},
         }
@@ -643,9 +630,7 @@ class SpatialCorrelator:
                     "rank": i,
                     "score": correlation.correlation_score,
                     "highlighted_text": correlation.highlighted_text,
-                    "context": correlation.context_text[
-                        :200
-                    ],  # Truncate for readability
+                    "context": correlation.context_text[:200],  # Truncate for readability
                     "surrounding_regions_count": len(correlation.surrounding_regions),
                 },
             )
@@ -655,8 +640,7 @@ class SpatialCorrelator:
         if total_regions > 0:
             report["spatial_insights"] = {
                 "average_surrounding_regions": total_regions / len(correlations),
-                "context_coverage": len([c for c in correlations if c.context_text])
-                / len(correlations),
+                "context_coverage": len([c for c in correlations if c.context_text]) / len(correlations),
                 "highlighted_text_detection": len(
                     [c for c in correlations if c.highlighted_text],
                 )

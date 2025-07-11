@@ -178,9 +178,7 @@ class BankStatementCV:
                 processing_metadata={
                     "ocr_results_count": len(ocr_data["ocr_results"]),
                     "processing_method": "highlight_based",
-                    "confidence_threshold": self.bank_config[
-                        "transaction_confidence_threshold"
-                    ],
+                    "confidence_threshold": self.bank_config["transaction_confidence_threshold"],
                 },
             )
 
@@ -242,10 +240,7 @@ class BankStatementCV:
                         relative_y = highlight.y / height
                         if relative_y >= 0.2:  # Not in the very top section
                             # Check confidence
-                            if (
-                                highlight.confidence
-                                >= self.bank_config["transaction_confidence_threshold"]
-                            ):
+                            if highlight.confidence >= self.bank_config["transaction_confidence_threshold"]:
                                 transaction_highlights.append(highlight)
 
             return transaction_highlights
@@ -396,10 +391,7 @@ class BankStatementCV:
             account_info = {}
 
             # Process all text from account section
-            if (
-                hasattr(self.ocr_processor, "tesseract")
-                and self.ocr_processor.tesseract
-            ):
+            if hasattr(self.ocr_processor, "tesseract") and self.ocr_processor.tesseract:
                 try:
                     # Run OCR on entire account section
                     account_text = self.ocr_processor.tesseract.image_to_string(
@@ -481,20 +473,11 @@ class BankStatementCV:
 
         analysis = {
             "total_transactions": len(transactions),
-            "total_debits": sum(
-                1 for t in transactions if t.transaction_type == "debit"
-            ),
-            "total_credits": sum(
-                1 for t in transactions if t.transaction_type == "credit"
-            ),
-            "total_debit_amount": sum(
-                t.amount for t in transactions if t.transaction_type == "debit"
-            ),
-            "total_credit_amount": sum(
-                t.amount for t in transactions if t.transaction_type == "credit"
-            ),
-            "average_transaction_amount": sum(t.amount for t in transactions)
-            / len(transactions),
+            "total_debits": sum(1 for t in transactions if t.transaction_type == "debit"),
+            "total_credits": sum(1 for t in transactions if t.transaction_type == "credit"),
+            "total_debit_amount": sum(t.amount for t in transactions if t.transaction_type == "debit"),
+            "total_credit_amount": sum(t.amount for t in transactions if t.transaction_type == "credit"),
+            "average_transaction_amount": sum(t.amount for t in transactions) / len(transactions),
             "confidence_scores": {
                 "average": sum(t.confidence for t in transactions) / len(transactions),
                 "minimum": min(t.confidence for t in transactions),
@@ -527,9 +510,7 @@ class BankStatementCV:
         analysis["work_related"] = {
             "count": len(work_related),
             "total_amount": sum(t.amount for t in work_related),
-            "percentage": (len(work_related) / len(transactions)) * 100
-            if transactions
-            else 0,
+            "percentage": (len(work_related) / len(transactions)) * 100 if transactions else 0,
         }
 
         return analysis
@@ -567,12 +548,8 @@ class BankStatementCV:
                     "transaction_type": transaction.transaction_type or "",
                     "reference": transaction.reference or "",
                     "confidence": f"{transaction.confidence:.3f}",
-                    "highlight_x": transaction.highlight_region.x
-                    if transaction.highlight_region
-                    else "",
-                    "highlight_y": transaction.highlight_region.y
-                    if transaction.highlight_region
-                    else "",
+                    "highlight_x": transaction.highlight_region.x if transaction.highlight_region else "",
+                    "highlight_y": transaction.highlight_region.y if transaction.highlight_region else "",
                 }
                 writer.writerow(row)
 

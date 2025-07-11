@@ -263,9 +263,7 @@ class UnifiedConfig:
                     "Detected high-memory multi-GPU system, applying H200 optimizations",
                 )
                 self.h200_development = True
-                self.enable_8bit_quantization = (
-                    False  # High memory, no quantization needed
-                )
+                self.enable_8bit_quantization = False  # High memory, no quantization needed
                 self.multi_gpu_dev = True
                 self.gpu_memory_limit = None  # No limit on high-memory system
 
@@ -446,18 +444,10 @@ class UnifiedConfig:
         # Convert string values to enums if needed
         if "model_type" in config_dict and isinstance(config_dict["model_type"], str):
             config_dict["model_type"] = ModelType(config_dict["model_type"])
-        if "processing_pipeline" in config_dict and isinstance(
-            config_dict["processing_pipeline"], str
-        ):
-            config_dict["processing_pipeline"] = ProcessingPipeline(
-                config_dict["processing_pipeline"]
-            )
-        if "extraction_method" in config_dict and isinstance(
-            config_dict["extraction_method"], str
-        ):
-            config_dict["extraction_method"] = ExtractionMethod(
-                config_dict["extraction_method"]
-            )
+        if "processing_pipeline" in config_dict and isinstance(config_dict["processing_pipeline"], str):
+            config_dict["processing_pipeline"] = ProcessingPipeline(config_dict["processing_pipeline"])
+        if "extraction_method" in config_dict and isinstance(config_dict["extraction_method"], str):
+            config_dict["extraction_method"] = ExtractionMethod(config_dict["extraction_method"])
 
         # Set testing mode to avoid validation issues
         config_dict["testing_mode"] = True
@@ -574,9 +564,7 @@ class UnifiedConfig:
                         f"Invalid model type: {value}. Valid types: {[m.value for m in ModelType]}"
                     ) from err
             elif not isinstance(value, ModelType):
-                raise ValueError(
-                    f"Model type must be ModelType enum or valid string, got {type(value)}"
-                )
+                raise ValueError(f"Model type must be ModelType enum or valid string, got {type(value)}")
 
         super().__setattr__(name, value)
 

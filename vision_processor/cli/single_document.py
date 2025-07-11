@@ -98,9 +98,7 @@ def process(
             DocumentType(document_type.lower())
         except ValueError:
             console.print(f"[red]❌ Invalid document type: {document_type}[/red]")
-            valid_types = [
-                dt.value for dt in DocumentType if dt != DocumentType.UNKNOWN
-            ]
+            valid_types = [dt.value for dt in DocumentType if dt != DocumentType.UNKNOWN]
             console.print(f"Available types: {', '.join(valid_types)}")
             raise typer.Exit(1) from None
 
@@ -281,11 +279,7 @@ def _display_table_results(result) -> None:
 
     # Add quality metrics
     confidence_status = (
-        "🟢"
-        if result.confidence_score >= 0.8
-        else "🟡"
-        if result.confidence_score >= 0.6
-        else "🔴"
+        "🟢" if result.confidence_score >= 0.8 else "🟡" if result.confidence_score >= 0.6 else "🔴"
     )
     main_table.add_row(
         "Confidence Score",
@@ -534,8 +528,7 @@ def _analyze_with_comparison(image_file: Path, show_pipeline: bool) -> None:
             quality_order = ["very_poor", "poor", "fair", "good", "excellent"]
             winner = (
                 "🟢"
-                if quality_order.index(internvl_val.value)
-                > quality_order.index(llama_val.value)
+                if quality_order.index(internvl_val.value) > quality_order.index(llama_val.value)
                 else "🟡"
             )
         elif metric_attr == "processing_time":
@@ -546,11 +539,7 @@ def _analyze_with_comparison(image_file: Path, show_pipeline: bool) -> None:
             internvl_str = "Yes" if internvl_val else "No"
             llama_str = "Yes" if llama_val else "No"
             winner = (
-                "🟢"
-                if internvl_val and not llama_val
-                else "🟡"
-                if llama_val and not internvl_val
-                else "🤝"
+                "🟢" if internvl_val and not llama_val else "🟡" if llama_val and not internvl_val else "🤝"
             )
         else:
             internvl_str = f"{internvl_val:.3f}"

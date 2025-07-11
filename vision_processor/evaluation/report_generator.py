@@ -335,25 +335,16 @@ class ReportGenerator:
         table_html += "</tr>\n</thead>\n<tbody>\n"
 
         # Find best scores for highlighting (with safe attribute access)
-        best_f1 = max(
-            getattr(result, "average_f1_score", 0.0)
-            for result in comparison_results.values()
-        )
+        best_f1 = max(getattr(result, "average_f1_score", 0.0) for result in comparison_results.values())
         best_precision = max(
-            getattr(result, "average_precision", 0.0)
-            for result in comparison_results.values()
+            getattr(result, "average_precision", 0.0) for result in comparison_results.values()
         )
-        best_recall = max(
-            getattr(result, "average_recall", 0.0)
-            for result in comparison_results.values()
-        )
+        best_recall = max(getattr(result, "average_recall", 0.0) for result in comparison_results.values())
         best_confidence = max(
-            getattr(result, "average_confidence", 0.0)
-            for result in comparison_results.values()
+            getattr(result, "average_confidence", 0.0) for result in comparison_results.values()
         )
         best_production_rate = max(
-            getattr(result, "production_ready_rate", 0.0)
-            for result in comparison_results.values()
+            getattr(result, "production_ready_rate", 0.0) for result in comparison_results.values()
         )
 
         for model_name, result in comparison_results.items():
@@ -382,9 +373,7 @@ class ReportGenerator:
 
             # Production Ready
             prod_rate = getattr(result, "production_ready_rate", 0.0)
-            css_class = (
-                ' class="best-score"' if prod_rate == best_production_rate else ""
-            )
+            css_class = ' class="best-score"' if prod_rate == best_production_rate else ""
             table_html += f"<td{css_class}>{prod_rate:.1%}</td>"
 
             # Processing Time
@@ -468,9 +457,7 @@ class ReportGenerator:
 
             # Format quality distribution
             if quality_distribution:
-                quality_str = ", ".join(
-                    f"{k}: {v}" for k, v in quality_distribution.items()
-                )
+                quality_str = ", ".join(f"{k}: {v}" for k, v in quality_distribution.items())
             else:
                 quality_str = "No quality data available"
 
@@ -503,9 +490,7 @@ class ReportGenerator:
             failed_documents = getattr(result, "failed_documents", None) or result.get(
                 "failed_documents", []
             )
-            error_analysis = getattr(result, "error_analysis", None) or result.get(
-                "error_analysis", {}
-            )
+            error_analysis = getattr(result, "error_analysis", None) or result.get("error_analysis", {})
 
             if failed_documents or error_analysis:
                 error_html += f"""
@@ -546,27 +531,20 @@ class ReportGenerator:
         details_html = ""
 
         for model_name, result in comparison_results.items():
-            dataset_name = self._get_result_value(
-                result, "dataset_name", "Unknown Dataset"
-            )
+            dataset_name = self._get_result_value(result, "dataset_name", "Unknown Dataset")
             total_processing_time = self._get_result_value(
                 result,
                 "total_processing_time",
                 self._get_result_value(result, "average_processing_time", 0.0),
             )
-            highlight_detection_rate = self._get_result_value(
-                result, "highlight_detection_rate", 0.0
-            )
+            highlight_detection_rate = self._get_result_value(result, "highlight_detection_rate", 0.0)
             awk_fallback_rate = self._get_result_value(result, "awk_fallback_rate", 0.0)
 
             # Handle document_results safely
             document_results = self._get_result_value(result, "document_results", [])
             if hasattr(document_results, "__len__"):
                 doc_types_count = len(
-                    set(
-                        getattr(doc, "document_type", "unknown")
-                        for doc in document_results
-                    )
+                    set(getattr(doc, "document_type", "unknown") for doc in document_results)
                 )
             else:
                 doc_types_count = self._get_result_value(result, "total_documents", 0)
@@ -697,16 +675,12 @@ class ReportGenerator:
             try:
                 dataset_name = str(getattr(result, "dataset_name", "mock_dataset"))
                 total_documents = int(getattr(result, "total_documents", 100))
-                successful_extractions = int(
-                    getattr(result, "successful_extractions", 90)
-                )
+                successful_extractions = int(getattr(result, "successful_extractions", 90))
                 average_f1_score = float(getattr(result, "average_f1_score", 0.85))
                 average_precision = float(getattr(result, "average_precision", 0.87))
                 average_recall = float(getattr(result, "average_recall", 0.83))
                 average_confidence = float(getattr(result, "average_confidence", 0.82))
-                production_ready_rate = float(
-                    getattr(result, "production_ready_rate", 0.90)
-                )
+                production_ready_rate = float(getattr(result, "production_ready_rate", 0.90))
                 processing_time = float(getattr(result, "average_processing_time", 1.0))
                 awk_fallback_rate = float(getattr(result, "awk_fallback_rate", 0.10))
                 quality_distribution = getattr(result, "quality_distribution", {})
@@ -748,28 +722,14 @@ class ReportGenerator:
 
     def _generate_text_dataset_report(self, evaluation_result: Any) -> str:
         """Generate text dataset evaluation report."""
-        model_name = self._get_result_value(
-            evaluation_result, "model_name", "Unknown Model"
-        )
-        dataset_name = self._get_result_value(
-            evaluation_result, "dataset_name", "Unknown Dataset"
-        )
-        total_documents = self._get_result_value(
-            evaluation_result, "total_documents", 0
-        )
-        successful_extractions = self._get_result_value(
-            evaluation_result, "successful_extractions", 0
-        )
-        average_f1_score = self._get_result_value(
-            evaluation_result, "average_f1_score", 0.0
-        )
-        production_ready_rate = self._get_result_value(
-            evaluation_result, "production_ready_rate", 0.0
-        )
+        model_name = self._get_result_value(evaluation_result, "model_name", "Unknown Model")
+        dataset_name = self._get_result_value(evaluation_result, "dataset_name", "Unknown Dataset")
+        total_documents = self._get_result_value(evaluation_result, "total_documents", 0)
+        successful_extractions = self._get_result_value(evaluation_result, "successful_extractions", 0)
+        average_f1_score = self._get_result_value(evaluation_result, "average_f1_score", 0.0)
+        production_ready_rate = self._get_result_value(evaluation_result, "production_ready_rate", 0.0)
 
-        success_rate = (
-            successful_extractions / total_documents if total_documents > 0 else 0.0
-        )
+        success_rate = successful_extractions / total_documents if total_documents > 0 else 0.0
 
         report_lines = [
             "=" * 80,
@@ -831,22 +791,14 @@ class ReportGenerator:
         report_data = {
             "report_type": "dataset_evaluation",
             "generated_at": datetime.now().isoformat(),
-            "model_name": self._get_result_value(
-                evaluation_result, "model_name", "Unknown Model"
-            ),
-            "dataset_name": self._get_result_value(
-                evaluation_result, "dataset_name", "Unknown Dataset"
-            ),
+            "model_name": self._get_result_value(evaluation_result, "model_name", "Unknown Model"),
+            "dataset_name": self._get_result_value(evaluation_result, "dataset_name", "Unknown Dataset"),
             "summary_metrics": {
-                "total_documents": self._get_result_value(
-                    evaluation_result, "total_documents", 0
-                ),
+                "total_documents": self._get_result_value(evaluation_result, "total_documents", 0),
                 "successful_extractions": self._get_result_value(
                     evaluation_result, "successful_extractions", 0
                 ),
-                "average_f1_score": self._get_result_value(
-                    evaluation_result, "average_f1_score", 0.0
-                ),
+                "average_f1_score": self._get_result_value(evaluation_result, "average_f1_score", 0.0),
                 "production_ready_rate": self._get_result_value(
                     evaluation_result, "production_ready_rate", 0.0
                 ),
@@ -857,24 +809,12 @@ class ReportGenerator:
 
     def _generate_html_dataset_report(self, evaluation_result: Any) -> str:
         """Generate HTML dataset evaluation report."""
-        model_name = self._get_result_value(
-            evaluation_result, "model_name", "Unknown Model"
-        )
-        dataset_name = self._get_result_value(
-            evaluation_result, "dataset_name", "Unknown Dataset"
-        )
-        total_documents = self._get_result_value(
-            evaluation_result, "total_documents", 0
-        )
-        successful_extractions = self._get_result_value(
-            evaluation_result, "successful_extractions", 0
-        )
-        average_f1_score = self._get_result_value(
-            evaluation_result, "average_f1_score", 0.0
-        )
-        production_ready_rate = self._get_result_value(
-            evaluation_result, "production_ready_rate", 0.0
-        )
+        model_name = self._get_result_value(evaluation_result, "model_name", "Unknown Model")
+        dataset_name = self._get_result_value(evaluation_result, "dataset_name", "Unknown Dataset")
+        total_documents = self._get_result_value(evaluation_result, "total_documents", 0)
+        successful_extractions = self._get_result_value(evaluation_result, "successful_extractions", 0)
+        average_f1_score = self._get_result_value(evaluation_result, "average_f1_score", 0.0)
+        production_ready_rate = self._get_result_value(evaluation_result, "production_ready_rate", 0.0)
 
         return f"""
 <!DOCTYPE html>

@@ -77,11 +77,7 @@ class MetricsCalculator:
         )
 
         # Calculate F1 score
-        f1_score = (
-            2 * (precision * recall) / (precision + recall)
-            if (precision + recall) > 0
-            else 0.0
-        )
+        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
 
         return precision, recall, f1_score
 
@@ -289,9 +285,7 @@ class MetricsCalculator:
         baseline_time = baseline_times[complexity_category]
 
         # Calculate efficiency metrics
-        efficiency_ratio = (
-            baseline_time / processing_time if processing_time > 0 else 0.0
-        )
+        efficiency_ratio = baseline_time / processing_time if processing_time > 0 else 0.0
 
         # Performance categories
         if efficiency_ratio >= 2.0:
@@ -460,9 +454,7 @@ class MetricsCalculator:
         mean_y = sum(y_values) / n
 
         # Calculate correlation coefficient
-        numerator = sum(
-            (x_values[i] - mean_x) * (y_values[i] - mean_y) for i in range(n)
-        )
+        numerator = sum((x_values[i] - mean_x) * (y_values[i] - mean_y) for i in range(n))
 
         sum_sq_x = sum((x_values[i] - mean_x) ** 2 for i in range(n))
         sum_sq_y = sum((y_values[i] - mean_y) ** 2 for i in range(n))
@@ -492,23 +484,17 @@ class MetricsCalculator:
             Dictionary with comprehensive metrics
         """
         # Calculate basic metrics
-        precision, recall, f1_score = self.calculate_prf_metrics(
-            extracted, ground_truth
-        )
+        precision, recall, f1_score = self.calculate_prf_metrics(extracted, ground_truth)
         exact_match_score = self.calculate_exact_match(extracted, ground_truth)
         fuzzy_match_score = self.calculate_fuzzy_match(extracted, ground_truth)
-        ato_compliance_score = self.calculate_ato_compliance_score(
-            extracted, ground_truth
-        )
+        ato_compliance_score = self.calculate_ato_compliance_score(extracted, ground_truth)
         processing_efficiency = self.calculate_processing_efficiency(processing_time)
 
         # Calculate field counts
         field_count_extracted = len(extracted) if extracted else 0
         field_count_ground_truth = len(ground_truth) if ground_truth else 0
         field_coverage = (
-            field_count_extracted / field_count_ground_truth
-            if field_count_ground_truth > 0
-            else 0.0
+            field_count_extracted / field_count_ground_truth if field_count_ground_truth > 0 else 0.0
         )
 
         return {
