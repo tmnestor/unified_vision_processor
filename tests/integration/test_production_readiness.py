@@ -935,7 +935,7 @@ class TestProductionReadinessAssessment:
         assert 0.4 <= avg_confidence <= 0.8  # Mixed quality average
         assert 0.4 <= avg_ato_compliance <= 0.8
 
-    def test_production_deployment_criteria_validation(self, _production_config):
+    def test_production_deployment_criteria_validation(self):
         """Test validation of production deployment criteria."""
         deployment_criteria = {
             "minimum_production_ready_rate": 0.8,
