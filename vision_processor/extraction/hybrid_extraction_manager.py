@@ -323,19 +323,26 @@ class UnifiedExtractionManager:
             stages_completed.append(ProcessingStage.AWK_FALLBACK)
 
             awk_used = False
-            if self.config.awk_fallback and self._extraction_quality_insufficient(
-                extracted_fields,
-            ):
+            awk_enabled = self.config.awk_fallback
+            quality_insufficient = self._extraction_quality_insufficient(extracted_fields)
+            
+            logger.info(f"AWK check: enabled={awk_enabled}, quality_insufficient={quality_insufficient}, fields_count={len(extracted_fields)}")
+            
+            if awk_enabled and quality_insufficient:
                 # Use AWK extractor component
+                logger.info("Triggering AWK fallback extraction")
                 awk_fields = self.awk_extractor.extract(
                     model_response.raw_text,
                     classified_type,
                 )
+                logger.info(f"AWK extracted fields: {awk_fields}")
                 extracted_fields = self._merge_extractions(extracted_fields, awk_fields)
                 awk_used = True
                 self.processing_stats["awk_fallbacks"] += 1
                 quality_flags.append("awk_fallback_used")
                 logger.info("AWK fallback extraction applied")
+            else:
+                logger.info(f"AWK fallback skipped: enabled={awk_enabled}, quality_insufficient={quality_insufficient}")
 
             # =================================================
             # STEP 5: FIELD VALIDATION
