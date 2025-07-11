@@ -216,7 +216,7 @@ class ModelFactory:
             "processing_pipeline": "7step",
             "extraction_method": "hybrid",
             # Memory optimization for single GPU
-            "enable_compilation": True,
+            "enable_compilation": False,  # Disable for CUDA graph compatibility
             "use_cache": True,
             "low_cpu_mem_usage": True,
         }
