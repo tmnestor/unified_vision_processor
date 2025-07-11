@@ -165,6 +165,29 @@ class ConfidenceManager(BasePipelineComponent):
             for component in self.component_weights
         )
 
+        # Generate quality flags first to check for critical issues
+        quality_flags = self._generate_quality_flags(
+            component_scores,
+            extracted_fields,
+            compliance_result,
+        )
+
+        # Implement graceful degradation - cap confidence for critical issues
+        if "low_classification_confidence" in quality_flags:
+            # When classification confidence is critically low, cap overall confidence
+            # to ensure graceful degradation
+            max_confidence_with_low_classification = 0.5
+            overall_confidence = min(
+                overall_confidence, max_confidence_with_low_classification
+            )
+
+        # Additional graceful degradation for other critical issues
+        if "ato_compliance_failed" in quality_flags:
+            max_confidence_with_compliance_failure = 0.4
+            overall_confidence = min(
+                overall_confidence, max_confidence_with_compliance_failure
+            )
+
         # Determine quality grade
         quality_grade = self._determine_quality_grade(overall_confidence)
 
@@ -178,13 +201,6 @@ class ConfidenceManager(BasePipelineComponent):
         except TypeError:
             # Handle MagicMock comparison errors
             production_ready = False
-
-        # Generate quality flags
-        quality_flags = self._generate_quality_flags(
-            component_scores,
-            extracted_fields,
-            compliance_result,
-        )
 
         # Generate recommendations
         recommendations = self._generate_recommendations(

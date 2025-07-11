@@ -532,6 +532,12 @@ class ReportGenerator:
 
         return f'<div class="recommendation">{recommendations_html}</div>'
 
+    def _get_result_value(self, result: Any, key: str, default: Any = None) -> Any:
+        """Safely extract value from result object or dictionary."""
+        if isinstance(result, dict):
+            return result.get(key, default)
+        return getattr(result, key, default)
+
     def _generate_html_technical_details(
         self,
         comparison_results: dict[str, Any],
@@ -540,14 +546,39 @@ class ReportGenerator:
         details_html = ""
 
         for model_name, result in comparison_results.items():
+            dataset_name = self._get_result_value(
+                result, "dataset_name", "Unknown Dataset"
+            )
+            total_processing_time = self._get_result_value(
+                result,
+                "total_processing_time",
+                self._get_result_value(result, "average_processing_time", 0.0),
+            )
+            highlight_detection_rate = self._get_result_value(
+                result, "highlight_detection_rate", 0.0
+            )
+            awk_fallback_rate = self._get_result_value(result, "awk_fallback_rate", 0.0)
+
+            # Handle document_results safely
+            document_results = self._get_result_value(result, "document_results", [])
+            if hasattr(document_results, "__len__"):
+                doc_types_count = len(
+                    set(
+                        getattr(doc, "document_type", "unknown")
+                        for doc in document_results
+                    )
+                )
+            else:
+                doc_types_count = self._get_result_value(result, "total_documents", 0)
+
             details_html += f"""
             <h4>🔧 {model_name} Technical Details</h4>
             <ul>
-                <li><strong>Dataset:</strong> {result.dataset_name}</li>
-                <li><strong>Total Processing Time:</strong> {result.total_processing_time:.2f}s</li>
-                <li><strong>Highlight Detection Rate:</strong> {result.highlight_detection_rate:.1%}</li>
-                <li><strong>AWK Fallback Usage:</strong> {result.awk_fallback_rate:.1%}</li>
-                <li><strong>Document Types Processed:</strong> {len(set(doc.document_type for doc in result.document_results))}</li>
+                <li><strong>Dataset:</strong> {dataset_name}</li>
+                <li><strong>Total Processing Time:</strong> {total_processing_time:.2f}s</li>
+                <li><strong>Highlight Detection Rate:</strong> {highlight_detection_rate:.1%}</li>
+                <li><strong>AWK Fallback Usage:</strong> {awk_fallback_rate:.1%}</li>
+                <li><strong>Document Types Processed:</strong> {doc_types_count}</li>
             </ul>
             """
 
@@ -717,21 +748,44 @@ class ReportGenerator:
 
     def _generate_text_dataset_report(self, evaluation_result: Any) -> str:
         """Generate text dataset evaluation report."""
+        model_name = self._get_result_value(
+            evaluation_result, "model_name", "Unknown Model"
+        )
+        dataset_name = self._get_result_value(
+            evaluation_result, "dataset_name", "Unknown Dataset"
+        )
+        total_documents = self._get_result_value(
+            evaluation_result, "total_documents", 0
+        )
+        successful_extractions = self._get_result_value(
+            evaluation_result, "successful_extractions", 0
+        )
+        average_f1_score = self._get_result_value(
+            evaluation_result, "average_f1_score", 0.0
+        )
+        production_ready_rate = self._get_result_value(
+            evaluation_result, "production_ready_rate", 0.0
+        )
+
+        success_rate = (
+            successful_extractions / total_documents if total_documents > 0 else 0.0
+        )
+
         report_lines = [
             "=" * 80,
             "DATASET EVALUATION REPORT",
             "=" * 80,
             f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            f"Model: {evaluation_result.model_name}",
-            f"Dataset: {evaluation_result.dataset_name}",
+            f"Model: {model_name}",
+            f"Dataset: {dataset_name}",
             "",
             "SUMMARY METRICS",
             "-" * 40,
-            f"Total Documents: {evaluation_result.total_documents}",
-            f"Successful Extractions: {evaluation_result.successful_extractions}",
-            f"Success Rate: {evaluation_result.successful_extractions / evaluation_result.total_documents:.1%}",
-            f"F1 Score: {evaluation_result.average_f1_score:.3f}",
-            f"Production Ready Rate: {evaluation_result.production_ready_rate:.1%}",
+            f"Total Documents: {total_documents}",
+            f"Successful Extractions: {successful_extractions}",
+            f"Success Rate: {success_rate:.1%}",
+            f"F1 Score: {average_f1_score:.3f}",
+            f"Production Ready Rate: {production_ready_rate:.1%}",
             "",
         ]
 
@@ -777,13 +831,25 @@ class ReportGenerator:
         report_data = {
             "report_type": "dataset_evaluation",
             "generated_at": datetime.now().isoformat(),
-            "model_name": evaluation_result.model_name,
-            "dataset_name": evaluation_result.dataset_name,
+            "model_name": self._get_result_value(
+                evaluation_result, "model_name", "Unknown Model"
+            ),
+            "dataset_name": self._get_result_value(
+                evaluation_result, "dataset_name", "Unknown Dataset"
+            ),
             "summary_metrics": {
-                "total_documents": evaluation_result.total_documents,
-                "successful_extractions": evaluation_result.successful_extractions,
-                "average_f1_score": evaluation_result.average_f1_score,
-                "production_ready_rate": evaluation_result.production_ready_rate,
+                "total_documents": self._get_result_value(
+                    evaluation_result, "total_documents", 0
+                ),
+                "successful_extractions": self._get_result_value(
+                    evaluation_result, "successful_extractions", 0
+                ),
+                "average_f1_score": self._get_result_value(
+                    evaluation_result, "average_f1_score", 0.0
+                ),
+                "production_ready_rate": self._get_result_value(
+                    evaluation_result, "production_ready_rate", 0.0
+                ),
             },
         }
 
@@ -791,6 +857,25 @@ class ReportGenerator:
 
     def _generate_html_dataset_report(self, evaluation_result: Any) -> str:
         """Generate HTML dataset evaluation report."""
+        model_name = self._get_result_value(
+            evaluation_result, "model_name", "Unknown Model"
+        )
+        dataset_name = self._get_result_value(
+            evaluation_result, "dataset_name", "Unknown Dataset"
+        )
+        total_documents = self._get_result_value(
+            evaluation_result, "total_documents", 0
+        )
+        successful_extractions = self._get_result_value(
+            evaluation_result, "successful_extractions", 0
+        )
+        average_f1_score = self._get_result_value(
+            evaluation_result, "average_f1_score", 0.0
+        )
+        production_ready_rate = self._get_result_value(
+            evaluation_result, "production_ready_rate", 0.0
+        )
+
         return f"""
 <!DOCTYPE html>
 <html>
@@ -805,11 +890,11 @@ class ReportGenerator:
 <body>
     <h1>Dataset Evaluation Report</h1>
     <div class="summary">
-        <h2>{evaluation_result.model_name} - {evaluation_result.dataset_name}</h2>
-        <div class="metric">Total Documents: {evaluation_result.total_documents}</div>
-        <div class="metric">Successful Extractions: {evaluation_result.successful_extractions}</div>
-        <div class="metric">F1 Score: {evaluation_result.average_f1_score:.3f}</div>
-        <div class="metric">Production Ready Rate: {evaluation_result.production_ready_rate:.1%}</div>
+        <h2>{model_name} - {dataset_name}</h2>
+        <div class="metric">Total Documents: {total_documents}</div>
+        <div class="metric">Successful Extractions: {successful_extractions}</div>
+        <div class="metric">F1 Score: {average_f1_score:.3f}</div>
+        <div class="metric">Production Ready Rate: {production_ready_rate:.1%}</div>
     </div>
 </body>
 </html>"""
