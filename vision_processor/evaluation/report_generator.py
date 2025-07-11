@@ -441,8 +441,18 @@ class ReportGenerator:
         assessment_html = ""
 
         for model_name, result in comparison_results.items():
-            # Calculate production readiness grade
-            prod_rate = getattr(result, "production_ready_rate", 0.0)
+            # Handle both dict and object result types
+            if isinstance(result, dict):
+                prod_rate = result.get("production_ready_rate", 0.0)
+                production_ready_count = result.get("production_ready_count", 0)
+                total_documents = result.get("total_documents", 0)
+                quality_distribution = result.get("quality_distribution", {})
+            else:
+                prod_rate = getattr(result, "production_ready_rate", 0.0)
+                production_ready_count = getattr(result, "production_ready_count", 0)
+                total_documents = getattr(result, "total_documents", 0)
+                quality_distribution = getattr(result, "quality_distribution", {})
+
             if prod_rate >= 0.9:
                 grade = "🟢 Excellent"
                 grade_color = "#28a745"
@@ -456,6 +466,14 @@ class ReportGenerator:
                 grade = "🔴 Poor"
                 grade_color = "#dc3545"
 
+            # Format quality distribution
+            if quality_distribution:
+                quality_str = ", ".join(
+                    f"{k}: {v}" for k, v in quality_distribution.items()
+                )
+            else:
+                quality_str = "No quality data available"
+
             assessment_html += f"""
             <div class="model-card">
                 <h3>{model_name}</h3>
@@ -465,11 +483,11 @@ class ReportGenerator:
                 </div>
                 <div class="metric">
                     <span class="metric-label">Ready Documents:</span>
-                    <span class="metric-value">{result.production_ready_count}/{result.total_documents}</span>
+                    <span class="metric-value">{production_ready_count}/{total_documents}</span>
                 </div>
                 <div class="metric">
                     <span class="metric-label">Quality Distribution:</span>
-                    <span class="metric-value">{", ".join(f"{k}: {v}" for k, v in result.quality_distribution.items())}</span>
+                    <span class="metric-value">{quality_str}</span>
                 </div>
             </div>
             """

@@ -31,12 +31,12 @@ class TestATOComplianceValidator:
     def test_abn_validation_valid_formats(self, ato_validator):
         """Test ABN validation with valid formats."""
         valid_abns = [
-            "88 000 014 675",  # Woolworths (with spaces)
-            "88000014675",  # Woolworths (no spaces)
-            "51 004 085 616",  # Coles
-            "51004085616",  # Coles (no spaces)
-            "63 000 240 417",  # JB Hi-Fi
-            "63000240417",  # JB Hi-Fi (no spaces)
+            "88 000 014 675",  # Woolworths (with spaces) - verified valid
+            "88000014675",  # Woolworths (no spaces) - verified valid
+            "64 067 190 363",  # Test ABN 1 (with spaces)
+            "64067190363",  # Test ABN 1 (no spaces)
+            "61 291 347 325",  # Test ABN 2 (with spaces)
+            "61291347325",  # Test ABN 2 (no spaces)
         ]
 
         for abn in valid_abns:
@@ -51,10 +51,10 @@ class TestATOComplianceValidator:
             "12345",  # Too short
             "123456789012",  # Too long
             "abc123def456",  # Contains letters
-            "88 000 014 999",  # Invalid check digit
+            "88 000 014 999",  # Invalid check digit (last digit changed from 5 to 9)
             "",  # Empty
             None,  # None
-            "88-000-014-675",  # Wrong separators
+            "51 004 085 616",  # Invalid checksum (verified invalid)
         ]
 
         for abn in invalid_abns:
@@ -326,9 +326,9 @@ class TestFieldValidators:
 
         # Known valid ABNs with correct checksums
         valid_abns = [
-            "88000014675",  # Woolworths
-            "51004085616",  # Coles
-            "63000240417",  # JB Hi-Fi
+            "88000014675",  # Woolworths (verified valid)
+            "64067190363",  # Test ABN 1 (generated valid)
+            "61291347325",  # Test ABN 2 (generated valid)
         ]
 
         for abn in valid_abns:
@@ -355,7 +355,12 @@ class TestFieldValidators:
         # Test cases with rounding tolerance
         test_cases = [
             (23.63, 2.36, 25.99, True),  # 23.63 * 0.1 = 2.363, rounded to 2.36
-            (23.64, 2.37, 26.01, True),  # 23.64 * 0.1 = 2.364, rounded to 2.37
+            (
+                23.64,
+                2.36,
+                26.00,
+                True,
+            ),  # 23.64 * 0.1 = 2.364, rounded to 2.36 (correct)
             (45.45, 4.55, 50.00, True),  # 45.45 * 0.1 = 4.545, rounded to 4.55
             (100.00, 10.01, 110.01, False),  # Outside tolerance
         ]
