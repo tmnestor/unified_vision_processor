@@ -82,9 +82,10 @@ class BaseATOHandler(ABC):
 
     def _load_australian_patterns(self) -> None:
         """Load Australian business and format patterns."""
-        # Australian date patterns (DD/MM/YYYY) - structured format first
+        # Australian date patterns - match working Llama key-value format
         self.date_patterns = [
-            r"Date:\s*(\d{1,2}/\d{1,2}/\d{4})",  # New structured format: "Date: 15/06/2024"
+            r"DATE:\s*(\d{1,2}/\d{1,2}/\d{4})",  # Working format: "DATE: 16/03/2023"
+            r"Date:\s*(\d{1,2}/\d{1,2}/\d{4})",  # Structured format: "Date: 15/06/2024"
             r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b",
             r"\b(\d{1,2})-(\d{1,2})-(\d{4})\b",
             r"\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b",
@@ -102,9 +103,10 @@ class BaseATOHandler(ABC):
             r"\b(?:abn\s*:?\s*)?(\d{11})\b",
         ]
 
-        # GST patterns (10% in Australia) - structured format first
+        # GST patterns - match working Llama key-value format
         self.gst_patterns = [
-            r"GST:\s*\$?(\d+(?:\.\d{2})?)",  # New structured format: "GST: $4.55"
+            r"TAX:\s*(\d+(?:\.\d{2})?)",  # Working format: "TAX: 3.82"
+            r"GST:\s*\$?(\d+(?:\.\d{2})?)",  # Structured format: "GST: $4.55"
             r"(?:gst|tax)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
             r"(?:goods\s+and\s+services\s+tax)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
         ]
@@ -155,9 +157,10 @@ class BaseATOHandler(ABC):
         if date_match:
             fields["date"] = date_match
 
-        # Extract total amount
+        # Extract total amount - match working Llama key-value format
         total_patterns = [
-            r"Total:\s*\$?(\d+(?:\.\d{2})?)",  # New structured format: "Total: $45.50"
+            r"TOTAL:\s*(\d+(?:\.\d{2})?)",  # Working format: "TOTAL: 42.08"
+            r"Total:\s*\$?(\d+(?:\.\d{2})?)",  # Structured format: "Total: $45.50"
             r"(?:total|amount)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
             r"(?:grand\s+total)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
         ]
@@ -177,7 +180,8 @@ class BaseATOHandler(ABC):
 
         # Extract supplier/business name (structured format first)
         supplier_patterns = [
-            r"Supplier:\s*(.+?)(?:\n|$)",  # New structured format: "Supplier: Business Name"
+            r"STORE:\s*(.+?)(?:\n|$)",  # Working format: "STORE: WOOLWORTHS"
+            r"Supplier:\s*(.+?)(?:\n|$)",  # Structured format: "Supplier: Business Name"
         ]
         supplier_match = self._extract_first_match(text, supplier_patterns)
         if supplier_match:

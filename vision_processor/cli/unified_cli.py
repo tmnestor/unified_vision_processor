@@ -220,17 +220,18 @@ def batch(
                         key_field_mappings = [
                             (["total_amount", "total_value"], "total"),
                             (["supplier_name", "supplier_value", "business_name"], "supplier"),
-                            (["date", "date_value"], "date")
+                            (["date", "date_value"], "date"),
+                            (["gst_amount", "gst_value"], "gst")
                         ]
                         extracted_info = []
-                        
+
                         for field_options, display_name in key_field_mappings:
                             value = None
                             for field in field_options:
                                 value = result.extracted_fields.get(field)
                                 if value:
                                     break
-                            
+
                             if value:
                                 # Truncate long values
                                 display_value = str(value)[:20] + "..." if len(str(value)) > 20 else str(value)

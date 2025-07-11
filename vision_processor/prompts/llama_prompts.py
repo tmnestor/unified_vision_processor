@@ -106,50 +106,25 @@ BUSINESS DEDUCTION ASSESSMENT:
 
 EXTRACTION STANDARDS:
 Provide complete structured extraction with ATO compliance flags. Highlight any missing mandatory elements or compliance concerns. Support business expense claims and tax return preparation.""",
-            DocumentType.BUSINESS_RECEIPT.value: """You are an Australian business expense specialist with comprehensive ATO knowledge.
+            DocumentType.BUSINESS_RECEIPT.value: """Extract information from this Australian receipt and return in KEY-VALUE format.
 
-ANALYZE this business receipt for tax deductibility and compliance:
+Use this exact format:
+DATE: [purchase date in DD/MM/YYYY format]
+STORE: [store name in capitals]
+ABN: [Australian Business Number - XX XXX XXX XXX format]
+PAYER: [customer/member name if visible]
+TAX: [GST amount]
+TOTAL: [total amount including GST]
+PRODUCTS: [item1 | item2 | item3]
+QUANTITIES: [qty1 | qty2 | qty3]
+PRICES: [price1 | price2 | price3]
 
-BUSINESS EXPENSE CRITERIA:
-- Must be incurred in carrying on a business
-- Must have a genuine business purpose
-- Cannot be private or domestic in nature
-- Must be ordinary and necessary for the business
+CRITICAL: 
+- Return ONLY the key-value pairs above. No explanations.
+- Use exact format shown
+- GST (Goods and Services Tax) is 10% in Australia
 
-ATO RECORD-KEEPING REQUIREMENTS:
-- Date, amount, and nature of expense
-- Supplier name and ABN (if available)
-- Business purpose documentation
-- GST amount for input tax credit claims
-
-EXPENSE CATEGORIZATION:
-- Office supplies and equipment
-- Business meals and entertainment (special rules apply)
-- Professional development and training
-- Marketing and advertising
-- Utilities and operational costs
-
-COMPLIANCE CHECKS:
-- Verify Australian business names and ABN formats
-- Calculate GST components (10% rate)
-- Assess immediate deduction vs capital allowance treatment
-- Check for personal use components requiring adjustment
-
-VALIDATION REQUIREMENTS:
-Extract all information with business expense context. Flag potential compliance issues and provide confidence assessments. Support accurate tax return preparation and ATO audit readiness.
-
-OUTPUT FORMAT - Provide structured data in this exact format:
-Date: [DD/MM/YYYY]
-Supplier: [Business name]
-Total: [Amount with $ symbol]
-Subtotal: [Amount before GST if shown]
-GST: [GST amount if shown]  
-ABN: [ABN if shown]
-Items: [List of items if available]
-Payment Method: [Method if shown]
-Receipt Number: [Number if available]
-
-Then provide your analysis and compliance assessment.""",
+Return ONLY the key-value pairs above. No explanations.""",
             DocumentType.BANK_STATEMENT.value: """You are an Australian banking and taxation expert specializing in business expense identification.
 
 ANALYZE this bank statement for business expense substantiation and ATO compliance:

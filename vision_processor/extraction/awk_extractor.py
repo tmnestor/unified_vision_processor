@@ -186,6 +186,45 @@ class AWKExtractor:
         """Load comprehensive extraction patterns."""
         patterns = []
 
+        # HIGH PRIORITY: Working Llama key-value format patterns
+        patterns.extend(
+            [
+                ExtractionPattern(
+                    pattern=r"DATE:\s*(\d{1,2}/\d{1,2}/\d{4})",
+                    field_type=FieldType.DATE,
+                    priority=15,  # Highest priority
+                    document_types=list(DocumentType),
+                ),
+                ExtractionPattern(
+                    pattern=r"STORE:\s*(.+?)(?:\n|$)",
+                    field_type=FieldType.SUPPLIER,
+                    priority=15,
+                    document_types=list(DocumentType),
+                ),
+                ExtractionPattern(
+                    pattern=r"TOTAL:\s*(\d+(?:\.\d{2})?)",
+                    field_type=FieldType.TOTAL,
+                    priority=15,
+                    document_types=list(DocumentType),
+                    post_processor="clean_amount",
+                ),
+                ExtractionPattern(
+                    pattern=r"TAX:\s*(\d+(?:\.\d{2})?)",
+                    field_type=FieldType.GST,
+                    priority=15,
+                    document_types=list(DocumentType),
+                    post_processor="clean_amount",
+                ),
+                ExtractionPattern(
+                    pattern=r"ABN:\s*(\d{2}\s?\d{3}\s?\d{3}\s?\d{3})",
+                    field_type=FieldType.ABN,
+                    priority=15,
+                    document_types=list(DocumentType),
+                    post_processor="clean_abn",
+                ),
+            ],
+        )
+
         # Date patterns (high priority for all documents)
         patterns.extend(
             [
