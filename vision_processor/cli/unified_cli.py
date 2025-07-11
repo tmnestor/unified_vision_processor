@@ -216,10 +216,22 @@ def batch(
                             },
                         )
 
+                        # Extract key fields for progress display
+                        key_fields = ["total_amount", "supplier_name", "date"]
+                        extracted_info = []
+                        for field in key_fields:
+                            value = result.extracted_fields.get(field)
+                            if value:
+                                # Truncate long values
+                                display_value = str(value)[:20] + "..." if len(str(value)) > 20 else str(value)
+                                extracted_info.append(f"{field}:{display_value}")
+
+                        fields_summary = " | ".join(extracted_info) if extracted_info else "No key fields"
+
                         progress.update(
                             task,
                             advance=1,
-                            description=f"[green]Processed {i + 1}/{len(image_files)} - {result.quality_grade.value}",
+                            description=f"[green]Processed {i + 1}/{len(image_files)} - {result.quality_grade.value} | {fields_summary}",
                         )
 
                     except Exception as e:
@@ -498,6 +510,38 @@ def _display_batch_statistics(results: list[dict], model: str) -> None:
         stats_table.add_row("Quality Distribution", quality_str)
 
     console.print(stats_table)
+
+    # Show sample extracted fields from the first few successful results
+    if successful and len(successful) >= 3:
+        sample_table = Table(title="📋 Sample Extracted Fields (First 3 Documents)")
+        sample_table.add_column("Document", style="cyan")
+        sample_table.add_column("Total Amount", style="green")
+        sample_table.add_column("Supplier", style="yellow")
+        sample_table.add_column("Date", style="blue")
+        sample_table.add_column("Fields Count", justify="center")
+
+        for _i, result_entry in enumerate(successful[:3]):
+            result = result_entry["result"]
+            fields = result.extracted_fields
+
+            # Extract key fields
+            total_amount = fields.get("total_amount", "Not found")
+            supplier = fields.get("supplier_name", "Not found")
+            date = fields.get("date", "Not found")
+            field_count = len([v for v in fields.values() if v and str(v).strip()])
+
+            # Truncate long values for display
+            supplier_display = str(supplier)[:25] + "..." if len(str(supplier)) > 25 else str(supplier)
+
+            sample_table.add_row(
+                result_entry["image_file"],
+                str(total_amount),
+                supplier_display,
+                str(date),
+                str(field_count)
+            )
+
+        console.print(sample_table)
 
 
 def _display_comparison_results(comparison_result) -> None:
