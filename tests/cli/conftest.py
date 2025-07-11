@@ -128,6 +128,20 @@ def cli_test_config() -> UnifiedConfig:
 
 
 @pytest.fixture
+def real_test_images():
+    """Get paths to real test images from datasets directory."""
+    datasets_dir = Path(__file__).parent.parent.parent / "datasets"
+    if not datasets_dir.exists():
+        pytest.skip("Datasets directory not found")
+
+    image_files = list(datasets_dir.glob("image*.png"))
+    if not image_files:
+        pytest.skip("No test images found in datasets directory")
+
+    return image_files
+
+
+@pytest.fixture
 def mock_cli_dependencies(monkeypatch):
     """Mock all external dependencies for CLI testing."""
     # Mock the extraction manager

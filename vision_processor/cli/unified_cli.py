@@ -50,6 +50,27 @@ def process(
         "-o",
         help="Output path for results (JSON format)",
     ),
+    format: str = typer.Option(
+        "text",
+        "--format",
+        "-f",
+        help="Output format: text or json",
+    ),
+    confidence_threshold: float = typer.Option(
+        0.8,
+        "--confidence-threshold",
+        help="Minimum confidence threshold for results",
+    ),
+    enable_highlights: bool = typer.Option(
+        False,
+        "--enable-highlights/--no-highlights",
+        help="Enable highlight detection",
+    ),
+    enable_awk_fallback: bool = typer.Option(
+        False,
+        "--enable-awk-fallback/--no-awk-fallback",
+        help="Enable AWK fallback extraction",
+    ),
     verbose: bool = typer.Option(
         False,
         "--verbose",
@@ -88,18 +109,24 @@ def process(
         # Create configuration
         config = UnifiedConfig.from_env()
         config.model_type = model_type
+        config.confidence_threshold = confidence_threshold
+        config.highlight_detection = enable_highlights
+        config.awk_fallback = enable_awk_fallback
 
         # Process document using unified pipeline
         with console.status(f"[bold green]Processing with {model_type.value}..."):
             with UnifiedExtractionManager(config) as extraction_manager:
                 result = extraction_manager.process_document(image_file, document_type)
 
-        # Display results
-        _display_processing_result(result)
+        # Display results based on format
+        if format.lower() == "json":
+            _display_json_result(result)
+        else:
+            _display_processing_result(result)
 
         # Save output if requested
         if output_path:
-            _save_processing_result(result, output_path)
+            _save_processing_result(result, output_path, format)
             console.print(f"[green]✅ Results saved to: {output_path}[/green]")
 
     except Exception as e:
@@ -557,8 +584,8 @@ def _display_sroie_results(evaluation_result: dict) -> None:
     console.print(field_table)
 
 
-def _save_processing_result(result, output_path: str) -> None:
-    """Save processing result to JSON file."""
+def _display_json_result(result) -> None:
+    """Display processing result in JSON format."""
     import json
 
     result_dict = {
@@ -576,8 +603,44 @@ def _save_processing_result(result, output_path: str) -> None:
         "recommendations": result.recommendations,
     }
 
-    with Path(output_path).open("w") as f:
-        json.dump(result_dict, f, indent=2, default=str)
+    console.print(json.dumps(result_dict, indent=2, default=str))
+
+
+def _save_processing_result(result, output_path: str, format: str = "json") -> None:
+    """Save processing result to file."""
+    import json
+
+    result_dict = {
+        "model_type": result.model_type,
+        "document_type": result.document_type,
+        "processing_time": result.processing_time,
+        "confidence_score": result.confidence_score,
+        "quality_grade": result.quality_grade.value,
+        "production_ready": result.production_ready,
+        "ato_compliance_score": result.ato_compliance_score,
+        "extracted_fields": result.extracted_fields,
+        "awk_fallback_used": result.awk_fallback_used,
+        "highlights_detected": result.highlights_detected,
+        "quality_flags": result.quality_flags,
+        "recommendations": result.recommendations,
+    }
+
+    if format.lower() == "json":
+        with Path(output_path).open("w") as f:
+            json.dump(result_dict, f, indent=2, default=str)
+    else:
+        # Text format
+        with Path(output_path).open("w") as f:
+            f.write(f"Model: {result.model_type}\n")
+            f.write(f"Document Type: {result.document_type}\n")
+            f.write(f"Processing Time: {result.processing_time:.2f}s\n")
+            f.write(f"Confidence Score: {result.confidence_score:.3f}\n")
+            f.write(f"Quality Grade: {result.quality_grade.value}\n")
+            f.write(f"Production Ready: {result.production_ready}\n")
+            f.write("\nExtracted Fields:\n")
+            for field, value in result.extracted_fields.items():
+                if not field.startswith("_") and value:
+                    f.write(f"  {field}: {value}\n")
 
 
 def _save_batch_results(results: list[dict], output_file: Path) -> None:

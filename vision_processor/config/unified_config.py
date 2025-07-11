@@ -53,7 +53,7 @@ class UnifiedConfig:
     # =====================================================
     # MODEL SELECTION
     # =====================================================
-    model_type: ModelType = ModelType.INTERNVL3
+    _model_type: ModelType = ModelType.INTERNVL3
     model_path: Path | None = None
     device_config: DeviceConfig = DeviceConfig.AUTO
 
@@ -176,6 +176,19 @@ class UnifiedConfig:
         # Mark as initialized to enable validation
         self._initialized = True
 
+    @property
+    def model_type(self) -> ModelType:
+        """Get the current model type."""
+        return self._model_type
+
+    @model_type.setter
+    def model_type(self, value: ModelType) -> None:
+        """Set model type and re-resolve model path."""
+        self._model_type = value
+        # Re-resolve model path when type changes
+        if hasattr(self, "_initialized") and self._initialized:
+            self._resolve_model_path()
+
     def _resolve_model_path(self) -> None:
         """Resolve model path based on model type and configured paths."""
         if self.model_type == ModelType.INTERNVL3 and self.internvl_model_path:
@@ -184,6 +197,33 @@ class UnifiedConfig:
         elif self.model_type == ModelType.LLAMA32_VISION and self.llama_model_path:
             self.model_path = self.llama_model_path
             logger.info(f"Using Llama model path: {self.model_path}")
+        elif self.model_type == ModelType.LLAMA32_VISION and not self.llama_model_path:
+            # Try to auto-detect Llama path based on InternVL path structure
+            if self.internvl_model_path:
+                base_dir = self.internvl_model_path.parent
+                # Try common Llama model directory names
+                potential_llama_paths = [
+                    base_dir / "Llama-3.2-11B-Vision",
+                    base_dir / "Llama-3.2-Vision-11B",
+                    base_dir / "llama-3.2-11b-vision",
+                    base_dir / "Llama3.2-11B-Vision",
+                ]
+
+                for potential_path in potential_llama_paths:
+                    if potential_path.exists():
+                        self.model_path = potential_path
+                        logger.info(f"Auto-detected Llama model path: {self.model_path}")
+                        return
+
+                # If no Llama model found, provide helpful error
+                logger.error(
+                    f"Llama model not found. Searched in: {[str(p) for p in potential_llama_paths]}"
+                )
+                if self.offline_mode and not self.testing_mode:
+                    raise ValueError(
+                        f"Llama model not found. Please ensure Llama-3.2-Vision model is available at one of: "
+                        f"{[str(p) for p in potential_llama_paths[:2]]} or set VISION_LLAMA_MODEL_PATH environment variable."
+                    )
         else:
             # If offline mode (default) and no path configured, raise error (unless testing)
             if self.offline_mode and not self.testing_mode:
