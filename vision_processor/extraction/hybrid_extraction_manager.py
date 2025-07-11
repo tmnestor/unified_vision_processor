@@ -491,8 +491,16 @@ class UnifiedExtractionManager:
 
     def _extraction_quality_insufficient(self, fields: dict[str, Any]) -> bool:
         """Assess if extraction quality is insufficient for AWK fallback."""
-        # Simple heuristic - will be enhanced in Phase 4
-        return len(fields) < 3 or "extracted_method" in fields
+        # Filter out metadata fields to count only actual extracted data
+        data_fields = {
+            k: v for k, v in fields.items() 
+            if k not in ['extracted_by', 'fields_count', 'extraction_method', 'handler_type']
+            and v is not None 
+            and str(v).strip()
+        }
+        
+        # Check if we have insufficient actual data fields
+        return len(data_fields) < 3
 
     def _merge_extractions(
         self,
