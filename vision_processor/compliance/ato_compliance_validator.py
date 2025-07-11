@@ -521,8 +521,17 @@ class ATOComplianceValidator:
         issues = []
         recommendations = []
 
-        # Recognize businesses in text
+        # Recognize businesses in text or supplier name
         recognized_business = self.business_registry.recognize_business(raw_text)
+
+        # If no business found in raw text, try supplier name
+        if not recognized_business.is_recognized and extracted_fields.get(
+            "supplier_name"
+        ):
+            supplier_text = extracted_fields["supplier_name"]
+            recognized_business = self.business_registry.recognize_business(
+                supplier_text
+            )
 
         business_score = 0.0
 

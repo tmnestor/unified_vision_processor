@@ -97,20 +97,23 @@ class ABNValidator:
             # Convert to list of integers
             digits = [int(d) for d in abn]
 
-            # Subtract 1 from the first digit
-            digits[0] -= 1
+            # Apply ABN checksum algorithm:
+            # 1. Subtract 1 from the first digit
+            first_digit = digits[0] - 1
 
-            # Handle case where first digit becomes -1
-            if digits[0] < 0:
+            # Handle case where first digit becomes -1 (for ABNs starting with 0)
+            if first_digit < 0:
                 return False
 
-            # Calculate weighted sum
-            weighted_sum = sum(
-                digit * weight
-                for digit, weight in zip(digits, self.weights, strict=False)
-            )
+            # 2. Calculate weighted sum: first digit * 10 + remaining digits * weights
+            weighted_sum = first_digit * 10
 
-            # Check if divisible by 89
+            # Add products of remaining 10 digits with their weights [1,3,5,7,9,11,13,15,17,19]
+            remaining_weights = [1, 3, 5, 7, 9, 11, 13, 15, 17, 19]
+            for i in range(10):
+                weighted_sum += digits[i + 1] * remaining_weights[i]
+
+            # 3. Check if divisible by 89
             return weighted_sum % 89 == 0
 
         except (ValueError, IndexError):
@@ -410,11 +413,12 @@ class GSTValidator:
         if gst == 0.0 and total == subtotal:
             return True
 
-        # Calculate expected GST (10% of subtotal)
-        expected_gst = subtotal * self.gst_rate
+        # Calculate expected GST (10% of subtotal) and round to 2 decimal places
+        expected_gst_raw = subtotal * self.gst_rate
+        expected_gst = round(expected_gst_raw, 2)
         expected_total = subtotal + expected_gst
 
-        # Check GST amount with tolerance
+        # Check GST amount with tolerance (compare against rounded expected value)
         gst_valid = abs(gst - expected_gst) <= self.tolerance
         # Check total amount with tolerance
         total_valid = abs(total - expected_total) <= self.tolerance
@@ -433,8 +437,9 @@ class AmountValidator:
     """
 
     def __init__(self):
-        # Currency patterns - allow for optional currency symbol and decimal places
-        self.currency_pattern = re.compile(r"^-?\$?[\d,]+(\.\d{1,2})?$")
+        # Currency patterns - more restrictive for proper thousands separator placement
+        # Matches: $1,234.56 or 1234.56 or $1234 but not $1,23.45
+        self.currency_pattern = re.compile(r"^-?\$?(\d{1,3}(,\d{3})*|\d+)(\.\d{1,2})?$")
 
     def validate(self, amount_str: str) -> tuple[bool, float | None, str, list[str]]:
         """Validate and parse Australian currency amount.

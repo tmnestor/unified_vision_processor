@@ -119,6 +119,17 @@ class TestUnifiedExtractionManager:
                                         "Test prompt for document processing"
                                     )
 
+                                    # Store mock references for test access
+                                    manager._test_mocks = {
+                                        "classifier": mock_classifier,
+                                        "confidence_manager": mock_confidence,
+                                        "ato_handler": mock_ato,
+                                        "awk_extractor": mock_awk,
+                                        "model": mock_model,
+                                        "highlights": mock_highlights,
+                                        "prompt": mock_prompt,
+                                    }
+
                                     return manager
 
     def test_extraction_manager_initialization(self, test_config):
@@ -176,10 +187,10 @@ class TestUnifiedExtractionManager:
         # Test with auto-detection
         result = mock_extraction_manager.process_document(mock_image_path)
 
-        # Verify classification was called
-        mock_extraction_manager.classifier.classify_with_evidence.assert_called_once_with(
-            mock_image_path
-        )
+        # Verify classification was called using stored mock reference
+        mock_extraction_manager._test_mocks[
+            "classifier"
+        ].classify_with_evidence.assert_called_once_with(mock_image_path)
         assert result.document_type == "business_receipt"
 
         # Test with predefined document type
@@ -315,8 +326,10 @@ class TestUnifiedExtractionManager:
         """Test Step 7: Confidence Integration and Production Readiness."""
         result = mock_extraction_manager.process_document(mock_image_path)
 
-        # Verify confidence assessment was called
-        mock_extraction_manager.confidence_manager.assess_document_confidence.assert_called_once()
+        # Verify confidence assessment was called using stored mock reference
+        mock_extraction_manager._test_mocks[
+            "confidence_manager"
+        ].assess_document_confidence.assert_called_once()
         assert result.confidence_score == 0.82
         assert result.quality_grade == QualityGrade.GOOD
         assert result.production_ready is True
@@ -438,13 +451,17 @@ class TestUnifiedExtractionManager:
     ):
         """Test graceful degradation when model inference fails."""
         # Mock model failure
-        mock_extraction_manager.model.process_image.side_effect = Exception(
-            "Model failed"
-        )
+        mock_extraction_manager._test_mocks[
+            "model"
+        ].process_image.side_effect = Exception("Model failed")
 
-        # Should handle the error gracefully
-        with pytest.raises(Exception, match=".*"):
-            mock_extraction_manager.process_document(mock_image_path)
+        # Should handle the error gracefully and return a result with errors
+        result = mock_extraction_manager.process_document(mock_image_path)
+
+        # Should complete processing but with errors recorded
+        assert result is not None
+        assert len(result.errors) > 0
+        assert any("Model failed" in str(error) for error in result.errors)
 
     def test_processing_time_measurement(
         self, mock_extraction_manager, mock_image_path

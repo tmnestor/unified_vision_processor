@@ -267,19 +267,30 @@ class ReportGenerator:
         if not comparison_results:
             return "<p>No comparison results available.</p>"
 
-        # Find best performing model
+        # Find best performing model (handle both dict and object results)
         best_model = max(
             comparison_results.keys(),
-            key=lambda k: comparison_results[k].average_f1_score,
+            key=lambda k: (
+                comparison_results[k].get("average_f1_score", 0.0)
+                if isinstance(comparison_results[k], dict)
+                else getattr(comparison_results[k], "average_f1_score", 0.0)
+            ),
         )
         best_result = comparison_results[best_model]
 
-        # Safe formatting to handle Mock objects in tests
-        f1_score = getattr(best_result, "average_f1_score", 0.0)
-        ready_rate = getattr(best_result, "production_ready_rate", 0.0)
-        proc_time = getattr(best_result, "average_processing_time", 0.0)
-        success_count = getattr(best_result, "successful_extractions", 0)
-        total_count = getattr(best_result, "total_documents", 0)
+        # Safe formatting to handle Mock objects and dicts in tests
+        if isinstance(best_result, dict):
+            f1_score = best_result.get("average_f1_score", 0.0)
+            ready_rate = best_result.get("production_ready_rate", 0.0)
+            proc_time = best_result.get("average_processing_time", 0.0)
+            success_count = best_result.get("successful_extractions", 0)
+            total_count = best_result.get("total_documents", 0)
+        else:
+            f1_score = getattr(best_result, "average_f1_score", 0.0)
+            ready_rate = getattr(best_result, "production_ready_rate", 0.0)
+            proc_time = getattr(best_result, "average_processing_time", 0.0)
+            success_count = getattr(best_result, "successful_extractions", 0)
+            total_count = getattr(best_result, "total_documents", 0)
 
         # Format numbers safely
         try:
@@ -792,45 +803,72 @@ class ReportGenerator:
         if not comparison_results:
             return recommendations
 
-        # Find best model (with safe attribute access)
+        # Find best model (with safe attribute access for both dicts and objects)
         best_model = max(
             comparison_results.keys(),
-            key=lambda k: getattr(comparison_results[k], "average_f1_score", 0.0),
+            key=lambda k: (
+                comparison_results[k].get("average_f1_score", 0.0)
+                if isinstance(comparison_results[k], dict)
+                else getattr(comparison_results[k], "average_f1_score", 0.0)
+            ),
         )
 
         best_result = comparison_results[best_model]
 
-        # Production deployment recommendations
-        if best_result.production_ready_rate >= 0.9:
+        # Production deployment recommendations (handle both dict and object)
+        production_ready_rate = (
+            best_result.get("production_ready_rate", 0.0)
+            if isinstance(best_result, dict)
+            else getattr(best_result, "production_ready_rate", 0.0)
+        )
+
+        if production_ready_rate >= 0.9:
             recommendations["Production Deployment"].append(
-                f"✅ {best_model} is ready for production deployment with {best_result.production_ready_rate:.1%} ready rate",
+                f"✅ {best_model} is ready for production deployment with {production_ready_rate:.1%} ready rate",
             )
-        elif best_result.production_ready_rate >= 0.7:
+        elif production_ready_rate >= 0.7:
             recommendations["Production Deployment"].append(
-                f"⚠️ {best_model} requires monitoring in production with {best_result.production_ready_rate:.1%} ready rate",
+                f"⚠️ {best_model} requires monitoring in production with {production_ready_rate:.1%} ready rate",
             )
         else:
             recommendations["Production Deployment"].append(
                 f"❌ {best_model} requires significant improvement before production deployment",
             )
 
-        # Performance optimization
+        # Performance optimization (handle both dict and object)
         for model_name, result in comparison_results.items():
-            if result.awk_fallback_rate > 0.3:
+            awk_fallback_rate = (
+                result.get("awk_fallback_rate", 0.0)
+                if isinstance(result, dict)
+                else getattr(result, "awk_fallback_rate", 0.0)
+            )
+            avg_processing_time = (
+                result.get("average_processing_time", 0.0)
+                if isinstance(result, dict)
+                else getattr(result, "average_processing_time", 0.0)
+            )
+
+            if awk_fallback_rate > 0.3:
                 recommendations["Performance Optimization"].append(
-                    f"🔄 {model_name}: High AWK fallback rate ({result.awk_fallback_rate:.1%}) - consider improving primary extraction",
+                    f"🔄 {model_name}: High AWK fallback rate ({awk_fallback_rate:.1%}) - consider improving primary extraction",
                 )
 
-            if result.average_processing_time > 10.0:
+            if avg_processing_time > 10.0:
                 recommendations["Performance Optimization"].append(
-                    f"⏱️ {model_name}: Slow processing ({result.average_processing_time:.2f}s avg) - consider optimization",
+                    f"⏱️ {model_name}: Slow processing ({avg_processing_time:.2f}s avg) - consider optimization",
                 )
 
-        # Quality improvement
+        # Quality improvement (handle both dict and object)
         for model_name, result in comparison_results.items():
-            if result.average_f1_score < 0.8:
+            avg_f1_score = (
+                result.get("average_f1_score", 0.0)
+                if isinstance(result, dict)
+                else getattr(result, "average_f1_score", 0.0)
+            )
+
+            if avg_f1_score < 0.8:
                 recommendations["Quality Improvement"].append(
-                    f"📈 {model_name}: F1 score below threshold ({result.average_f1_score:.3f}) - review extraction accuracy",
+                    f"📈 {model_name}: F1 score below threshold ({avg_f1_score:.3f}) - review extraction accuracy",
                 )
 
         # Technical considerations
