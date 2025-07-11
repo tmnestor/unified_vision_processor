@@ -388,7 +388,7 @@ class ModelFactory:
             base_config.update(
                 {
                     "device_config": DeviceConfig.MULTI_GPU,
-                    "enable_quantization": False,  # High memory, no quantization needed
+                    "enable_quantization": True,  # Required for CUDA scatter operation compatibility
                     "memory_limit_mb": None,
                 },
             )
