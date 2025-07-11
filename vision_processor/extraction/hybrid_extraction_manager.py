@@ -299,7 +299,14 @@ class UnifiedExtractionManager:
             # Get document handler and perform primary extraction
             handler = self._get_handler(classified_type)
             handler.ensure_initialized()
+            
+            # DEBUG: Log raw model response for troubleshooting
+            logger.info(f"Raw model response (first 500 chars): {model_response.raw_text[:500]}")
+            
             extracted_fields = handler.extract_fields_primary(model_response.raw_text)
+            
+            # DEBUG: Log extracted fields
+            logger.info(f"Extracted fields: {extracted_fields}")
 
             # InternVL Integration: Enhanced Key-Value Parser
             if self.config.extraction_method == ExtractionMethod.HYBRID and self.enhanced_parser:
