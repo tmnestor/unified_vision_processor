@@ -8,10 +8,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Union
 
-import torch
-from PIL import Image
+if TYPE_CHECKING:
+    import torch
+    from PIL import Image
 
 
 class ModelType(Enum):
@@ -38,12 +39,12 @@ class ModelResponse:
     confidence: float
     processing_time: float
     device_used: str
-    memory_usage: float | None = None
-    model_type: str | None = None
+    memory_usage: Union[float, None] = None
+    model_type: Union[str, None] = None
     quantized: bool = False
 
     # Additional metadata for analysis
-    metadata: dict[str, Any] = None
+    metadata: Union[dict[str, Any], None] = None
 
     def __post_init__(self):
         if self.metadata is None:
@@ -73,10 +74,10 @@ class BaseVisionModel(ABC):
 
     def __init__(
         self,
-        model_path: str | Path,
+        model_path: Union[str, Path],
         device_config: DeviceConfig = DeviceConfig.AUTO,
         enable_quantization: bool = True,
-        memory_limit_mb: int | None = None,
+        memory_limit_mb: Union[int, None] = None,
         **kwargs,
     ):
         self.model_path = Path(model_path)
@@ -100,7 +101,7 @@ class BaseVisionModel(ABC):
         """Return model-specific capabilities."""
 
     @abstractmethod
-    def _setup_device(self) -> torch.device:
+    def _setup_device(self) -> "torch.device":
         """Setup device configuration for the model."""
 
     @abstractmethod
@@ -114,7 +115,7 @@ class BaseVisionModel(ABC):
     @abstractmethod
     def process_image(
         self,
-        image_path: str | Path | Image.Image,
+        image_path: Union[str, Path, "Image.Image"],
         prompt: str,
         **kwargs,
     ) -> ModelResponse:
@@ -133,7 +134,7 @@ class BaseVisionModel(ABC):
     @abstractmethod
     def process_batch(
         self,
-        image_paths: list[str | Path | Image.Image],
+        image_paths: list[Union[str, Path, "Image.Image"]],
         prompts: list[str],
         **kwargs,
     ) -> list[ModelResponse]:
@@ -151,8 +152,13 @@ class BaseVisionModel(ABC):
 
     def get_memory_usage(self) -> float:
         """Get current GPU memory usage in MB."""
-        if torch.cuda.is_available() and self.device.type == "cuda":
-            return torch.cuda.memory_allocated(self.device) / 1024 / 1024
+        try:
+            import torch
+
+            if torch.cuda.is_available() and self.device.type == "cuda":
+                return torch.cuda.memory_allocated(self.device) / 1024 / 1024
+        except ImportError:
+            pass
         return 0.0
 
     def optimize_for_inference(self) -> None:
@@ -168,7 +174,7 @@ class BaseVisionModel(ABC):
     def _apply_quantization(self) -> None:
         """Apply model-specific quantization."""
 
-    def validate_image(self, image_path: str | Path | Image.Image) -> bool:
+    def validate_image(self, image_path: Union[str, Path, "Image.Image"]) -> bool:
         """Validate image format and size constraints.
 
         Args:
@@ -180,6 +186,8 @@ class BaseVisionModel(ABC):
         """
         try:
             if isinstance(image_path, (str, Path)):
+                from PIL import Image
+
                 image = Image.open(image_path)
             else:
                 image = image_path
@@ -207,18 +215,23 @@ class BaseVisionModel(ABC):
             "quantization_enabled": self.enable_quantization,
         }
 
-        if torch.cuda.is_available():
-            info.update(
-                {
-                    "cuda_version": torch.version.cuda,
-                    "gpu_count": torch.cuda.device_count(),
-                    "current_gpu": torch.cuda.current_device() if self.device.type == "cuda" else None,
-                    "gpu_memory_total": torch.cuda.get_device_properties(0).total_memory / 1024 / 1024
-                    if self.device.type == "cuda"
-                    else None,
-                    "gpu_memory_allocated": self.get_memory_usage(),
-                },
-            )
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                info.update(
+                    {
+                        "cuda_version": torch.version.cuda,
+                        "gpu_count": torch.cuda.device_count(),
+                        "current_gpu": torch.cuda.current_device() if self.device.type == "cuda" else None,
+                        "gpu_memory_total": torch.cuda.get_device_properties(0).total_memory / 1024 / 1024
+                        if self.device.type == "cuda"
+                        else None,
+                        "gpu_memory_allocated": self.get_memory_usage(),
+                    },
+                )
+        except ImportError:
+            pass
 
         return info
 

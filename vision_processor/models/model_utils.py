@@ -9,10 +9,12 @@ Provides shared utilities for both InternVL and Llama models including:
 
 import logging
 import platform
+from typing import TYPE_CHECKING, Union
 
-import torch
-from torch import nn
-from transformers import BitsAndBytesConfig
+if TYPE_CHECKING:
+    import torch
+    from torch import nn
+    from transformers import BitsAndBytesConfig
 
 from .base_model import DeviceConfig
 
@@ -22,12 +24,14 @@ logger = logging.getLogger(__name__)
 class DeviceManager:
     """Manages device selection and configuration for vision models."""
 
-    def __init__(self, memory_limit_mb: int | None = None):
+    def __init__(self, memory_limit_mb: Union[int, None] = None):
         self.memory_limit_mb = memory_limit_mb
         self.system_info = self._get_system_info()
 
     def _get_system_info(self) -> dict[str, any]:
         """Get comprehensive system information."""
+        import torch
+
         info = {
             "platform": platform.system(),
             "architecture": platform.machine(),
@@ -67,7 +71,7 @@ class DeviceManager:
 
         return info
 
-    def select_device(self, device_config: DeviceConfig) -> torch.device:
+    def select_device(self, device_config: DeviceConfig) -> "torch.device":
         """Select optimal device based on configuration and system capabilities.
 
         Args:
@@ -101,8 +105,10 @@ class DeviceManager:
 
         raise ValueError(f"Unsupported device configuration: {device_config}")
 
-    def _auto_select_device(self) -> torch.device:
+    def _auto_select_device(self) -> "torch.device":
         """Automatically select the best available device."""
+        import torch
+
         # Priority 1: Multiple high-memory GPUs (H200 development)
         if torch.cuda.device_count() > 1:
             gpu_memory = [
@@ -139,8 +145,8 @@ class DeviceManager:
     def get_optimal_quantization_config(
         self,
         _model_type: str,
-        device: torch.device,
-    ) -> BitsAndBytesConfig | None:
+        device: "torch.device",
+    ) -> Union["BitsAndBytesConfig", None]:
         """Get optimal quantization configuration based on model and device.
 
         Args:
@@ -151,6 +157,9 @@ class DeviceManager:
             BitsAndBytesConfig or None if quantization not recommended
 
         """
+        import torch
+        from transformers import BitsAndBytesConfig
+
         if device.type == "cpu":
             return None  # No quantization on CPU
 
@@ -184,7 +193,7 @@ class DeviceManager:
         logger.info("High GPU memory detected, no quantization needed")
         return None
 
-    def setup_multi_gpu(self, model: nn.Module) -> nn.Module:
+    def setup_multi_gpu(self, model: "nn.Module") -> "nn.Module":
         """Setup model for multi-GPU processing if available.
 
         Args:
@@ -194,14 +203,19 @@ class DeviceManager:
             Model wrapped for multi-GPU or original model
 
         """
+        import torch
+        from torch import nn
+
         if torch.cuda.device_count() > 1:
             logger.info(f"Setting up model for {torch.cuda.device_count()} GPUs")
             model = nn.DataParallel(model)
 
         return model
 
-    def optimize_memory_usage(self, device: torch.device) -> None:
+    def optimize_memory_usage(self, device: "torch.device") -> None:
         """Optimize memory usage for the given device."""
+        import torch
+
         if device.type == "cuda":
             # Clear cache
             torch.cuda.empty_cache()
@@ -214,8 +228,10 @@ class DeviceManager:
                 torch.cuda.set_per_process_memory_fraction(memory_fraction, device)
                 logger.info(f"Set GPU memory fraction to {memory_fraction:.2f}")
 
-    def get_memory_stats(self, device: torch.device) -> dict[str, float]:
+    def get_memory_stats(self, device: "torch.device") -> dict[str, float]:
         """Get detailed memory statistics for the device."""
+        import torch
+
         if device.type == "cuda":
             return {
                 "allocated_mb": torch.cuda.memory_allocated(device) / 1024 / 1024,
@@ -229,8 +245,11 @@ class QuantizationHelper:
     """Helper utilities for model quantization."""
 
     @staticmethod
-    def apply_dynamic_quantization(model: nn.Module) -> nn.Module:
+    def apply_dynamic_quantization(model: "nn.Module") -> "nn.Module":
         """Apply dynamic quantization to the model."""
+        import torch
+        from torch import nn
+
         quantized_model = torch.quantization.quantize_dynamic(
             model,
             {nn.Linear},
@@ -240,7 +259,7 @@ class QuantizationHelper:
         return quantized_model
 
     @staticmethod
-    def check_quantization_support(device: torch.device) -> bool:
+    def check_quantization_support(device: "torch.device") -> bool:
         """Check if quantization is supported on the device."""
         if device.type == "cpu":
             return True  # CPU supports quantization
@@ -275,6 +294,8 @@ class ModelProfiler:
 
         """
         import time
+
+        import torch
 
         # Get initial memory
         if torch.cuda.is_available():

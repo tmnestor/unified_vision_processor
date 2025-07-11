@@ -8,8 +8,6 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
-import torch
-
 from ..models.base_model import BaseVisionModel, DeviceConfig
 
 if TYPE_CHECKING:
@@ -265,6 +263,8 @@ class ModelFactory:
         _config: Optional["UnifiedConfig"],
     ) -> None:
         """Apply CUDA-specific optimizations."""
+        import torch
+
         # Enable optimized attention if available
         try:
             torch.backends.cuda.enable_flash_sdp(True)
@@ -317,6 +317,8 @@ class ModelFactory:
     ) -> None:
         """Apply CPU-specific optimizations."""
         try:
+            import torch
+
             # Enable CPU optimizations
             torch.set_num_threads(torch.get_num_threads())
 

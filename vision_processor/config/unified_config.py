@@ -349,7 +349,7 @@ class UnifiedConfig:
 
         # Model selection
         if model_type := os.getenv("VISION_MODEL_TYPE"):
-            config_dict["model_type"] = ModelType(model_type)
+            config_dict["_model_type"] = ModelType(model_type)
         if model_path := os.getenv("VISION_MODEL_PATH"):
             config_dict["model_path"] = Path(model_path)
         if device_config := os.getenv("VISION_DEVICE_CONFIG"):
@@ -482,8 +482,8 @@ class UnifiedConfig:
     def from_dict(cls, config_dict: dict[str, Any]) -> "UnifiedConfig":
         """Create configuration from dictionary."""
         # Convert string values to enums if needed
-        if "model_type" in config_dict and isinstance(config_dict["model_type"], str):
-            config_dict["model_type"] = ModelType(config_dict["model_type"])
+        if "_model_type" in config_dict and isinstance(config_dict["_model_type"], str):
+            config_dict["_model_type"] = ModelType(config_dict["_model_type"])
         if "processing_pipeline" in config_dict and isinstance(config_dict["processing_pipeline"], str):
             config_dict["processing_pipeline"] = ProcessingPipeline(config_dict["processing_pipeline"])
         if "extraction_method" in config_dict and isinstance(config_dict["extraction_method"], str):
@@ -517,8 +517,8 @@ class UnifiedConfig:
             config_dict = yaml.safe_load(f)
 
         # Convert string enums back to enum objects
-        if "model_type" in config_dict:
-            config_dict["model_type"] = ModelType(config_dict["model_type"])
+        if "_model_type" in config_dict:
+            config_dict["_model_type"] = ModelType(config_dict["_model_type"])
         if "device_config" in config_dict:
             config_dict["device_config"] = DeviceConfig(config_dict["device_config"])
         if "processing_pipeline" in config_dict:
