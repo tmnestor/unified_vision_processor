@@ -276,7 +276,7 @@ class UnifiedExtractionManager:
             classification_text = " ".join(classification_evidence) if classification_evidence else None
             prompt = self.prompt_manager.get_prompt_for_document_type(
                 classified_type,
-                model_type=self.config.model_type,
+                model_type=self.config.model_type.value,
                 classification_response=classification_text,
             )
 
