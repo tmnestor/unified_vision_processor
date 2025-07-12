@@ -89,11 +89,11 @@ class BaseATOHandler(ABC):
         """Load Australian business and format patterns."""
         # Australian date patterns - match working Llama key-value format
         self.date_patterns = [
-            r"DATE:\s*(\d{1,2}/\d{1,2}/\d{4})",  # Working format: "DATE: 16/03/2023"
-            r"Date:\s*(\d{1,2}/\d{1,2}/\d{4})",  # Structured format: "Date: 15/06/2024"
-            r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b",
-            r"\b(\d{1,2})-(\d{1,2})-(\d{4})\b",
-            r"\b(\d{1,2})\.(\d{1,2})\.(\d{4})\b",
+            r"DATE:\s*(\d{1,2}[./]\d{1,2}[./]\d{4})",  # Working format: "DATE: 16/03/2023" or "DATE: 17.10.2020"
+            r"Date:\s*(\d{1,2}[./]\d{1,2}[./]\d{4})",  # Structured format: "Date: 15/06/2024"
+            r"\b(\d{1,2}/\d{1,2}/\d{4})\b",
+            r"\b(\d{1,2}-\d{1,2}-\d{4})\b",
+            r"\b(\d{1,2}\.\d{1,2}\.\d{4})\b",
         ]
 
         # Australian currency patterns
@@ -110,6 +110,7 @@ class BaseATOHandler(ABC):
 
         # GST patterns - match working Llama key-value format
         self.gst_patterns = [
+            r"GST\s+\$[\d.]+\s+\$(\d+\.\d{2})\s+\$[\d.]+",  # Format: "GST $278.44 $27.84 $306.28" (middle value)
             r"TAX:\s*(\d+(?:\.\d{2})?)",  # Working format: "TAX: 3.82"
             r"GST:\s*\$?(\d+(?:\.\d{2})?)",  # Structured format: "GST: $4.55"
             r"(?:gst|tax)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
@@ -164,7 +165,9 @@ class BaseATOHandler(ABC):
 
         # Extract total amount - match working Llama key-value format
         total_patterns = [
-            r"TOTAL:\s*(\d+(?:\.\d{2})?)",  # Working format: "TOTAL: 42.08"
+            r"TOTAL:\s*\$?(\d+(?:\.\d{2})?)",  # Working format: "TOTAL: 42.08"
+            r"\$(\d+\.\d{2})\s+TOTAL:",  # Format: "$306.28 TOTAL:"
+            r"GST\s+\$[\d.]+\s+\$[\d.]+\s+\$(\d+\.\d{2})",  # Format: "GST $278.44 $27.84 $306.28"
             r"Total:\s*\$?(\d+(?:\.\d{2})?)",  # Structured format: "Total: $45.50"
             r"(?:total|amount)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
             r"(?:grand\s+total)\s*:?\s*\$?\s*(\d+(?:\.\d{2})?)",
@@ -228,14 +231,14 @@ class BaseATOHandler(ABC):
 
         return merged
 
-    def validate_fields(self, fields: dict[str, Any]) -> HandlerResult:
+    def validate_fields(self, fields: dict[str, Any]) -> dict[str, Any]:
         """Step 5: Validate extracted fields using ATO compliance rules.
 
         Args:
             fields: Extracted fields to validate
 
         Returns:
-            HandlerResult with validation status and issues
+            Dictionary of validated fields (same as input, pipeline expects dict)
 
         """
         if not self.initialized:
@@ -260,13 +263,16 @@ class BaseATOHandler(ABC):
         # Calculate confidence based on field completeness and validation
         confidence_score = self._calculate_field_confidence(fields, validation_issues)
 
-        return HandlerResult(
-            extracted_fields=fields,
-            validation_passed=len(validation_issues) == 0,
-            validation_issues=validation_issues,
-            confidence_score=confidence_score,
-            processing_notes=processing_notes,
-        )
+        # Log validation results for debugging
+        if validation_issues:
+            logger.warning(f"Validation issues found: {validation_issues}")
+        else:
+            logger.info("Field validation passed successfully")
+
+        logger.debug(f"Field confidence score: {confidence_score:.3f}")
+
+        # Return validated fields dictionary (pipeline expects dict, not HandlerResult)
+        return fields
 
     @abstractmethod
     def _validate_document_specific_fields(self, fields: dict[str, Any]) -> list[str]:
