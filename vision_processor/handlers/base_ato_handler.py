@@ -72,6 +72,11 @@ class BaseATOHandler(ABC):
         logger.info(f"{self.__class__.__name__} initialized with ATO compliance")
         self.initialized = True
 
+    def ensure_initialized(self) -> None:
+        """Ensure handler is initialized (compatible with pipeline components)."""
+        if not self.initialized:
+            self.initialize()
+
     @abstractmethod
     def _load_field_requirements(self) -> None:
         """Load required and optional fields for this document type."""
