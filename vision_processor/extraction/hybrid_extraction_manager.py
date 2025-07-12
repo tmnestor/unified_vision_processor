@@ -331,11 +331,22 @@ class UnifiedExtractionManager:
             awk_enabled = self.config.awk_fallback
             quality_insufficient = self._extraction_quality_insufficient(extracted_fields)
 
+            # Preliminary quality grading for AWK fallback decision
+            preliminary_grade = self._assess_preliminary_quality_grade(extracted_fields)
+
+            # Trigger AWK fallback for insufficient quality OR Fair/Poor grades
+            should_use_awk = quality_insufficient or preliminary_grade in [
+                QualityGrade.FAIR,
+                QualityGrade.POOR,
+                QualityGrade.VERY_POOR,
+            ]
+
             logger.info(
-                f"AWK check: enabled={awk_enabled}, quality_insufficient={quality_insufficient}, fields_count={len(extracted_fields)}"
+                f"AWK check: enabled={awk_enabled}, quality_insufficient={quality_insufficient}, "
+                f"preliminary_grade={preliminary_grade.value}, should_use_awk={should_use_awk}"
             )
 
-            if awk_enabled and quality_insufficient:
+            if awk_enabled and should_use_awk:
                 # Use AWK extractor component
                 logger.info("Triggering AWK fallback extraction")
                 awk_fields = self.awk_extractor.extract(
@@ -350,7 +361,8 @@ class UnifiedExtractionManager:
                 logger.info("AWK fallback extraction applied")
             else:
                 logger.info(
-                    f"AWK fallback skipped: enabled={awk_enabled}, quality_insufficient={quality_insufficient}"
+                    f"AWK fallback skipped: enabled={awk_enabled}, quality_insufficient={quality_insufficient}, "
+                    f"preliminary_grade={preliminary_grade.value}, should_use_awk={should_use_awk}"
                 )
 
             # =================================================
@@ -499,7 +511,10 @@ class UnifiedExtractionManager:
         return self.model.process_image(image_path, prompt)
 
     def _extraction_quality_insufficient(self, fields: dict[str, Any]) -> bool:
-        """Assess if extraction quality is insufficient for AWK fallback."""
+        """Assess if extraction quality is insufficient for AWK fallback.
+
+        Checks both field count and value quality to determine if AWK fallback is needed.
+        """
         # Filter out metadata fields to count only actual extracted data
         data_fields = {
             k: v
@@ -509,8 +524,170 @@ class UnifiedExtractionManager:
             and str(v).strip()
         }
 
-        # Check if we have insufficient actual data fields
-        return len(data_fields) < 3
+        # Check 1: Insufficient field count
+        if len(data_fields) < 3:
+            logger.info(f"Quality insufficient: only {len(data_fields)} fields extracted")
+            return True
+
+        # Check 2: Critical field quality assessment
+        quality_issues = []
+
+        # Check total_amount field - should be reasonable for business receipts
+        if "total_amount" in data_fields:
+            total_str = str(data_fields["total_amount"]).replace("$", "").replace(",", "").strip()
+            try:
+                total_value = float(total_str)
+                # Flag obviously wrong totals (too small for typical business receipts)
+                if total_value < 5.0:
+                    quality_issues.append(f"total_amount too small: {total_value}")
+            except (ValueError, TypeError):
+                quality_issues.append(f"total_amount not numeric: {total_str}")
+
+        # Check receipt_number field - should not be nonsensical single words
+        if "receipt_number" in data_fields:
+            receipt_str = str(data_fields["receipt_number"]).strip()
+            # Flag single letters or common meaningless extractions
+            if len(receipt_str) <= 2 or receipt_str.lower() in [
+                "is",
+                "it",
+                "to",
+                "of",
+                "and",
+                "the",
+                "a",
+                "an",
+            ]:
+                quality_issues.append(f"receipt_number invalid: '{receipt_str}'")
+
+        # Check supplier_name field - should not be single characters
+        if "supplier_name" in data_fields:
+            supplier_str = str(data_fields["supplier_name"]).strip()
+            if len(supplier_str) <= 2:
+                quality_issues.append(f"supplier_name too short: '{supplier_str}'")
+
+        # Check date fields - should follow DD/MM/YYYY pattern or similar
+        date_fields = ["invoice_date", "transaction_date", "date"]
+        for field in date_fields:
+            if field in data_fields:
+                date_str = str(data_fields[field]).strip()
+                # Basic date validation - should contain numbers and separators
+                if not any(char.isdigit() for char in date_str) or len(date_str) < 8:
+                    quality_issues.append(f"{field} invalid format: '{date_str}'")
+
+        if quality_issues:
+            logger.info(f"Quality insufficient: {len(quality_issues)} issues found: {quality_issues}")
+            return True
+
+        # Check 3: Overall value meaningfulness
+        meaningless_values = 0
+        for _key, value in data_fields.items():
+            value_str = str(value).strip().lower()
+            # Count values that are clearly extraction errors
+            if len(value_str) <= 1 or value_str in [
+                "n/a",
+                "na",
+                "not available",
+                "not visible",
+                "none",
+                "",
+                "-",
+            ]:
+                meaningless_values += 1
+
+        # If more than half the fields are meaningless, quality is insufficient
+        if meaningless_values > len(data_fields) // 2:
+            logger.info(
+                f"Quality insufficient: {meaningless_values}/{len(data_fields)} fields are meaningless"
+            )
+            return True
+
+        # Quality is sufficient
+        logger.info(f"Quality sufficient: {len(data_fields)} fields with good values")
+        return False
+
+    def _assess_preliminary_quality_grade(self, fields: dict[str, Any]) -> QualityGrade:
+        """Assess preliminary quality grade for AWK fallback decision.
+
+        This is a lightweight version of quality assessment that runs before
+        the full confidence manager assessment.
+        """
+        # Filter out metadata fields
+        data_fields = {
+            k: v
+            for k, v in fields.items()
+            if k not in ["extracted_by", "fields_count", "extraction_method", "handler_type"]
+            and v is not None
+            and str(v).strip()
+        }
+
+        field_count = len(data_fields)
+        quality_issues = 0
+
+        # Count quality issues using similar logic to _extraction_quality_insufficient
+
+        # Check critical fields
+        if "total_amount" in data_fields:
+            total_str = str(data_fields["total_amount"]).replace("$", "").replace(",", "").strip()
+            try:
+                total_value = float(total_str)
+                if total_value < 5.0:
+                    quality_issues += 1
+            except (ValueError, TypeError):
+                quality_issues += 1
+
+        if "receipt_number" in data_fields:
+            receipt_str = str(data_fields["receipt_number"]).strip()
+            if len(receipt_str) <= 2 or receipt_str.lower() in [
+                "is",
+                "it",
+                "to",
+                "of",
+                "and",
+                "the",
+                "a",
+                "an",
+            ]:
+                quality_issues += 1
+
+        if "supplier_name" in data_fields:
+            supplier_str = str(data_fields["supplier_name"]).strip()
+            if len(supplier_str) <= 2:
+                quality_issues += 1
+
+        # Check date fields
+        date_fields = ["invoice_date", "transaction_date", "date"]
+        for field in date_fields:
+            if field in data_fields:
+                date_str = str(data_fields[field]).strip()
+                if not any(char.isdigit() for char in date_str) or len(date_str) < 8:
+                    quality_issues += 1
+
+        # Count meaningless values
+        meaningless_values = 0
+        for _key, value in data_fields.items():
+            value_str = str(value).strip().lower()
+            if len(value_str) <= 1 or value_str in [
+                "n/a",
+                "na",
+                "not available",
+                "not visible",
+                "none",
+                "",
+                "-",
+            ]:
+                meaningless_values += 1
+
+        # Grade based on field count, quality issues, and meaningless values
+        if field_count < 3 or quality_issues >= 3:
+            return QualityGrade.VERY_POOR
+        elif field_count < 5 or quality_issues >= 2 or meaningless_values > field_count // 2:
+            return QualityGrade.POOR
+        elif field_count < 7 or quality_issues >= 1 or meaningless_values > field_count // 3:
+            return QualityGrade.FAIR
+        elif field_count >= 8 and quality_issues == 0 and meaningless_values == 0:
+            return QualityGrade.EXCELLENT
+        else:
+            return QualityGrade.GOOD
 
     def _merge_extractions(
         self,

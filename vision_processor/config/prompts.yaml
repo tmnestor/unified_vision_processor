@@ -7,19 +7,25 @@
 # Core business receipt extraction - optimized for both models
 business_receipt_extraction_prompt: |
   <|image|>Extract information from this Australian receipt and return in KEY-VALUE format.
-  
-  Use this exact format:
+
+  CRITICAL: Use EXACT KEY-VALUE format below - NO JSON, NO other formats.
+
   DATE: [purchase date in DD/MM/YYYY format]
   STORE: [store name in capitals]
-  ABN: [Australian Business Number - XX XXX XXX XXX format]
-  GST: [GST amount - 10% component]
+  ABN: [Australian Business Number if visible]
+  GST: [GST amount]
   TOTAL: [total amount including GST]
   ITEMS: [item1 | item2 | item3]
-  
-  CRITICAL: 
-  - Return ONLY the key-value pairs above. No explanations.
-  - Read prices carefully from receipt - accuracy is essential
-  - This is business document processing for accounting software integration
+
+  EXAMPLE OUTPUT:
+  DATE: 17/10/2020
+  STORE: IGA
+  ABN: 88 000 014 675
+  GST: 27.84
+  TOTAL: 306.28
+  ITEMS: Bread White | Milk 2L | Eggs Free Range 12pk
+
+  CRITICAL: Return ONLY the key-value pairs above. No explanations.
 
 # Bank statement processing - safety optimized
 bank_statement_extraction_prompt: |
