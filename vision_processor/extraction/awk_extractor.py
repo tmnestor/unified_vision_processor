@@ -202,10 +202,34 @@ class AWKExtractor:
                     document_types=list(DocumentType),
                 ),
                 ExtractionPattern(
-                    pattern=r"TOTAL:\s*(\d+(?:\.\d{2})?)",
+                    pattern=r"TOTAL:\s*\$?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
                     field_type=FieldType.TOTAL,
                     priority=15,
                     document_types=list(DocumentType),
+                    post_processor="clean_amount",
+                ),
+                # High-priority pattern for Australian receipt format: SUBTOTAL -> GST -> TOTAL
+                ExtractionPattern(
+                    pattern=r"SUBTOTAL:\s*\$[\d,.]+\s*GST[^$]*\$[\d,.]+\s*TOTAL:\s*\$?(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)",
+                    field_type=FieldType.TOTAL,
+                    priority=20,  # Higher priority than simple TOTAL pattern
+                    document_types=[DocumentType.BUSINESS_RECEIPT, DocumentType.TAX_INVOICE],
+                    post_processor="clean_amount",
+                ),
+                # Pattern for synthetic receipt format with subtotal, GST, and final total
+                ExtractionPattern(
+                    pattern=r"\$\d{1,3}(?:,\d{3})*(?:\.\d{2})?\s*\$\d{1,2}(?:\.\d{2})?\s*\$(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)\s*SUBTOTAL:\s*GST.*?TOTAL:",
+                    field_type=FieldType.TOTAL,
+                    priority=18,
+                    document_types=[DocumentType.BUSINESS_RECEIPT],
+                    post_processor="clean_amount",
+                ),
+                # Final fallback: look for TOTAL: followed by largest dollar amount on receipt
+                ExtractionPattern(
+                    pattern=r"TOTAL:\s*\$?(\d{3,}(?:\.\d{2})?)",  # Match amounts >= $100 for receipts
+                    field_type=FieldType.TOTAL,
+                    priority=17,
+                    document_types=[DocumentType.BUSINESS_RECEIPT],
                     post_processor="clean_amount",
                 ),
                 ExtractionPattern(
@@ -344,6 +368,19 @@ class AWKExtractor:
                     field_type=FieldType.REFERENCE,
                     priority=8,
                     document_types=list(DocumentType),
+                ),
+                # Receipt number patterns for business receipts
+                ExtractionPattern(
+                    pattern=r"RECEIPT:\s*[^#]*#(\d+)",
+                    field_type=FieldType.INVOICE_NUMBER,  # Map to invoice_number for compatibility
+                    priority=15,
+                    document_types=[DocumentType.BUSINESS_RECEIPT],
+                ),
+                ExtractionPattern(
+                    pattern=r"(?:receipt\s+(?:no|number)|rcpt\s+no)[\s:]*#?([A-Z0-9]+)",
+                    field_type=FieldType.INVOICE_NUMBER,
+                    priority=12,
+                    document_types=[DocumentType.BUSINESS_RECEIPT],
                 ),
             ],
         )
