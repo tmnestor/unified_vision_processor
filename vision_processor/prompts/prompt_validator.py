@@ -7,7 +7,7 @@ import logging
 import re
 from typing import Any
 
-from ..extraction.pipeline_components import DocumentType
+from ..classification.australian_tax_types import DocumentType
 
 logger = logging.getLogger(__name__)
 

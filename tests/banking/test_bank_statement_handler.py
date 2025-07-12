@@ -38,7 +38,7 @@ class TestBankStatementHandler:
         ANZ Bank Account Statement
         Account: 123-456 789012345
         Statement Period: 01/06/2024 to 30/06/2024
-        
+
         Date        Description                    Amount
         15/06/2024  BP Fuel Station Melbourne     -85.50
         16/06/2024  Wilson Parking Flinders St    -12.00
@@ -49,7 +49,7 @@ class TestBankStatementHandler:
         21/06/2024  Deloitte Consulting Fee       -2500.00
         22/06/2024  Telstra Phone Bill            -89.90
         23/06/2024  CityLink Toll                 -8.20
-        
+
         Opening Balance: $2,456.78
         Closing Balance: $1,510.48
         """

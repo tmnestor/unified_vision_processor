@@ -221,7 +221,7 @@ def batch(
                             (["total_amount", "total_value"], "total"),
                             (["supplier_name", "supplier_value", "business_name"], "supplier"),
                             (["date", "date_value"], "date"),
-                            (["gst_amount", "gst_value"], "gst")
+                            (["gst_amount", "gst_value"], "gst"),
                         ]
                         extracted_info = []
 
@@ -234,7 +234,9 @@ def batch(
 
                             if value:
                                 # Truncate long values
-                                display_value = str(value)[:20] + "..." if len(str(value)) > 20 else str(value)
+                                display_value = (
+                                    str(value)[:20] + "..." if len(str(value)) > 20 else str(value)
+                                )
                                 extracted_info.append(f"{display_name}:{display_value}")
 
                         fields_summary = " | ".join(extracted_info) if extracted_info else "No key fields"
@@ -545,11 +547,7 @@ def _display_batch_statistics(results: list[dict], model: str) -> None:
             supplier_display = str(supplier)[:25] + "..." if len(str(supplier)) > 25 else str(supplier)
 
             sample_table.add_row(
-                result_entry["image_file"],
-                str(total_amount),
-                supplier_display,
-                str(date),
-                str(field_count)
+                result_entry["image_file"], str(total_amount), supplier_display, str(date), str(field_count)
             )
 
         console.print(sample_table)

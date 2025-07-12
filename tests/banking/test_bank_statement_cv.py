@@ -80,7 +80,7 @@ class TestBankStatementComputerVision:
         return """
         ANZ Bank Statement
         Account: 123-456 789012345
-        
+
         15/06/2024  BP Fuel Station Melbourne     -85.50
         16/06/2024  Wilson Parking Flinders St    -12.00
         17/06/2024  Deloitte Consulting Fee       -2500.00

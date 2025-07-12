@@ -7,7 +7,7 @@ with Llama's 13 ATO-compliant prompts for Australian tax document processing.
 import logging
 from typing import Any
 
-from ..extraction.pipeline_components import DocumentType
+from ..classification.australian_tax_types import DocumentType
 from .internvl_prompts import InternVLPrompts
 from .llama_prompts import LlamaPrompts
 

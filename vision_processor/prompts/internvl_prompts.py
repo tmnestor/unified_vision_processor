@@ -6,7 +6,7 @@ document processing with computer vision and highlight detection capabilities.
 
 import logging
 
-from ..extraction.pipeline_components import DocumentType
+from ..classification.australian_tax_types import DocumentType
 
 logger = logging.getLogger(__name__)
 

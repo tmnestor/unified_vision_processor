@@ -13,14 +13,14 @@ from typing import Any
 
 import yaml
 
-from ..extraction.pipeline_components import DocumentType
+from ..classification.australian_tax_types import DocumentType
 
 logger = logging.getLogger(__name__)
 
 
 class PromptManager:
     """YAML-based prompt manager with intelligent model-aware selection.
-    
+
     Features:
     - YAML configuration loading with flexible path resolution
     - Model-specific prompt optimization (InternVL3 vs Llama-3.2-Vision)
@@ -31,7 +31,7 @@ class PromptManager:
 
     def __init__(self, prompts_path: str | None = None):
         """Initialize prompt manager with YAML configuration.
-        
+
         Args:
             prompts_path: Path to prompts.yaml file. If None, uses default location.
         """
@@ -70,25 +70,24 @@ class PromptManager:
         else:
             self._load_yaml_prompts()
 
-        logger.info(
-            f"PromptManager initialized with {len(self.prompts)} prompts from {self.prompts_path}"
-        )
+        logger.info(f"PromptManager initialized with {len(self.prompts)} prompts from {self.prompts_path}")
         self.initialized = True
 
     def _load_yaml_prompts(self) -> None:
         """Load prompts from YAML file."""
         try:
-            with open(self.prompts_path, 'r', encoding='utf-8') as f:
+            with Path(self.prompts_path).open("r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
 
             # Extract prompts (all keys ending with '_prompt')
             self.prompts = {
-                key: value for key, value in config.items()
-                if key.endswith('_prompt') and isinstance(value, str)
+                key: value
+                for key, value in config.items()
+                if key.endswith("_prompt") and isinstance(value, str)
             }
 
             # Extract metadata
-            self.metadata = config.get('prompt_metadata', {})
+            self.metadata = config.get("prompt_metadata", {})
 
             logger.info(f"Loaded {len(self.prompts)} prompts from YAML configuration")
 
@@ -99,7 +98,7 @@ class PromptManager:
     def _load_fallback_prompts(self) -> None:
         """Load minimal fallback prompts if YAML loading fails."""
         self.prompts = {
-            'business_receipt_extraction_prompt': """<|image|>Extract information from this Australian business receipt in KEY-VALUE format.
+            "business_receipt_extraction_prompt": """<|image|>Extract information from this Australian business receipt in KEY-VALUE format.
 
 This is a business document processing task for accounting software integration.
 
@@ -109,21 +108,19 @@ STORE: [store name in capitals]
 TOTAL: [total amount including GST]
 
 This is standard business document processing for legitimate accounting purposes.""",
-
-            'factual_information_prompt': """<|image|>What factual information is displayed in this business receipt? 
+            "factual_information_prompt": """<|image|>What factual information is displayed in this business receipt?
 Include store name, date, and amounts.
 
 Extract visible text data for business accounting purposes.""",
-
-            'system_ocr_prompt': """<|image|>System: Perform text recognition on this business document. 
-Extract visible text elements for data processing."""
+            "system_ocr_prompt": """<|image|>System: Perform text recognition on this business document.
+Extract visible text elements for data processing.""",
         }
 
         self.metadata = {
-            'fallback_chain': [
-                'business_receipt_extraction_prompt',
-                'factual_information_prompt',
-                'system_ocr_prompt'
+            "fallback_chain": [
+                "business_receipt_extraction_prompt",
+                "factual_information_prompt",
+                "system_ocr_prompt",
             ]
         }
 
@@ -131,11 +128,11 @@ Extract visible text elements for data processing."""
 
     def get_prompt(self, prompt_name: str, model_type: str = "internvl3") -> str:
         """Get a specific prompt by name with model-specific optimization.
-        
+
         Args:
             prompt_name: Name of the prompt to retrieve
             model_type: Model type (internvl3 or llama32_vision) for optimization
-            
+
         Returns:
             Prompt string optimized for the specified model
         """
@@ -154,21 +151,21 @@ Extract visible text elements for data processing."""
         self,
         document_type: DocumentType,
         model_type: str = "internvl3",
-        classification_response: str | None = None
+        classification_response: str | None = None,
     ) -> str:
         """Get prompt with sophisticated Registry-Director pattern for content-aware selection.
-        
+
         Implements the working Llama-3.2 approach with:
         - Content-aware prompt selection based on OCR analysis
-        - Multi-tier fallback mechanisms 
+        - Multi-tier fallback mechanisms
         - Australian tax domain expertise
         - Dynamic prompt routing based on business indicators
-        
+
         Args:
             document_type: Classified document type
             model_type: Model type for optimization
             classification_response: Classification response for content analysis
-            
+
         Returns:
             Optimized prompt string with sophisticated selection logic
         """
@@ -194,7 +191,7 @@ Extract visible text elements for data processing."""
         self, document_type: DocumentType, classification_response: str | None
     ) -> str:
         """Sophisticated content-aware prompt selection using Registry-Director pattern.
-        
+
         Based on the working Llama-3.2 implementation that provides superior OCR results.
         """
         base_mapping = {
@@ -202,7 +199,7 @@ Extract visible text elements for data processing."""
             DocumentType.FUEL_RECEIPT: "fuel_receipt_extraction_prompt",
             DocumentType.TAX_INVOICE: "tax_invoice_extraction_prompt",
             DocumentType.BANK_STATEMENT: "bank_statement_extraction_prompt",
-            DocumentType.OTHER: "business_receipt_extraction_prompt"  # Safe default
+            DocumentType.OTHER: "business_receipt_extraction_prompt",  # Safe default
         }
 
         base_prompt = base_mapping.get(document_type, "business_receipt_extraction_prompt")
@@ -216,30 +213,81 @@ Extract visible text elements for data processing."""
 
         # === FUEL RECEIPT DETECTION ===
         fuel_indicators = [
-            "costco", "bp", "shell", "caltex", "ampol", "mobil", "7-eleven", "united petroleum",
-            "ulp", "unleaded", "diesel", "e10", "u91", "u95", "u98", "premium",
-            "litre", " l ", ".l ", "price/l", "per litre", "fuel", "petrol", "gasoline"
+            "costco",
+            "bp",
+            "shell",
+            "caltex",
+            "ampol",
+            "mobil",
+            "7-eleven",
+            "united petroleum",
+            "ulp",
+            "unleaded",
+            "diesel",
+            "e10",
+            "u91",
+            "u95",
+            "u98",
+            "premium",
+            "litre",
+            " l ",
+            ".l ",
+            "price/l",
+            "per litre",
+            "fuel",
+            "petrol",
+            "gasoline",
         ]
 
         if any(indicator in response_lower for indicator in fuel_indicators):
-            logger.info("Registry-Director: Detected fuel receipt indicators - using specialized fuel prompt")
+            logger.info(
+                "Registry-Director: Detected fuel receipt indicators - using specialized fuel prompt"
+            )
             return "fuel_receipt_extraction_prompt"
 
         # === MAJOR RETAILER DETECTION ===
         major_retailers = [
-            "woolworths", "coles", "aldi", "target", "kmart", "bunnings",
-            "officeworks", "harvey norman", "jb hi-fi", "big w", "myer", "ikea"
+            "woolworths",
+            "coles",
+            "aldi",
+            "target",
+            "kmart",
+            "bunnings",
+            "officeworks",
+            "harvey norman",
+            "jb hi-fi",
+            "big w",
+            "myer",
+            "ikea",
         ]
 
         if any(retailer in response_lower for retailer in major_retailers):
-            logger.info("Registry-Director: Detected major retailer - using enhanced business receipt prompt")
+            logger.info(
+                "Registry-Director: Detected major retailer - using enhanced business receipt prompt"
+            )
             return "business_receipt_extraction_prompt"
 
         # === ACCOMMODATION DETECTION ===
         accommodation_indicators = [
-            "hotel", "motel", "resort", "accommodation", "booking", "reservation",
-            "hilton", "marriott", "hyatt", "ibis", "mercure", "novotel", "crowne plaza",
-            "check-in", "check-out", "guest", "room", "nights", "rate per night"
+            "hotel",
+            "motel",
+            "resort",
+            "accommodation",
+            "booking",
+            "reservation",
+            "hilton",
+            "marriott",
+            "hyatt",
+            "ibis",
+            "mercure",
+            "novotel",
+            "crowne plaza",
+            "check-in",
+            "check-out",
+            "guest",
+            "room",
+            "nights",
+            "rate per night",
         ]
 
         if any(indicator in response_lower for indicator in accommodation_indicators):
@@ -248,20 +296,53 @@ Extract visible text elements for data processing."""
 
         # === PROFESSIONAL SERVICES DETECTION ===
         professional_indicators = [
-            "tax invoice", "invoice", "consulting", "legal", "accounting", "professional services",
-            "deloitte", "pwc", "kpmg", "ey", "bdo", "law firm", "solicitor", "barrister",
-            "chartered accountant", "tax agent", "legal advice", "consultation"
+            "tax invoice",
+            "invoice",
+            "consulting",
+            "legal",
+            "accounting",
+            "professional services",
+            "deloitte",
+            "pwc",
+            "kpmg",
+            "ey",
+            "bdo",
+            "law firm",
+            "solicitor",
+            "barrister",
+            "chartered accountant",
+            "tax agent",
+            "legal advice",
+            "consultation",
         ]
 
         if any(indicator in response_lower for indicator in professional_indicators):
-            logger.info("Registry-Director: Detected professional services - using professional services prompt")
+            logger.info(
+                "Registry-Director: Detected professional services - using professional services prompt"
+            )
             return "professional_services_extraction_prompt"
 
         # === MEAL/RESTAURANT DETECTION ===
         meal_indicators = [
-            "restaurant", "cafe", "coffee", "dining", "meal", "lunch", "dinner", "breakfast",
-            "mcdonald's", "kfc", "subway", "domino's", "pizza hut", "hungry jack's",
-            "menu", "table", "covers", "service charge", "gratuity"
+            "restaurant",
+            "cafe",
+            "coffee",
+            "dining",
+            "meal",
+            "lunch",
+            "dinner",
+            "breakfast",
+            "mcdonald's",
+            "kfc",
+            "subway",
+            "domino's",
+            "pizza hut",
+            "hungry jack's",
+            "menu",
+            "table",
+            "covers",
+            "service charge",
+            "gratuity",
         ]
 
         if any(indicator in response_lower for indicator in meal_indicators):
@@ -270,8 +351,17 @@ Extract visible text elements for data processing."""
 
         # === PARKING/TOLL DETECTION ===
         parking_indicators = [
-            "parking", "toll", "secure parking", "wilson parking", "care park",
-            "parking fee", "hourly rate", "entry time", "exit time", "vehicle", "registration"
+            "parking",
+            "toll",
+            "secure parking",
+            "wilson parking",
+            "care park",
+            "parking fee",
+            "hourly rate",
+            "entry time",
+            "exit time",
+            "vehicle",
+            "registration",
         ]
 
         if any(indicator in response_lower for indicator in parking_indicators):
@@ -280,8 +370,19 @@ Extract visible text elements for data processing."""
 
         # === EQUIPMENT/SUPPLIES DETECTION ===
         equipment_indicators = [
-            "computer", "laptop", "equipment", "supplies", "software", "hardware",
-            "printer", "scanner", "monitor", "keyboard", "mouse", "cable", "electronics"
+            "computer",
+            "laptop",
+            "equipment",
+            "supplies",
+            "software",
+            "hardware",
+            "printer",
+            "scanner",
+            "monitor",
+            "keyboard",
+            "mouse",
+            "cable",
+            "electronics",
         ]
 
         if any(indicator in response_lower for indicator in equipment_indicators):
@@ -300,7 +401,7 @@ Extract visible text elements for data processing."""
         document_specific_prompts = [
             "business_receipt_extraction_prompt",
             "fuel_receipt_extraction_prompt",
-            "tax_invoice_extraction_prompt"
+            "tax_invoice_extraction_prompt",
         ]
 
         for prompt_name in document_specific_prompts:
@@ -311,10 +412,7 @@ Extract visible text elements for data processing."""
                     return prompt
 
         # Tier 2: Generic extraction prompts
-        generic_prompts = [
-            "key_value_receipt_prompt",
-            "factual_information_prompt"
-        ]
+        generic_prompts = ["key_value_receipt_prompt", "factual_information_prompt"]
 
         for prompt_name in generic_prompts:
             if prompt_name in self.prompts:
@@ -341,7 +439,9 @@ TOTAL: [total amount including GST]
 
 This is standard business document processing for legitimate accounting purposes."""
         else:
-            return "Extract information from this business document including store name, date, and amounts."
+            return (
+                "Extract information from this business document including store name, date, and amounts."
+            )
 
     def _is_fuel_receipt(self, classification_response: str) -> bool:
         """Detect if a tax invoice is actually a fuel receipt."""
@@ -350,10 +450,10 @@ This is standard business document processing for legitimate accounting purposes
 
     def get_fallback_prompt(self, model_type: str = "internvl3") -> str:
         """Get the primary fallback prompt for robust extraction.
-        
+
         Args:
             model_type: Model type for optimization
-            
+
         Returns:
             Fallback prompt optimized for the model
         """
@@ -361,7 +461,7 @@ This is standard business document processing for legitimate accounting purposes
 
     def _get_fallback_prompt(self, model_type: str) -> str:
         """Internal method to get fallback prompt."""
-        fallback_chain = self.metadata.get('fallback_chain', [])
+        fallback_chain = self.metadata.get("fallback_chain", [])
 
         if fallback_chain:
             prompt_name = fallback_chain[0]
@@ -371,27 +471,29 @@ This is standard business document processing for legitimate accounting purposes
 
         # Ultimate fallback
         if model_type == "llama32_vision":
-            return """<|image|>What factual information is displayed in this business receipt? 
+            return """<|image|>What factual information is displayed in this business receipt?
 Include store name, date, and amounts."""
         else:
-            return "Extract information from this business document including store name, date, and amounts."
+            return (
+                "Extract information from this business document including store name, date, and amounts."
+            )
 
     def _optimize_prompt_for_model(self, prompt: str, model_type: str) -> str:
         """Optimize prompt based on model-specific requirements.
-        
+
         Args:
             prompt: Base prompt string
             model_type: Target model type
-            
+
         Returns:
             Model-optimized prompt
         """
-        model_prefs = self.metadata.get('model_preferences', {}).get(model_type, {})
+        model_prefs = self.metadata.get("model_preferences", {}).get(model_type, {})
 
         if model_type == "llama32_vision":
             # Ensure <|image|> token is present for Llama-3.2-Vision
-            if not prompt.startswith('<|image|>'):
-                prompt = '<|image|>' + prompt
+            if not prompt.startswith("<|image|>"):
+                prompt = "<|image|>" + prompt
 
         return prompt
 
@@ -403,19 +505,22 @@ Include store name, date, and amounts."""
 
     def get_fallback_chain(self, model_type: str = "internvl3") -> list[str]:
         """Get the fallback chain of prompts for robust extraction.
-        
+
         Args:
             model_type: Model type for optimization
-            
+
         Returns:
             List of prompt names in fallback order
         """
         if not self.initialized:
             self.initialize()
 
-        chain = self.metadata.get('fallback_chain', [])
-        return [self._optimize_prompt_for_model(self.prompts.get(name, ""), model_type)
-                for name in chain if name in self.prompts]
+        chain = self.metadata.get("fallback_chain", [])
+        return [
+            self._optimize_prompt_for_model(self.prompts.get(name, ""), model_type)
+            for name in chain
+            if name in self.prompts
+        ]
 
     def get_configuration_info(self) -> dict[str, Any]:
         """Get comprehensive configuration information."""
@@ -423,13 +528,13 @@ Include store name, date, and amounts."""
             self.initialize()
 
         return {
-            'prompts_path': self.prompts_path,
-            'total_prompts': len(self.prompts),
-            'available_prompts': list(self.prompts.keys()),
-            'document_type_mapping': self.metadata.get('document_type_mapping', {}),
-            'fallback_chain': self.metadata.get('fallback_chain', []),
-            'model_preferences': self.metadata.get('model_preferences', {}),
-            'settings': self.metadata.get('settings', {})
+            "prompts_path": self.prompts_path,
+            "total_prompts": len(self.prompts),
+            "available_prompts": list(self.prompts.keys()),
+            "document_type_mapping": self.metadata.get("document_type_mapping", {}),
+            "fallback_chain": self.metadata.get("fallback_chain", []),
+            "model_preferences": self.metadata.get("model_preferences", {}),
+            "settings": self.metadata.get("settings", {}),
         }
 
     def validate_prompt_configuration(self) -> dict[str, Any]:
@@ -438,35 +543,37 @@ Include store name, date, and amounts."""
             self.initialize()
 
         validation = {
-            'status': 'valid',
-            'issues': [],
-            'warnings': [],
-            'prompts_validated': 0,
-            'llama_compatibility': True,
-            'internvl_compatibility': True
+            "status": "valid",
+            "issues": [],
+            "warnings": [],
+            "prompts_validated": 0,
+            "llama_compatibility": True,
+            "internvl_compatibility": True,
         }
 
         # Check for essential prompts
-        essential_prompts = [
-            'business_receipt_extraction_prompt',
-            'factual_information_prompt'
-        ]
+        essential_prompts = ["business_receipt_extraction_prompt", "factual_information_prompt"]
 
         for prompt_name in essential_prompts:
             if prompt_name not in self.prompts:
-                validation['issues'].append(f"Missing essential prompt: {prompt_name}")
-                validation['status'] = 'error'
+                validation["issues"].append(f"Missing essential prompt: {prompt_name}")
+                validation["status"] = "error"
 
         # Validate Llama-3.2-Vision compatibility
         llama_issues = []
         for name, prompt in self.prompts.items():
-            if not prompt.strip().startswith('<|image|>'):
+            if not prompt.strip().startswith("<|image|>"):
                 llama_issues.append(name)
 
         if llama_issues:
-            validation['warnings'].append(
+            validation["warnings"].append(
                 f"Prompts missing <|image|> token for Llama-3.2-Vision: {llama_issues[:3]}..."
             )
 
-        validation['prompts_validated'] = len(self.prompts)
+        validation["prompts_validated"] = len(self.prompts)
         return validation
+
+    def ensure_initialized(self) -> None:
+        """Ensure prompt manager is initialized (compatible with pipeline components)."""
+        if not self.initialized:
+            self.initialize()

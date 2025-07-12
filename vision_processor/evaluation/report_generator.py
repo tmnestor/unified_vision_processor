@@ -231,27 +231,27 @@ class ReportGenerator:
     <div class="container">
         <h1>🔬 Model Comparison Report</h1>
         <div class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</div>
-        
+
         <h2>📊 Executive Summary</h2>
         {self._generate_html_executive_summary(comparison_results)}
-        
+
         <h2>📈 Detailed Metrics Comparison</h2>
         {self._generate_html_metrics_table(comparison_results)}
-        
+
         <h2>🎯 Model Performance Cards</h2>
         <div class="summary-grid">
             {self._generate_html_model_cards(comparison_results)}
         </div>
-        
+
         <h2>🏭 Production Readiness Assessment</h2>
         {self._generate_html_production_assessment(comparison_results)}
-        
+
         <h2>⚠️ Error Analysis</h2>
         {self._generate_html_error_analysis(comparison_results)}
-        
+
         <h2>💡 Recommendations</h2>
         {self._generate_html_recommendations(comparison_results)}
-        
+
         <h2>🔍 Technical Details</h2>
         {self._generate_html_technical_details(comparison_results)}
     </div>
@@ -544,7 +544,7 @@ class ReportGenerator:
             document_results = self._get_result_value(result, "document_results", [])
             if hasattr(document_results, "__len__"):
                 doc_types_count = len(
-                    set(getattr(doc, "document_type", "unknown") for doc in document_results)
+                    {getattr(doc, "document_type", "unknown") for doc in document_results}
                 )
             else:
                 doc_types_count = self._get_result_value(result, "total_documents", 0)

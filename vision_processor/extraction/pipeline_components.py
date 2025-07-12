@@ -10,24 +10,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
+from ..classification.australian_tax_types import DocumentType
+
 logger = logging.getLogger(__name__)
-
-
-class DocumentType(Enum):
-    """Australian tax document types."""
-
-    FUEL_RECEIPT = "fuel_receipt"
-    TAX_INVOICE = "tax_invoice"
-    BUSINESS_RECEIPT = "business_receipt"
-    BANK_STATEMENT = "bank_statement"
-    MEAL_RECEIPT = "meal_receipt"
-    ACCOMMODATION = "accommodation"
-    TRAVEL_DOCUMENT = "travel_document"
-    PARKING_TOLL = "parking_toll"
-    PROFESSIONAL_SERVICES = "professional_services"
-    EQUIPMENT_SUPPLIES = "equipment_supplies"
-    OTHER = "other"
-    UNKNOWN = "unknown"
 
 
 class ProcessingStage(Enum):
@@ -1112,7 +1097,10 @@ def create_document_handler(
         from ..handlers.bank_statement_handler import BankStatementHandler
         from ..handlers.business_receipt_handler import BusinessReceiptHandler
         from ..handlers.fuel_receipt_handler import FuelReceiptHandler
-        logger.info(f"Creating specialized handler for {document_type} (type: {type(document_type)}, value: {document_type.value})")
+
+        logger.info(
+            f"Creating specialized handler for {document_type} (type: {type(document_type)}, value: {document_type.value})"
+        )
 
         # Map document types to their specialized handlers
         handler_map = {
@@ -1131,7 +1119,9 @@ def create_document_handler(
 
         # Debug: Check if enum comparison is working
         for key in handler_map.keys():
-            logger.info(f"Checking {key} == {document_type}: {key == document_type} (id: {id(key)} vs {id(document_type)})")
+            logger.info(
+                f"Checking {key} == {document_type}: {key == document_type} (id: {id(key)} vs {id(document_type)})"
+            )
             logger.info(f"Key type: {type(key)}, Document type: {type(document_type)}")
 
         if handler_class != DocumentHandler:
@@ -1143,6 +1133,7 @@ def create_document_handler(
     except Exception as e:
         logger.error(f"Failed to import specialized handlers: {e}")
         import traceback
+
         logger.error(f"Full traceback: {traceback.format_exc()}")
         logger.info("Falling back to base DocumentHandler")
         return DocumentHandler(config)

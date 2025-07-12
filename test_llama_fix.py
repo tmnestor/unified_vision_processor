@@ -39,7 +39,7 @@ def test_llama_model():
         print("\n=== Testing basic prediction ===")
         test_response = model.predict(
             "/Users/tod/Desktop/internvl_PoC/test_images/woolworths_receipt.jpg",
-            "<|image|>Extract the store name from this receipt."
+            "<|image|>Extract the store name from this receipt.",
         )
         print(f"Test response: {test_response[:100]}...")
 

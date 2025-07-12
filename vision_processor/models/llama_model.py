@@ -378,7 +378,7 @@ class LlamaVisionModel(BaseVisionModel):
             generation_kwargs = {
                 **inputs,
                 "max_new_tokens": kwargs.get("max_new_tokens", 1024),
-                "do_sample": kwargs.get("do_sample", True),   # Enable sampling
+                "do_sample": kwargs.get("do_sample", True),  # Enable sampling
                 "temperature": kwargs.get("temperature", 0.3),  # Low temp for focused responses
                 "top_p": kwargs.get("top_p", 0.95),
                 "top_k": kwargs.get("top_k", 50),

@@ -910,12 +910,12 @@ def _generate_comprehensive_report(
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Batch Processing Report - {model_name}</title>
         <style>
-            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                    line-height: 1.6; margin: 0; padding: 20px; background-color: #f8f9fa; }}
-            .container {{ max-width: 1200px; margin: 0 auto; background: white; 
+            .container {{ max-width: 1200px; margin: 0 auto; background: white;
                         padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
             h1, h2, h3 {{ color: #2c3e50; }}
-            .summary-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+            .summary-grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                            gap: 20px; margin: 30px 0; }}
             .metric-card {{ border: 1px solid #e1e5e9; border-radius: 8px; padding: 20px; background: #f8f9fa; }}
             .metric-value {{ font-size: 2em; font-weight: bold; color: #28a745; }}
@@ -940,7 +940,7 @@ def _generate_comprehensive_report(
         <div class="container">
             <h1>📦 Batch Processing Report - {model_name}</h1>
             <p class="timestamp">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
-            
+
             <h2>📊 Executive Summary</h2>
             <div class="summary-grid">
                 <div class="metric-card">
@@ -960,7 +960,7 @@ def _generate_comprehensive_report(
                     <div class="metric-label">Docs/Second</div>
                 </div>
             </div>
-            
+
             <h2>🎯 Quality Distribution</h2>
             <div class="quality-bar">
     """
@@ -976,7 +976,7 @@ def _generate_comprehensive_report(
 
     html_content += f"""
             </div>
-            
+
             <h2>📈 Performance Metrics</h2>
             <table>
                 <tr><th>Metric</th><th>Value</th></tr>
@@ -985,7 +985,7 @@ def _generate_comprehensive_report(
                 <tr><td>Average Confidence</td><td>{analysis.get("confidence_analysis", {}).get("average_confidence", 0):.3f}</td></tr>
                 <tr><td>ATO Compliance</td><td>{analysis.get("ato_compliance", {}).get("average_score", 0):.3f}</td></tr>
             </table>
-            
+
             <h2>🏭 Production Readiness</h2>
     """
 

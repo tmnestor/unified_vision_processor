@@ -64,7 +64,7 @@ def process(
             console.print(
                 f"Available models: {', '.join([m.value for m in ModelType])}",
             )
-            raise typer.Exit(1)
+            raise typer.Exit(1) from None
 
         # Create configuration
         config = UnifiedConfig.from_env()
@@ -88,14 +88,14 @@ def process(
         console.print("[yellow]Please ensure all dependencies are installed:[/yellow]")
         console.print("  conda activate unified_vision_processor")
         console.print("  pip install torch torchvision transformers")
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
     except Exception as e:
         console.print(f"[red]❌ Processing failed: {e}[/red]")
         if verbose:
             import traceback
 
             console.print(traceback.format_exc())
-        raise typer.Exit(1)
+        raise typer.Exit(1) from e
 
 
 @app.command()
@@ -127,7 +127,7 @@ def test_env():
 
     # Test vision processor imports
     try:
-        from ..config.unified_config import UnifiedConfig
+        from ..config.unified_config import UnifiedConfig  # noqa: F401
 
         console.print("[green]✓ UnifiedConfig import[/green]")
     except ImportError as e:

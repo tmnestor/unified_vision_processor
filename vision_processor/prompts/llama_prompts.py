@@ -6,7 +6,7 @@ Australian tax compliance and graceful degradation processing.
 
 import logging
 
-from ..extraction.pipeline_components import DocumentType
+from ..classification.australian_tax_types import DocumentType
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ PRODUCTS: [item1 | item2 | item3]
 QUANTITIES: [qty1 | qty2 | qty3]
 PRICES: [price1 | price2 | price3]
 
-CRITICAL: 
+CRITICAL:
 - Return ONLY the key-value pairs above. No explanations.
 - Use exact format shown
 - GST (Goods and Services Tax) is 10% in Australia
